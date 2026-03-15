@@ -4,30 +4,30 @@
 
 :root {
   --bg: #ffffff;
-  --fg: #0a0a0b;
+  --fg: #1a1a1a;
   --muted-bg: #f4f4f5;
   --muted-fg: #71717a;
-  --card-bg: #ffffff;
   --border-color: #e4e4e7;
-  --accent-bg: #f4f4f5;
-  --sidebar-bg: #fafafa;
+  --accent-bg: #f0f0f1;
+  --sidebar-bg: #f8f8f9;
   --sidebar-fg: #71717a;
-  --sidebar-active-bg: #f4f4f5;
+  --sidebar-active-bg: #ebebec;
   --editor-bg: #ffffff;
+  --hover-bg: #ededee;
 }
 
 .dark {
-  --bg: #09090b;
-  --fg: #fafafa;
-  --muted-bg: #18181b;
-  --muted-fg: #a1a1aa;
-  --card-bg: #0a0a0b;
-  --border-color: #27272a;
-  --accent-bg: #27272a;
-  --sidebar-bg: #0a0a0b;
-  --sidebar-fg: #a1a1aa;
-  --sidebar-active-bg: #18181b;
-  --editor-bg: #09090b;
+  --bg: #111113;
+  --fg: #ececee;
+  --muted-bg: #1e1e21;
+  --muted-fg: #8b8b93;
+  --border-color: #2e2e33;
+  --accent-bg: #252529;
+  --sidebar-bg: #18181b;
+  --sidebar-fg: #8b8b93;
+  --sidebar-active-bg: #252529;
+  --editor-bg: #111113;
+  --hover-bg: #222226;
 }
 
 @theme inline {
@@ -35,7 +35,6 @@
   --color-foreground: var(--fg);
   --color-muted: var(--muted-bg);
   --color-muted-foreground: var(--muted-fg);
-  --color-card: var(--card-bg);
   --color-border: var(--border-color);
   --color-accent: var(--accent-bg);
   --color-sidebar: var(--sidebar-bg);

@@ -6,19 +6,25 @@ interface EmptyStateProps {
 
 export function EmptyState({ onAdd }: EmptyStateProps) {
   return (
-    <div className="flex-1 flex items-center justify-center" style={{ background: 'var(--editor-bg)' }}>
-      <div className="text-center">
-        <FileText size={48} className="mx-auto mb-4" style={{ color: 'var(--muted-fg)', opacity: 0.3 }} />
-        <h2 className="text-lg font-medium mb-1" style={{ color: 'var(--fg)' }}>Zarnetti</h2>
-        <p className="text-sm mb-5" style={{ color: 'var(--muted-fg)' }}>
+    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--editor-bg)' }}>
+      <div style={{ textAlign: 'center' }}>
+        <FileText size={48} style={{ margin: '0 auto 16px', color: 'var(--muted-fg)', opacity: 0.3 }} />
+        <h2 style={{ fontSize: 18, fontWeight: 500, color: 'var(--fg)', marginBottom: 4 }}>Zarnetti</h2>
+        <p style={{ fontSize: 14, color: 'var(--muted-fg)', marginBottom: 20 }}>
           Selecciona una nota o crea una nueva
         </p>
         <button
           onClick={onAdd}
-          className="h-8 px-4 text-[13px] font-medium rounded-md transition-colors"
           style={{
+            height: 34,
+            padding: '0 16px',
+            fontSize: 13,
+            fontWeight: 500,
+            borderRadius: 8,
+            border: 'none',
             background: 'var(--fg)',
             color: 'var(--bg)',
+            cursor: 'pointer',
           }}
         >
           Nueva nota
