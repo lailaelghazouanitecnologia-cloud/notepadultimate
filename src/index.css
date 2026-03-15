@@ -1,43 +1,64 @@
 @import "tailwindcss";
 
-@theme {
-  --color-background: #ffffff;
-  --color-foreground: #0a0a0b;
-  --color-muted: #f4f4f5;
-  --color-muted-foreground: #71717a;
-  --color-card: #ffffff;
-  --color-card-foreground: #0a0a0b;
-  --color-border: #e4e4e7;
-  --color-input: #e4e4e7;
-  --color-primary: #18181b;
-  --color-primary-foreground: #fafafa;
-  --color-accent: #f4f4f5;
-  --color-accent-foreground: #18181b;
-  --color-sidebar: #fafafa;
-  --color-sidebar-foreground: #71717a;
-  --color-sidebar-active: #f4f4f5;
-  --color-editor: #ffffff;
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", Consolas, monospace;
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg: #ffffff;
+  --fg: #0a0a0b;
+  --muted-bg: #f4f4f5;
+  --muted-fg: #71717a;
+  --card-bg: #ffffff;
+  --card-fg: #0a0a0b;
+  --border-color: #e4e4e7;
+  --input-color: #e4e4e7;
+  --primary-bg: #18181b;
+  --primary-fg: #fafafa;
+  --accent-bg: #f4f4f5;
+  --accent-fg: #18181b;
+  --sidebar-bg: #fafafa;
+  --sidebar-fg: #71717a;
+  --sidebar-active-bg: #f4f4f5;
+  --editor-bg: #ffffff;
 }
 
 .dark {
-  --color-background: #09090b;
-  --color-foreground: #fafafa;
-  --color-muted: #18181b;
-  --color-muted-foreground: #a1a1aa;
-  --color-card: #0a0a0b;
-  --color-card-foreground: #fafafa;
-  --color-border: #27272a;
-  --color-input: #27272a;
-  --color-primary: #fafafa;
-  --color-primary-foreground: #18181b;
-  --color-accent: #27272a;
-  --color-accent-foreground: #fafafa;
-  --color-sidebar: #0a0a0b;
-  --color-sidebar-foreground: #a1a1aa;
-  --color-sidebar-active: #18181b;
-  --color-editor: #09090b;
+  --bg: #09090b;
+  --fg: #fafafa;
+  --muted-bg: #18181b;
+  --muted-fg: #a1a1aa;
+  --card-bg: #0a0a0b;
+  --card-fg: #fafafa;
+  --border-color: #27272a;
+  --input-color: #27272a;
+  --primary-bg: #fafafa;
+  --primary-fg: #18181b;
+  --accent-bg: #27272a;
+  --accent-fg: #fafafa;
+  --sidebar-bg: #0a0a0b;
+  --sidebar-fg: #a1a1aa;
+  --sidebar-active-bg: #18181b;
+  --editor-bg: #09090b;
+}
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --color-muted: var(--muted-bg);
+  --color-muted-foreground: var(--muted-fg);
+  --color-card: var(--card-bg);
+  --color-card-foreground: var(--card-fg);
+  --color-border: var(--border-color);
+  --color-input: var(--input-color);
+  --color-primary: var(--primary-bg);
+  --color-primary-foreground: var(--primary-fg);
+  --color-accent: var(--accent-bg);
+  --color-accent-foreground: var(--accent-fg);
+  --color-sidebar: var(--sidebar-bg);
+  --color-sidebar-foreground: var(--sidebar-fg);
+  --color-sidebar-active: var(--sidebar-active-bg);
+  --color-editor: var(--editor-bg);
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", Consolas, monospace;
 }
 
 * {
@@ -48,8 +69,8 @@
 
 body {
   font-family: var(--font-sans);
-  background: var(--color-background);
-  color: var(--color-foreground);
+  background: var(--bg);
+  color: var(--fg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -69,12 +90,12 @@ body {
 .markdown-body code {
   font-family: var(--font-mono);
   font-size: 0.875rem;
-  background: var(--color-muted);
+  background: var(--muted-bg);
   padding: 0.125rem 0.375rem;
   border-radius: 0.25rem;
 }
 .markdown-body pre {
-  background: var(--color-muted);
+  background: var(--muted-bg);
   padding: 1rem;
   border-radius: 0.5rem;
   overflow-x: auto;
@@ -82,21 +103,21 @@ body {
 }
 .markdown-body pre code { background: transparent; padding: 0; }
 .markdown-body blockquote {
-  border-left: 3px solid var(--color-border);
+  border-left: 3px solid var(--border-color);
   padding-left: 1rem;
-  color: var(--color-muted-foreground);
+  color: var(--muted-fg);
   margin-bottom: 0.75rem;
 }
-.markdown-body a { color: var(--color-foreground); text-decoration: underline; text-underline-offset: 2px; }
-.markdown-body hr { border: none; border-top: 1px solid var(--color-border); margin: 1.5rem 0; }
+.markdown-body a { color: var(--fg); text-decoration: underline; text-underline-offset: 2px; }
+.markdown-body hr { border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0; }
 .markdown-body table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
-.markdown-body th, .markdown-body td { border: 1px solid var(--color-border); padding: 0.5rem 0.75rem; text-align: left; }
-.markdown-body th { background: var(--color-muted); font-weight: 600; }
+.markdown-body th, .markdown-body td { border: 1px solid var(--border-color); padding: 0.5rem 0.75rem; text-align: left; }
+.markdown-body th { background: var(--muted-bg); font-weight: 600; }
 .markdown-body img { max-width: 100%; border-radius: 0.5rem; }
 .markdown-body input[type="checkbox"] { margin-right: 0.5rem; }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--color-muted-foreground); }
+::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted-fg); }
