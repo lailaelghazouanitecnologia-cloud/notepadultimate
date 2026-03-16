@@ -1,52 +1,49 @@
 import { memo } from 'react'
 import { renderMarkdown } from '../../lib/markdown'
-import type { StreamingState } from '../../types/chat'
+import type { StreamingState } from './types'
 
-interface StreamingMessageProps {
-  state: StreamingState
-}
+export const StreamingMessage = memo(function StreamingMessage({
+  streaming,
+}: {
+  streaming: StreamingState
+}) {
+  if (streaming.status === 'idle' || streaming.status === 'completed') return null
 
-export const StreamingMessage = memo(function StreamingMessage({ state }: StreamingMessageProps) {
-  if (state.status === 'idle' || state.status === 'done') return null
+  if (streaming.status === 'error') {
+    return (
+      <div className="zw-chat-msg zw-chat-msg-ai">
+        <div className="zw-chat-error">
+          <p>{streaming.error || 'An error occurred while generating the response.'}</p>
+        </div>
+      </div>
+    )
+  }
 
+  if (streaming.status === 'connecting') {
+    return (
+      <div className="zw-chat-msg zw-chat-msg-ai">
+        <div className="zw-thinking">
+          <div className="zw-thinking__dots">
+            <span className="zw-thinking__dot" />
+            <span className="zw-thinking__dot" />
+            <span className="zw-thinking__dot" />
+          </div>
+          <span className="zw-thinking__label">Thinking...</span>
+        </div>
+      </div>
+    )
+  }
+
+  // streaming text
   return (
-    <div className="chat-msg chat-msg--ai">
-      {state.status === 'connecting' && (
-        <div className="chat-thinking">
-          <div className="chat-thinking__dots">
-            <span className="chat-thinking__dot" />
-            <span className="chat-thinking__dot" />
-            <span className="chat-thinking__dot" />
-          </div>
-          <span className="chat-thinking__label">Thinking...</span>
-        </div>
-      )}
-
-      {state.status === 'streaming' && state.text && (
-        <div className="chat-bubble-ai">
-          <div
-            className="chat-ai-content zn-preview"
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(state.text) }}
-          />
-          <span className="chat-cursor" />
-        </div>
-      )}
-
-      {state.status === 'streaming' && !state.text && (
-        <div className="chat-thinking">
-          <div className="chat-thinking__dots">
-            <span className="chat-thinking__dot" />
-            <span className="chat-thinking__dot" />
-            <span className="chat-thinking__dot" />
-          </div>
-        </div>
-      )}
-
-      {state.status === 'error' && (
-        <div className="chat-error">
-          <p>{state.error || 'An error occurred while generating the response.'}</p>
-        </div>
-      )}
+    <div className="zw-chat-msg zw-chat-msg-ai">
+      <div className="zw-chat-bubble-ai">
+        <div
+          className="zw-chat-ai-content zn-preview"
+          dangerouslySetInnerHTML={{ __html: renderMarkdown(streaming.text) }}
+        />
+        <span className="zw-cursor" />
+      </div>
     </div>
   )
 })

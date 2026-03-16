@@ -1,28 +1,49 @@
 import { useState, useCallback, memo } from 'react'
 import { Icons } from '../../lib/icons'
 import { renderMarkdown } from '../../lib/markdown'
-import type { ChatMessage } from '../../types/chat'
+import type { ChatMessage } from './types'
 
-interface MessageBubbleProps {
-  message: ChatMessage
-  onRetry?: (content: string) => void
-  onEdit?: (messageId: string, newContent: string) => void
-}
-
-function formatTime(ts: number): string {
+function formatRelativeDate(ts: number): string {
   const diff = Date.now() - ts
   const mins = Math.floor(diff / 60000)
   if (mins < 1) return 'just now'
   if (mins < 60) return `${mins}m ago`
   const hrs = Math.floor(mins / 60)
   if (hrs < 24) return `${hrs}h ago`
-  return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const days = Math.floor(hrs / 24)
+  if (days < 7) return `${days}d ago`
+  return new Date(ts).toLocaleDateString('en', { day: 'numeric', month: 'short' })
 }
 
-export const UserMessage = memo(function UserMessage({ message, onRetry, onEdit }: MessageBubbleProps) {
+/* ── Copy button with check feedback ── */
+export const CopyButton = memo(function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }, [text])
+
+  return (
+    <button className="zw-msg-action-btn" onClick={handleCopy} title="Copy">
+      {copied ? Icons.check() : Icons.copy()}
+    </button>
+  )
+})
+
+/* ── User message with inline edit ── */
+export const UserMessage = memo(function UserMessage({
+  message,
+  onRetry,
+  onEdit,
+}: {
+  message: ChatMessage
+  onRetry?: (content: string) => void
+  onEdit?: (messageId: string, newContent: string) => void
+}) {
   const [editing, setEditing] = useState(false)
   const [editText, setEditText] = useState(message.content)
-  const [copied, setCopied] = useState(false)
 
   const handleSave = useCallback(() => {
     if (editText.trim() && onEdit) {
@@ -31,82 +52,72 @@ export const UserMessage = memo(function UserMessage({ message, onRetry, onEdit 
     setEditing(false)
   }, [editText, onEdit, message.id])
 
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(message.content)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+  const handleCancel = useCallback(() => {
+    setEditText(message.content)
+    setEditing(false)
   }, [message.content])
 
   return (
-    <div className="chat-msg chat-msg--user">
+    <div className="zw-chat-msg zw-chat-msg-user">
       {editing ? (
-        <div className="chat-edit-wrap">
+        <div className="zw-edit-wrap">
           <textarea
             value={editText}
             onChange={(e) => setEditText(e.target.value)}
-            className="chat-edit-textarea"
+            className="zw-edit-textarea"
             rows={3}
             autoFocus
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSave() }
-              if (e.key === 'Escape') { setEditText(message.content); setEditing(false) }
+              if (e.key === 'Escape') handleCancel()
             }}
           />
-          <div className="chat-edit-actions">
-            <button className="chat-edit-btn" onClick={() => { setEditText(message.content); setEditing(false) }}>
-              Cancel
-            </button>
-            <button className="chat-edit-btn chat-edit-btn--save" onClick={handleSave}>
-              Save & Resend
-            </button>
+          <div className="zw-edit-actions">
+            <button className="zw-edit-cancel" onClick={handleCancel}>Cancel</button>
+            <button className="zw-edit-save" onClick={handleSave}>Save & Resend</button>
           </div>
         </div>
       ) : (
-        <div className="chat-bubble-user">
-          <p>{message.content}</p>
-        </div>
+        <div className="zw-chat-bubble-user">{message.content}</div>
       )}
-      <div className="chat-msg__actions">
-        <span className="chat-msg__time">{formatTime(message.timestamp)}</span>
-        {onRetry && (
-          <button className="chat-msg__action-btn" onClick={() => onRetry(message.content)} title="Retry">
-            {Icons.refresh()}
-          </button>
-        )}
-        <button className="chat-msg__action-btn" onClick={() => { setEditText(message.content); setEditing(true) }} title="Edit">
+      <div className="zw-msg-actions">
+        <span className="zw-msg-time">{formatRelativeDate(message.timestamp)}</span>
+        <button className="zw-msg-action-btn" onClick={() => onRetry?.(message.content)} title="Retry">
+          {Icons.refresh()}
+        </button>
+        <button
+          className="zw-msg-action-btn"
+          onClick={() => { setEditText(message.content); setEditing(true) }}
+          title="Edit"
+        >
           {Icons.edit()}
         </button>
-        <button className="chat-msg__action-btn" onClick={handleCopy} title="Copy">
-          {copied ? Icons.check() : Icons.copy()}
-        </button>
+        <CopyButton text={message.content} />
       </div>
     </div>
   )
 })
 
-export const AssistantMessage = memo(function AssistantMessage({ message }: MessageBubbleProps) {
-  const [copied, setCopied] = useState(false)
-
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(message.content)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }, [message.content])
-
-  const html = renderMarkdown(message.content)
-
+/* ── Assistant message with markdown ── */
+export const AssistantMessage = memo(function AssistantMessage({
+  message,
+  onRetry,
+}: {
+  message: ChatMessage
+  onRetry?: (content: string) => void
+}) {
   return (
-    <div className="chat-msg chat-msg--ai">
-      <div className="chat-bubble-ai">
+    <div className="zw-chat-msg zw-chat-msg-ai">
+      <div className="zw-chat-bubble-ai">
         <div
-          className="chat-ai-content zn-preview"
-          dangerouslySetInnerHTML={{ __html: html }}
+          className="zw-chat-ai-content zn-preview"
+          dangerouslySetInnerHTML={{ __html: renderMarkdown(message.content) }}
         />
       </div>
-      <div className="chat-msg__actions">
-        <span className="chat-msg__time">{formatTime(message.timestamp)}</span>
-        <button className="chat-msg__action-btn" onClick={handleCopy} title="Copy">
-          {copied ? Icons.check() : Icons.copy()}
+      <div className="zw-msg-actions">
+        <CopyButton text={message.content} />
+        <button className="zw-msg-action-btn" onClick={() => onRetry?.(message.content)} title="Retry">
+          {Icons.refresh()}
         </button>
       </div>
     </div>

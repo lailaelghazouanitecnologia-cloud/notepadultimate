@@ -2,7 +2,9 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import type { Note } from '../types'
 import type { ChatSession } from '../contexts/UIContext'
 import { ZarnettiLogo, Icons } from '../lib/icons'
-import { renderMarkdown } from '../lib/markdown'
+import { useAutoScroll } from '../hooks/useAutoScroll'
+import { UserMessage, AssistantMessage, StreamingMessage, EmptyState } from './chat'
+import type { ChatMessage, StreamingState } from './chat'
 import '../lib/markdown.css'
 
 interface HomeScreenProps {
@@ -12,20 +14,6 @@ interface HomeScreenProps {
   onOpenNote: (id: string) => void
   onSaveChat: (session: ChatSession) => void
   initialSession?: ChatSession
-}
-
-interface ChatMessage {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  timestamp: number
-}
-
-type StreamingStatus = 'idle' | 'connecting' | 'streaming' | 'done'
-
-interface StreamingState {
-  status: StreamingStatus
-  text: string
 }
 
 /** 'home' = search/welcome view, 'chat' = AI conversation thread */
@@ -77,16 +65,21 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
   const [viewMode, setViewMode] = useState<ViewMode>(
     initialSession && initialSession.messages.length > 0 ? 'chat' : 'home'
   )
-  const [streaming, setStreaming] = useState<StreamingState>({ status: 'idle', text: '' })
+  const [streaming, setStreaming] = useState<StreamingState>({ status: 'idle', text: '', error: null })
   const inputRef = useRef<HTMLInputElement>(null)
   const chatInputRef = useRef<HTMLTextAreaElement>(null)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
   const cmdRef = useRef<HTMLDivElement>(null)
   const modelRef = useRef<HTMLDivElement>(null)
+  const streamIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, streaming])
+  const isStreaming = streaming.status === 'streaming' || streaming.status === 'connecting'
+
+  // Auto-scroll
+  const { scrollRef } = useAutoScroll([
+    messages.length,
+    streaming.text.length,
+    streaming.status,
+  ])
 
   // Save chat session when messages change
   useEffect(() => {
@@ -98,6 +91,7 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
     onSaveChat({ id: sessionId, title, messages, createdAt: Date.now() })
   }, [messages, sessionId, onSaveChat])
 
+  // Close dropdowns on outside click
   useEffect(() => {
     if (!showCommands) return
     const handler = (e: MouseEvent) => {
@@ -122,6 +116,14 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
       setTimeout(() => chatInputRef.current?.focus(), 100)
     }
   }, [viewMode])
+
+  // Auto-resize textarea
+  const handleTextareaInput = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value)
+    const el = e.target
+    el.style.height = 'auto'
+    el.style.height = Math.min(el.scrollHeight, 384) + 'px'
+  }, [])
 
   const liveResults = useMemo(() => {
     const q = input.trim().toLowerCase()
@@ -173,15 +175,17 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
       return `No note found matching "${title}".`
     }
 
-    return null // Not a command
+    return null
   }, [notes, onCreateNote, onOpenNote])
 
   // Simulate AI streaming response
   const simulateAIResponse = useCallback((userText: string) => {
-    setStreaming({ status: 'connecting', text: '' })
+    // Clear any existing interval
+    if (streamIntervalRef.current) clearInterval(streamIntervalRef.current)
+
+    setStreaming({ status: 'connecting', text: '', error: null })
 
     setTimeout(() => {
-      // Generate contextual response based on notes
       const query = userText.toLowerCase()
       const found = notes.filter(
         (n) => n.title.toLowerCase().includes(query) || n.content.toLowerCase().includes(query)
@@ -194,33 +198,33 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
         response = `I don't have specific notes about "${userText}", but I can help you create one. Would you like me to:\n\n- Create a new note with \`/new ${userText}\`\n- Search more broadly with \`/search ${userText.split(' ')[0]}\`\n- Or just tell me more about what you're looking for`
       }
 
-      // Stream character by character
       let charIndex = 0
-      setStreaming({ status: 'streaming', text: '' })
+      setStreaming({ status: 'streaming', text: '', error: null })
 
-      const interval = setInterval(() => {
+      streamIntervalRef.current = setInterval(() => {
         charIndex += Math.floor(Math.random() * 4) + 2
         if (charIndex >= response.length) {
           charIndex = response.length
-          clearInterval(interval)
-          setStreaming({ status: 'done', text: '' })
+          if (streamIntervalRef.current) clearInterval(streamIntervalRef.current)
+          streamIntervalRef.current = null
+          setStreaming({ status: 'completed', text: '', error: null })
           setMessages(prev => [...prev, {
             id: `msg-${Date.now()}-r`, role: 'assistant',
             content: response, timestamp: Date.now(),
           }])
         } else {
-          setStreaming({ status: 'streaming', text: response.slice(0, charIndex) })
+          setStreaming({ status: 'streaming', text: response.slice(0, charIndex), error: null })
         }
       }, 20)
     }, 600)
   }, [notes])
 
-  // Handle send from the home search bar
-  const handleHomeSend = useCallback(() => {
-    const text = input.trim()
-    if (!text) return
+  // Send message (unified for both views)
+  const sendMessage = useCallback((text: string) => {
+    if (!text.trim()) return
+    if (isStreaming) return
 
-    // Commands stay in home view
+    // Commands
     if (isCommand(text)) {
       const cmdResponse = processCommand(text)
       if (cmdResponse) {
@@ -232,46 +236,23 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
       }
       setInput('')
       setShowCommands(false)
+      if (viewMode === 'home') setViewMode('chat')
       return
     }
 
-    // Non-command: switch to chat mode with AI
+    // Regular message
     const userMsg: ChatMessage = {
       id: `msg-${Date.now()}`, role: 'user', content: text, timestamp: Date.now(),
     }
     setMessages(prev => [...prev, userMsg])
     setInput('')
     setShowCommands(false)
-    setViewMode('chat')
+    if (viewMode === 'home') setViewMode('chat')
     simulateAIResponse(text)
-  }, [input, processCommand, simulateAIResponse])
+  }, [isStreaming, processCommand, simulateAIResponse, viewMode])
 
-  // Handle send from the chat thread input
-  const handleChatSend = useCallback(() => {
-    const text = input.trim()
-    if (!text || streaming.status === 'streaming' || streaming.status === 'connecting') return
-
-    // Commands work in chat too
-    if (isCommand(text)) {
-      const cmdResponse = processCommand(text)
-      if (cmdResponse) {
-        setMessages(prev => [
-          ...prev,
-          { id: `msg-${Date.now()}`, role: 'user', content: text, timestamp: Date.now() },
-          { id: `msg-${Date.now()}-r`, role: 'assistant', content: cmdResponse, timestamp: Date.now() },
-        ])
-      }
-      setInput('')
-      return
-    }
-
-    const userMsg: ChatMessage = {
-      id: `msg-${Date.now()}`, role: 'user', content: text, timestamp: Date.now(),
-    }
-    setMessages(prev => [...prev, userMsg])
-    setInput('')
-    simulateAIResponse(text)
-  }, [input, streaming.status, processCommand, simulateAIResponse])
+  const handleHomeSend = useCallback(() => sendMessage(input.trim()), [input, sendMessage])
+  const handleChatSend = useCallback(() => sendMessage(input.trim()), [input, sendMessage])
 
   const handleHomeKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -289,12 +270,49 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
 
   const handleBackToHome = useCallback(() => {
     setViewMode('home')
-    setStreaming({ status: 'idle', text: '' })
+    if (streamIntervalRef.current) clearInterval(streamIntervalRef.current)
+    setStreaming({ status: 'idle', text: '', error: null })
   }, [])
 
   const handleStop = useCallback(() => {
-    setStreaming({ status: 'done', text: '' })
-  }, [])
+    if (streamIntervalRef.current) clearInterval(streamIntervalRef.current)
+    streamIntervalRef.current = null
+    // Commit whatever we streamed so far
+    const currentText = streaming.text
+    if (currentText) {
+      setMessages(prev => [...prev, {
+        id: `msg-${Date.now()}-r`, role: 'assistant',
+        content: currentText, timestamp: Date.now(),
+      }])
+    }
+    setStreaming({ status: 'idle', text: '', error: null })
+  }, [streaming.text])
+
+  const handleRetry = useCallback((content: string) => {
+    if (isStreaming) return
+    // Remove last assistant message, re-send
+    setMessages(prev => {
+      const lastAi = [...prev].reverse().findIndex(m => m.role === 'assistant')
+      if (lastAi >= 0) {
+        const idx = prev.length - 1 - lastAi
+        return prev.slice(0, idx)
+      }
+      return prev
+    })
+    simulateAIResponse(content)
+  }, [isStreaming, simulateAIResponse])
+
+  const handleEditMessage = useCallback((messageId: string, newContent: string) => {
+    // Remove everything after this message, then re-send
+    setMessages(prev => {
+      const idx = prev.findIndex(m => m.id === messageId)
+      if (idx < 0) return prev
+      const updated = prev.slice(0, idx)
+      updated.push({ ...prev[idx], content: newContent })
+      return updated
+    })
+    simulateAIResponse(newContent)
+  }, [simulateAIResponse])
 
   const selectCommand = (cmd: string) => {
     setInput(cmd + ' ')
@@ -308,30 +326,31 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
     { id: 'haiku', label: 'Haiku 4.5', desc: 'Fastest' },
   ]
 
-  const hasHomeMessages = messages.length > 0 && viewMode === 'home'
   const totalTokens = messages.length * 280
   const allResults = [...liveResults.own, ...liveResults.community]
   const showingResults = allResults.length > 0 && viewMode === 'home'
   const greeting = getGreeting()
-  const isStreaming = streaming.status === 'streaming' || streaming.status === 'connecting'
+  const hasMessages = messages.length > 0
 
-  // ── Chat mode view (faithful to chatagent) ──
+  // ── Chat mode view ──
   if (viewMode === 'chat') {
     return (
       <div className="content-area">
         <div className="home-research">
-          {/* Header — compact 28px bar */}
+          {/* Header */}
           <div className="zw-chat-header">
             <div className="zw-chat-header__left">
               <button className="zw-chat-header__btn" onClick={handleBackToHome} title="Back">
                 {Icons.arrowLeft()}
               </button>
-              <span className="zw-chat-header__title">Chat</span>
+              <span className="zw-chat-header__title">
+                {messages.find(m => m.role === 'user')?.content.slice(0, 40) || 'Chat'}
+              </span>
             </div>
             <div className="zw-chat-header__right">
               <button
                 className="zw-chat-header__btn"
-                onClick={() => { setMessages([]); setViewMode('home'); setStreaming({ status: 'idle', text: '' }) }}
+                onClick={() => { setMessages([]); setViewMode('home'); if (streamIntervalRef.current) clearInterval(streamIntervalRef.current); setStreaming({ status: 'idle', text: '', error: null }) }}
                 title="New chat"
               >
                 {Icons.plus()}
@@ -339,88 +358,55 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
             </div>
           </div>
 
-          {/* Messages — scrollable, max-width 720px centered */}
-          <div className="zw-chat-messages">
+          {/* Messages */}
+          <div className="zw-chat-messages" ref={scrollRef}>
             <div className="zw-chat-messages__inner">
+              {!hasMessages && !isStreaming && (
+                <EmptyState onSend={sendMessage} />
+              )}
+
               {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`zw-chat-msg ${msg.role === 'user' ? 'zw-chat-msg-user' : 'zw-chat-msg-ai'}`}
-                >
-                  {msg.role === 'user' ? (
-                    <div className="zw-chat-bubble-user">{msg.content}</div>
-                  ) : (
-                    <>
-                      <div className="zw-chat-bubble-ai">
-                        <div
-                          className="zw-chat-ai-content zn-preview"
-                          dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
-                        />
-                      </div>
-                      <div className="zw-msg-actions">
-                        <button
-                          className="zw-msg-action-btn"
-                          onClick={() => navigator.clipboard.writeText(msg.content)}
-                          title="Copy"
-                        >
-                          {Icons.copy()}
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
+                msg.role === 'user' ? (
+                  <UserMessage
+                    key={msg.id}
+                    message={msg}
+                    onRetry={handleRetry}
+                    onEdit={handleEditMessage}
+                  />
+                ) : (
+                  <AssistantMessage
+                    key={msg.id}
+                    message={msg}
+                    onRetry={handleRetry}
+                  />
+                )
               ))}
 
-              {/* Connecting — red bouncing dots */}
-              {streaming.status === 'connecting' && (
-                <div className="zw-chat-msg zw-chat-msg-ai">
-                  <div className="zw-thinking">
-                    <div className="zw-thinking__dots">
-                      <span className="zw-thinking__dot" />
-                      <span className="zw-thinking__dot" />
-                      <span className="zw-thinking__dot" />
-                    </div>
-                    <span className="zw-thinking__label">Thinking...</span>
-                  </div>
-                </div>
-              )}
+              <StreamingMessage streaming={streaming} />
 
-              {/* Streaming — text with inline cursor */}
-              {streaming.status === 'streaming' && (
-                <div className="zw-chat-msg zw-chat-msg-ai">
-                  <div className="zw-chat-bubble-ai">
-                    <div
-                      className="zw-chat-ai-content zn-preview"
-                      dangerouslySetInnerHTML={{ __html: renderMarkdown(streaming.text) }}
-                    />
-                    <span className="zw-cursor" />
-                  </div>
-                </div>
-              )}
-
-              <div className="zw-chat-messages__end" ref={messagesEndRef} />
+              <div className="zw-chat-messages__end" />
             </div>
           </div>
 
-          {/* Input — NO card border, just border-top separator */}
+          {/* Input */}
           <div className="zw-chat-input-area">
-            <div className="zw-chat-input-area__inner">
+            <div className="zw-chat-input-card">
               <textarea
                 ref={chatInputRef}
                 className="zw-chat-textarea"
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={handleTextareaInput}
                 onKeyDown={handleChatKeyDown}
-                placeholder="Message Zarnet..."
+                placeholder="Reply..."
                 rows={1}
                 disabled={isStreaming}
               />
               <div className="zw-chat-input-toolbar">
                 <div className="zw-chat-input-toolbar__left">
+                  <button className="zw-toolbar-btn" title="Attach file">{Icons.paperclip()}</button>
                   <div style={{ position: 'relative' }} ref={modelRef}>
                     <button className="zw-chat-model-btn" onClick={() => setShowModels(!showModels)}>
-                      {Icons.sparkles()}
-                      <span>{model}</span>
+                      <span>zarnet</span>
                       {Icons.chevronDown()}
                     </button>
                     {showModels && (
@@ -443,7 +429,6 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
                       </div>
                     )}
                   </div>
-                  <button className="zw-toolbar-btn" title="Attach file">{Icons.paperclip()}</button>
                 </div>
                 <div className="zw-chat-input-toolbar__right">
                   {isStreaming ? (
@@ -454,17 +439,18 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
                     <button
                       className={`zw-chat-send-btn ${input.trim() ? 'active' : ''}`}
                       onClick={handleChatSend}
+                      title="Send"
                     >
                       {Icons.arrowUp()}
                     </button>
                   )}
                 </div>
               </div>
-              <div className="zw-chat-disclaimer">zarnet can make mistakes. Double-check responses.</div>
             </div>
+            <div className="zw-chat-disclaimer">zarnet can make mistakes. Double-check responses.</div>
           </div>
 
-          {/* Footer — 24px status bar */}
+          {/* Footer */}
           <div className="zw-chat-footer">
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
               <span className="zw-chat-footer-name">Zarnet</span>
@@ -482,7 +468,7 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
                 </>
               )}
               <span className="zw-stat-sep" />
-              <span className="zw-chat-footer-stat">{notes.length} notes · {publishedNotes.length} published</span>
+              <span className="zw-chat-footer-stat">{model}</span>
             </div>
           </div>
         </div>
@@ -490,7 +476,7 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
     )
   }
 
-  // ── Home / Search view (original layout) ──
+  // ── Home / Search view ──
   return (
     <div className="content-area">
       <div className="home-research">
@@ -528,7 +514,6 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
             {/* Toolbar under search */}
             <div className="home-research__toolbar">
               <div className="home-research__toolbar-left">
-                {/* Model selector */}
                 <div style={{ position: 'relative' }} ref={modelRef}>
                   <button className="zw-chat-model-btn" onClick={() => setShowModels(!showModels)}>
                     {Icons.sparkles()}
@@ -555,9 +540,9 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
                     </div>
                   )}
                 </div>
-                <button className="zw-chat-tool-btn" title="Attach file">{Icons.paperclip()}</button>
-                <button className="zw-chat-tool-btn" title="Mention">{Icons.atSign()}</button>
-                <button className="zw-chat-tool-btn" title="Search web">{Icons.globe()}</button>
+                <button className="zw-toolbar-btn" title="Attach file">{Icons.paperclip()}</button>
+                <button className="zw-toolbar-btn" title="Mention">{Icons.atSign()}</button>
+                <button className="zw-toolbar-btn" title="Search web">{Icons.globe()}</button>
                 {/* / commands */}
                 <div style={{ position: 'relative' }} ref={cmdRef}>
                   <button className="zw-cmd-btn" onClick={() => setShowCommands(!showCommands)} title="Commands">
@@ -646,7 +631,7 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
           )}
 
           {/* Recent notes (when idle) */}
-          {!showingResults && !hasHomeMessages && recentNotes.length > 0 && (
+          {!showingResults && !hasMessages && recentNotes.length > 0 && (
             <>
               <div className="home-research__divider">
                 <div className="home-research__divider-line" />
@@ -674,43 +659,6 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
               </div>
             </>
           )}
-
-          {/* Command response messages (shown in home view) */}
-          {hasHomeMessages && (
-            <div className="home-research__messages">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`chat-msg ${msg.role === 'user' ? 'chat-msg--user' : 'chat-msg--ai'}`}
-                >
-                  <div className={msg.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}>
-                    {msg.role === 'assistant'
-                      ? msg.content.split('\n').map((line, j) => {
-                          const parsed = line
-                            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                            .replace(/`([^`]+)`/g, '<code>$1</code>')
-                            .replace(/^_(.+)_$/, '<em>$1</em>')
-                          return <div key={j} dangerouslySetInnerHTML={{ __html: parsed }} />
-                        })
-                      : msg.content
-                    }
-                  </div>
-                  {msg.role === 'assistant' && (
-                    <div className="chat-msg__actions">
-                      <button
-                        className="chat-msg__action-btn"
-                        onClick={() => navigator.clipboard.writeText(msg.content)}
-                        title="Copy"
-                      >
-                        {Icons.copy()}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-          )}
         </div>
 
         {/* Footer */}
@@ -724,8 +672,6 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
               <span className="zw-chat-op-indicator" data-op="read" />
               <span className="zw-chat-op-indicator" data-op="idle" />
             </div>
-            <span className="zw-stat-sep" />
-            <span className="zw-chat-footer-stat">~{totalTokens} tokens</span>
             <span className="zw-stat-sep" />
             <span className="zw-chat-footer-stat">{notes.length} notes · {publishedNotes.length} published</span>
           </div>
