@@ -88,25 +88,26 @@ html, body {
 }
 .header__search-input::placeholder { color: var(--muted-foreground); opacity: .5; }
 
-/* Mode switcher pill (Search | Edit | Graph) */
+/* Mode switcher pill */
 .zw-mode-switcher {
-  display: flex; align-items: center;
-  background: rgba(255,255,255,0.05); border-radius: 6px;
-  padding: 2px; gap: 1px;
+  display: flex; align-items: center; gap: 1px;
+  background: #191919; border-radius: 8px;
+  padding: 3px;
+  box-shadow: inset 0 1px 0 0 #2a2a2a;
 }
 .zw-mode-tab {
-  height: 24px; padding: 0 10px;
+  height: 28px; padding: 0 10px;
   display: flex; align-items: center; gap: 5px;
-  background: transparent; border: none; border-radius: 4px;
-  font-size: 11px; font-weight: 500; color: var(--muted-foreground);
-  cursor: pointer; transition: all 0.12s ease; white-space: nowrap;
+  background: transparent; border: none; border-radius: 5px;
+  font-size: 12px; font-weight: 500; color: #606060;
+  cursor: pointer; transition: color 0.12s, background 0.12s; white-space: nowrap;
+  user-select: none; outline: none;
   font-family: var(--font-sans);
 }
-.zw-mode-tab svg { width: 13px; height: 13px; }
-.zw-mode-tab:hover { color: var(--foreground); }
+.zw-mode-tab svg { width: 14px; height: 14px; flex-shrink: 0; }
+.zw-mode-tab:hover { color: #b4b4b4; }
 .zw-mode-tab.active {
-  color: var(--foreground); background: var(--background);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  color: #eee; background: #2a2a2a;
 }
 
 /* Header right */
