@@ -9,7 +9,7 @@ interface ActivityBarProps {
 
 export function ActivityBar({ activeView, onViewChange }: ActivityBarProps) {
   const items: { id: View; icon: (p?: object) => React.ReactNode; label: string }[] = [
-    { id: 'home', icon: Icons.home, label: 'Home' },
+    { id: 'home', icon: Icons.sparkles, label: 'Chat' },
     { id: 'files', icon: Icons.files, label: 'Files' },
     { id: 'graph', icon: Icons.graph, label: 'Graph' },
   ]

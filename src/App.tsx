@@ -42,7 +42,7 @@ export default function App() {
       <header className="header">
         <span className="header__title">Zarnetti</span>
         <div className="header__spacer" />
-        <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>
+        <span style={{ fontSize: 10, color: 'var(--muted-foreground)' }}>
           {notes.length} notes
         </span>
       </header>
@@ -78,10 +78,10 @@ export default function App() {
 
         {view === 'files' && !activeNote && (
           <div className="content-area">
-            <div className="home">
-              <div style={{ textAlign: 'center' }}>
-                <div className="home__brand"><strong>Zarnetti</strong></div>
-                <div className="home__sub">Select a note or create a new one</div>
+            <div className="chat-welcome">
+              <div className="chat-welcome__inner">
+                <h2 className="chat-welcome__title">Zarnetti</h2>
+                <p className="chat-welcome__sub">Select a note or create a new one</p>
               </div>
             </div>
           </div>
