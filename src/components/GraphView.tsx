@@ -74,39 +74,41 @@ export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
     return counts
   }, [notes, allIds])
 
-  // Center on the container
-  const [positions, setPositions] = useState<NodePos[]>([])
-  const initialized = useRef(false)
+  // Build positions: initialize eagerly, re-layout when notes change
+  const buildPositions = useCallback((existing: Map<string, NodePos>, cx: number, cy: number) => {
+    return notes.map((n, i) => {
+      const links = extractLinks(n.content, allIds)
+      const lc = linkCounts.get(n.id) || 0
+      const ex = existing.get(n.id)
+      if (ex) return { ...ex, title: n.title || 'Untitled', links, linkCount: lc }
+      const angle = (i / Math.max(notes.length, 1)) * Math.PI * 2 - Math.PI / 2
+      const radius = lc > 4 ? 0 : 160 + (i % 3) * 70
+      return {
+        id: n.id,
+        title: n.title || 'Untitled',
+        x: cx + Math.cos(angle) * radius - 60,
+        y: cy + Math.sin(angle) * radius - 14,
+        links,
+        linkCount: lc,
+      }
+    })
+  }, [notes, allIds, linkCounts])
 
+  const [positions, setPositions] = useState<NodePos[]>(() =>
+    buildPositions(new Map(), 500, 400)
+  )
+
+  // Re-center when container is available or notes change
   useEffect(() => {
     const el = containerRef.current
-    const cx = el ? el.clientWidth / 2 : 500
-    const cy = el ? el.clientHeight / 2 : 400
-
+    if (!el) return
+    const cx = el.clientWidth / 2
+    const cy = el.clientHeight / 2
     setPositions(prev => {
       const existing = new Map(prev.map(p => [p.id, p]))
-      return notes.map((n, i) => {
-        const links = extractLinks(n.content, allIds)
-        const lc = linkCounts.get(n.id) || 0
-        const ex = existing.get(n.id)
-        if (ex && initialized.current) {
-          return { ...ex, title: n.title || 'Untitled', links, linkCount: lc }
-        }
-        // Place hub (most connected) in center, others in orbit
-        const angle = (i / Math.max(notes.length, 1)) * Math.PI * 2 - Math.PI / 2
-        const radius = lc > 4 ? 0 : 160 + (i % 3) * 70
-        return {
-          id: n.id,
-          title: n.title || 'Untitled',
-          x: cx + Math.cos(angle) * radius - 60,
-          y: cy + Math.sin(angle) * radius - 14,
-          links,
-          linkCount: lc,
-        }
-      })
+      return buildPositions(existing, cx, cy)
     })
-    initialized.current = true
-  }, [notes, allIds, linkCounts])
+  }, [buildPositions])
 
   const posMap = useMemo(() => new Map(positions.map(p => [p.id, p])), [positions])
 

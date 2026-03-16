@@ -89,9 +89,36 @@ const INLINE_RULES: InlineRule[] = [
 ]
 
 function parseInline(text: string): string {
-  let r = escapeHtml(text)
+  // Extract images and links BEFORE escaping to preserve URLs
+  const placeholders: string[] = []
+  let r = text
+  // Replace images with placeholders (preserve raw URLs)
+  r = r.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_m, alt, url) => {
+    const idx = placeholders.length
+    placeholders.push(`<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" loading="lazy" />`)
+    return `\x00IMG${idx}\x00`
+  })
+  // Replace links with placeholders
+  r = r.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, txt, url) => {
+    const idx = placeholders.length
+    placeholders.push(`<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(txt)}</a>`)
+    return `\x00LNK${idx}\x00`
+  })
+  // Now escape the rest
+  r = escapeHtml(r)
+  // Apply remaining inline rules (skip image/link since handled)
   for (const rule of INLINE_RULES) {
-    r = r.replace(rule.pattern, rule.replace as string)
+    if (rule.name === 'image' || rule.name === 'link') continue
+    if (typeof rule.replace === 'function') {
+      r = r.replace(rule.pattern, rule.replace as (...args: string[]) => string)
+    } else {
+      r = r.replace(rule.pattern, rule.replace)
+    }
+  }
+  // Restore placeholders
+  for (let i = 0; i < placeholders.length; i++) {
+    r = r.replace(`\x00IMG${i}\x00`, placeholders[i])
+    r = r.replace(`\x00LNK${i}\x00`, placeholders[i])
   }
   return r
 }
@@ -238,7 +265,7 @@ function tokenize(markdown: string): Block[] {
     while (
       i < lines.length &&
       lines[i].trim() !== '' &&
-      !lines[i].startsWith('#') &&
+      !(/^#{1,6}\s/.test(lines[i])) &&
       !lines[i].startsWith('>') &&
       !lines[i].startsWith('```') &&
       !lines[i].startsWith(':::') &&
@@ -251,6 +278,10 @@ function tokenize(markdown: string): Block[] {
     }
     if (plines.length > 0) {
       blocks.push({ type: 'paragraph', content: plines.join('\n') })
+    } else {
+      // Safety: if nothing matched this line, treat it as a paragraph and advance
+      blocks.push({ type: 'paragraph', content: line })
+      i++
     }
   }
 
@@ -375,8 +406,8 @@ function renderBlock(block: Block): string {
 // ─── Sanitizer config ────────────────────────────────────────────────────────
 
 const SANITIZE_CONFIG = {
-  ADD_TAGS: ['mark'],
-  ADD_ATTR: ['data-link', 'target', 'rel', 'loading', 'checked', 'disabled'],
+  ADD_TAGS: ['mark', 'img'],
+  ADD_ATTR: ['data-link', 'target', 'rel', 'loading', 'checked', 'disabled', 'src', 'alt'],
   ALLOW_DATA_ATTR: true,
 }
 
