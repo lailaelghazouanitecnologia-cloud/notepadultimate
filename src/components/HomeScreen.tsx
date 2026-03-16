@@ -184,7 +184,7 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
             </div>
             <h2 className="home-research__title">{greeting}</h2>
             <p className="home-research__subtitle">
-              Search your notes, create new ones, or use commands.
+              Search Zarnet — your notes, the community, and the web. Use commands or just type.
             </p>
 
             {/* Search */}
@@ -197,7 +197,7 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Search or type a command..."
+                placeholder="Search Zarnet..."
               />
               <button
                 onClick={handleSend}
@@ -356,8 +356,8 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
 
         {/* Footer */}
         <div className="zw-chat-footer">
-          <span className="zw-chat-footer-name">Zarnetti</span>
-          <span className="zw-chat-footer-stat">{notes.length} notes</span>
+          <span className="zw-chat-footer-name">Zarnet</span>
+          <span className="zw-chat-footer-stat">{notes.length} notes · {publishedNotes.length} published</span>
         </div>
       </div>
     </div>

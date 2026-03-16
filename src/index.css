@@ -65,11 +65,12 @@ html, body {
 .app { display: flex; flex-direction: row; height: 100vh; }
 .app-main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
 
-/* ── Header ── */
+/* ── Header ── transparent with subtle gradient */
 .header {
   height: var(--zw-header-h); display: flex; align-items: center;
   padding: 0 12px; gap: 12px; flex-shrink: 0;
-  background: var(--surface); border-bottom: 1px solid var(--border);
+  background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.04) 100%);
+  border-bottom: 1px solid var(--border);
 }
 .header__left { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
@@ -98,15 +99,15 @@ html, body {
 .header__right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
 
-/* Header icon button (history, etc.) */
+/* Header icon button — no border, icon-only */
 .header__icon-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 6px;
+  width: 28px; height: 28px; border: none; border-radius: 6px;
   background: transparent; color: var(--muted-foreground);
   cursor: pointer; transition: all 0.12s ease;
 }
-.header__icon-btn:hover { background: rgba(255,255,255,0.05); color: var(--foreground); border-color: var(--ring); }
-.header__icon-btn.active { background: var(--accent); color: var(--foreground); border-color: var(--ring); }
+.header__icon-btn:hover { background: rgba(255,255,255,0.05); color: var(--foreground); }
+.header__icon-btn.active { background: var(--accent); color: var(--foreground); }
 .header__icon-btn svg { width: 14px; height: 14px; }
 
 /* Publish button */
@@ -145,7 +146,10 @@ html, body {
   background: var(--surface);
   border-right: 1px solid var(--sidebar-border);
   overflow: hidden; height: 100%;
+  transition: width 0.15s ease;
 }
+.zw-sb.collapsed { width: 40px; }
+.zw-sb.collapsed .zw-sb-content { display: none; }
 
 /* Icon rail */
 .zw-sb-rail {
@@ -184,6 +188,32 @@ html, body {
 }
 .zw-sb-avatar-btn:hover .zw-sb-avatar { border-color: var(--zw-red); }
 .zw-sb-avatar-img { width: 100%; height: 100%; display: block; }
+
+/* Avatar dropdown menu */
+.zw-avatar-menu {
+  position: absolute; bottom: 100%; left: 0; margin-bottom: 6px;
+  min-width: 200px; z-index: 100;
+  background: var(--popover); border: 1px solid var(--border);
+  border-radius: 8px; padding: 4px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  animation: scale-in 0.12s ease;
+}
+.zw-avatar-menu__header {
+  padding: 8px 10px; border-bottom: 1px solid var(--border); margin-bottom: 2px;
+}
+.zw-avatar-menu__name { font-size: 12px; font-weight: 600; color: var(--foreground); }
+.zw-avatar-menu__handle { font-size: 10px; color: var(--muted-foreground); }
+.zw-avatar-menu__item {
+  width: 100%; display: flex; align-items: center; gap: 8px;
+  height: 28px; padding: 0 10px;
+  background: transparent; border: none; border-radius: 5px;
+  font-size: 11px; color: var(--foreground); cursor: pointer;
+  transition: background 0.1s ease; font-family: var(--font-sans);
+  text-align: left;
+}
+.zw-avatar-menu__item:hover { background: var(--accent); }
+.zw-avatar-menu__item svg { width: 13px; height: 13px; color: var(--muted-foreground); }
+.zw-avatar-menu__divider { height: 1px; background: var(--border); margin: 2px 4px; }
 
 /* Content panel */
 .zw-sb-content { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
@@ -1185,6 +1215,78 @@ html, body {
 /* ═══════════════════════════════════════════════════
    ANIMATIONS
    ═══════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════
+   AGENT CONTRACTS
+   ═══════════════════════════════════════════════════ */
+.contracts-section { margin-top: 16px; }
+.contracts-section__title {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.04em; color: var(--muted-foreground); margin-bottom: 8px;
+}
+.contract-card {
+  padding: 10px 12px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--card);
+  margin-bottom: 6px; transition: all 0.12s ease;
+}
+.contract-card:hover { border-color: var(--ring); }
+.contract-card__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.contract-card__name { font-size: 12px; font-weight: 600; color: var(--foreground); }
+.contract-card__status {
+  font-size: 9px; font-weight: 600; text-transform: uppercase;
+  padding: 1px 6px; border-radius: 4px;
+}
+.contract-card__status--active { background: rgba(0,186,124,0.15); color: #00ba7c; }
+.contract-card__status--paused { background: rgba(255,200,40,0.15); color: #ffca28; }
+.contract-card__desc { font-size: 11px; color: var(--muted-foreground); line-height: 1.5; }
+.contract-card__delete {
+  width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
+  border: none; background: transparent; color: var(--muted-foreground); border-radius: 4px;
+  cursor: pointer; transition: all 0.1s;
+}
+.contract-card__delete:hover { color: var(--destructive); background: rgba(255,255,255,0.06); }
+.contract-card__delete svg { width: 10px; height: 10px; }
+
+.contract-create {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 10px 12px; border-radius: 8px;
+  border: 1px dashed var(--border); background: transparent;
+  margin-top: 6px;
+}
+.contract-create__input {
+  height: 30px; padding: 0 10px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--card);
+  font-size: 12px; color: var(--foreground); font-family: var(--font-sans);
+  outline: none; transition: border-color 0.12s;
+}
+.contract-create__input:focus { border-color: var(--ring); }
+.contract-create__input::placeholder { color: var(--muted-foreground); opacity: 0.45; }
+.contract-create__textarea {
+  padding: 6px 10px; border-radius: 6px; resize: vertical;
+  border: 1px solid var(--border); background: var(--card);
+  font-size: 12px; color: var(--foreground); font-family: var(--font-sans);
+  outline: none; line-height: 1.5; min-height: 60px;
+}
+.contract-create__textarea:focus { border-color: var(--ring); }
+.contract-create__textarea::placeholder { color: var(--muted-foreground); opacity: 0.45; }
+.contract-create__actions { display: flex; gap: 6px; justify-content: flex-end; }
+.contract-create__btn {
+  height: 26px; padding: 0 10px; border-radius: 5px; border: none;
+  font-size: 11px; font-weight: 600; cursor: pointer;
+  font-family: var(--font-sans); transition: opacity 0.12s;
+}
+.contract-create__btn--cancel { background: transparent; color: var(--muted-foreground); }
+.contract-create__btn--save { background: var(--zw-red); color: #fff; }
+.contract-create__btn:hover { opacity: 0.85; }
+
+/* Sidebar toggle button */
+.zw-sb-toggle {
+  width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+  border: none; background: transparent; color: var(--muted-foreground); border-radius: 5px;
+  cursor: pointer; transition: all 0.12s ease;
+}
+.zw-sb-toggle:hover { background: rgba(255,255,255,0.05); color: var(--foreground); }
+.zw-sb-toggle svg { width: 16px; height: 16px; }
+
 @keyframes scale-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slide-in-right { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }

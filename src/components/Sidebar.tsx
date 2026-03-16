@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { Note, Project } from '../types'
 import { ZarnettiLogo, Identicon, Icons, FileTypeIcon } from '../lib/icons'
 
@@ -12,14 +12,19 @@ interface SidebarProps {
   activeProjectId: string
   onSwitchProject: (id: string) => void
   onCreateProject: (name: string, emoji: string) => void
+  collapsed: boolean
+  onToggleCollapse: () => void
 }
 
 export function Sidebar({
   notes, activeId, onSelect, onAdd, onDelete,
   projects, activeProjectId, onSwitchProject, onCreateProject,
+  collapsed, onToggleCollapse,
 }: SidebarProps) {
   const [search, setSearch] = useState('')
   const [showProjects, setShowProjects] = useState(false)
+  const [showAvatarMenu, setShowAvatarMenu] = useState(false)
+  const avatarRef = useRef<HTMLDivElement>(null)
 
   const activeProject = projects.find((p) => p.id === activeProjectId) || projects[0]
 
@@ -32,8 +37,18 @@ export function Sidebar({
   const formatDate = (ts: number) =>
     new Date(ts).toLocaleDateString('es', { day: 'numeric', month: 'short' })
 
+  // Close avatar menu on outside click
+  useEffect(() => {
+    if (!showAvatarMenu) return
+    const handler = (e: MouseEvent) => {
+      if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) setShowAvatarMenu(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showAvatarMenu])
+
   return (
-    <aside className="zw-sb">
+    <aside className={`zw-sb ${collapsed ? 'collapsed' : ''}`}>
       {/* Icon rail */}
       <div className="zw-sb-rail">
         <div className="zw-sb-rail-top">
@@ -48,12 +63,44 @@ export function Sidebar({
           </button>
         </div>
         <div style={{ flex: 1 }} />
-        <div className="zw-sb-rail-bottom">
-          <button className="zw-sb-avatar-btn" title="Account">
+        <div className="zw-sb-rail-bottom" ref={avatarRef} style={{ position: 'relative' }}>
+          <button
+            className="zw-sb-toggle"
+            onClick={onToggleCollapse}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? Icons.panelLeft() : Icons.panelLeftClose()}
+          </button>
+          <button
+            className="zw-sb-avatar-btn"
+            title="Account"
+            onClick={() => setShowAvatarMenu(!showAvatarMenu)}
+          >
             <div className="zw-sb-avatar">
               <Identicon className="zw-sb-avatar-img" />
             </div>
           </button>
+          {showAvatarMenu && (
+            <div className="zw-avatar-menu">
+              <div className="zw-avatar-menu__header">
+                <div className="zw-avatar-menu__name">User</div>
+                <div className="zw-avatar-menu__handle">@user</div>
+              </div>
+              <button className="zw-avatar-menu__item" onClick={() => setShowAvatarMenu(false)}>
+                {Icons.settings()}
+                <span>Settings</span>
+              </button>
+              <button className="zw-avatar-menu__item" onClick={() => setShowAvatarMenu(false)}>
+                {Icons.moon()}
+                <span>Appearance</span>
+              </button>
+              <div className="zw-avatar-menu__divider" />
+              <button className="zw-avatar-menu__item" onClick={() => setShowAvatarMenu(false)}>
+                {Icons.logOut()}
+                <span>Log out</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

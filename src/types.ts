@@ -41,3 +41,13 @@ export interface Project {
   emoji: string
   createdAt: number
 }
+
+export interface Contract {
+  id: string
+  agentId: string
+  projectId: string
+  name: string
+  description: string
+  status: 'active' | 'paused'
+  createdAt: number
+}

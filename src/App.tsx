@@ -12,8 +12,9 @@ import {
   publishNote, loadPublished, loadAgents, saveAgent, deleteAgent as deleteAgentStore,
   loadAlerts, saveAlerts, generateAlerts,
   loadProjects, saveProjects, getActiveProjectId, setActiveProjectId,
+  loadContracts, saveContract, deleteContract as deleteContractStore, getContractsForProject,
 } from './store'
-import type { Agent, Alert, Project } from './types'
+import type { Agent, Alert, Project, Contract } from './types'
 
 export type View = 'feed' | 'chat'
 
@@ -37,6 +38,7 @@ export default function App() {
   const [alerts, setAlerts] = useState<Alert[]>(() => loadAlerts())
   const [profileAgentId, setProfileAgentId] = useState<string | null>(null)
   const [showAgents, setShowAgents] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   // Projects
   const [projects, setProjects] = useState<Project[]>(() => loadProjects())
@@ -151,6 +153,25 @@ export default function App() {
     handleSwitchProject(project.id)
   }, [projects, handleSwitchProject])
 
+  // Contracts
+  const [contracts, setContracts] = useState<Contract[]>(() => loadContracts())
+
+  const handleCreateContract = useCallback((agentId: string, name: string, description: string) => {
+    const contract: Contract = {
+      id: `contract-${Date.now()}`, agentId, projectId: activeProjectId,
+      name, description, status: 'active', createdAt: Date.now(),
+    }
+    saveContract(contract)
+    setContracts(loadContracts())
+  }, [activeProjectId])
+
+  const handleDeleteContract = useCallback((id: string) => {
+    deleteContractStore(id)
+    setContracts(loadContracts())
+  }, [])
+
+  const projectContracts = getContractsForProject(activeProjectId)
+
   const tabNotes = openTabs.map((id) => notes.find((n) => n.id === id)).filter(Boolean)
   const unreadAlerts = alerts.filter((a) => !a.read).length
 
@@ -175,6 +196,8 @@ export default function App() {
         activeProjectId={activeProjectId}
         onSwitchProject={handleSwitchProject}
         onCreateProject={handleCreateProject}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
 
       <div className="app-main">
@@ -277,10 +300,13 @@ export default function App() {
               agents={agents}
               alerts={alerts}
               publishedNotes={publishedNotes}
+              contracts={projectContracts}
               onCreateAgent={handleCreateAgent}
               onDeleteAgent={handleDeleteAgent}
               onOpenProfile={handleOpenProfile}
               onMarkAlertRead={handleMarkAlertRead}
+              onCreateContract={handleCreateContract}
+              onDeleteContract={handleDeleteContract}
             />
           )
         ) : view === 'feed' ? (

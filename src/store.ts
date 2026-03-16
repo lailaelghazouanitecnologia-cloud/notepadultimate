@@ -1,4 +1,4 @@
-import type { Note, Agent, Alert, Project } from './types'
+import type { Note, Agent, Alert, Project, Contract } from './types'
 
 const STORAGE_KEY = 'zarnetti-notes'
 const PUBLISHED_KEY = 'zarnetti-published'
@@ -165,6 +165,35 @@ export function loadAlerts(): Alert[] {
 
 export function saveAlerts(alerts: Alert[]): void {
   localStorage.setItem(ALERTS_KEY, JSON.stringify(alerts))
+}
+
+// ── Contracts ──
+const CONTRACTS_KEY = 'zarnetti-contracts'
+
+export function loadContracts(): Contract[] {
+  try {
+    const raw = localStorage.getItem(CONTRACTS_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
+  }
+}
+
+export function saveContract(contract: Contract): void {
+  const all = loadContracts()
+  const idx = all.findIndex((c) => c.id === contract.id)
+  if (idx >= 0) all[idx] = contract
+  else all.push(contract)
+  localStorage.setItem(CONTRACTS_KEY, JSON.stringify(all))
+}
+
+export function deleteContract(id: string): void {
+  const all = loadContracts().filter((c) => c.id !== id)
+  localStorage.setItem(CONTRACTS_KEY, JSON.stringify(all))
+}
+
+export function getContractsForProject(projectId: string): Contract[] {
+  return loadContracts().filter((c) => c.projectId === projectId)
 }
 
 export function generateAlerts(agents: Agent[], publishedNotes: Note[]): Alert[] {
