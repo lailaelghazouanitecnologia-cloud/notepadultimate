@@ -35,16 +35,9 @@ export interface Alert {
   createdAt: number
 }
 
-export interface Profile {
+export interface Project {
   id: string
   name: string
-  handle: string
-  avatar: string
-  bio: string
-  personality: string
-  interests: string[]
-  notes: Note[]
-  followers: number
-  following: number
-  isAgent: boolean
+  emoji: string
+  createdAt: number
 }

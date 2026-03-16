@@ -1,20 +1,24 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { Editor } from './components/Editor'
 import { HomeScreen } from './components/HomeScreen'
-import { GraphView } from './components/GraphView'
+// GraphView available as plugin
+// import { GraphView } from './components/GraphView'
+import { FeedView } from './components/FeedView'
 import { AgentsView } from './components/AgentsView'
 import { ProfileView } from './components/ProfileView'
 import { useNotes } from './hooks/useNotes'
 import { useTheme } from './hooks/useTheme'
-import { ZarnettiLogo, Icons } from './lib/icons'
+import { Icons } from './lib/icons'
 import {
   publishNote, loadPublished, loadAgents, saveAgent, deleteAgent as deleteAgentStore,
   loadAlerts, saveAlerts, generateAlerts,
+  loadProjects, saveProjects, getActiveProjectId, setActiveProjectId,
 } from './store'
-import type { Agent, Alert } from './types'
+import type { Agent, Alert, Project } from './types'
 
-export type View = 'feed' | 'chat' | 'graph' | 'agents'
+export type View = 'feed' | 'chat'
+type PluginPanel = 'agents' | null
 
 export interface ChatSession {
   id: string
@@ -26,7 +30,7 @@ export interface ChatSession {
 export default function App() {
   const { notes, activeNote, activeId, setActiveId, addNote, updateNote, deleteNote } = useNotes()
   useTheme()
-  const [view, setView] = useState<View>('chat')
+  const [view, setView] = useState<View>('feed')
   const [openTabs, setOpenTabs] = useState<string[]>([])
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([])
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
@@ -35,6 +39,27 @@ export default function App() {
   const [agents, setAgents] = useState<Agent[]>(() => loadAgents())
   const [alerts, setAlerts] = useState<Alert[]>(() => loadAlerts())
   const [profileAgentId, setProfileAgentId] = useState<string | null>(null)
+  const [pluginPanel, setPluginPanel] = useState<PluginPanel>(null)
+  const [showPlugins, setShowPlugins] = useState(false)
+  const pluginsRef = useRef<HTMLDivElement>(null)
+
+  // Projects
+  const [projects, setProjects] = useState<Project[]>(() => loadProjects())
+  const [activeProjectId, setActiveProjectIdState] = useState(() => getActiveProjectId())
+
+  // Editing mode — when a note is open in editor
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+  const editingNote = editingNoteId ? notes.find((n) => n.id === editingNoteId) : null
+
+  // Close plugins dropdown on outside click
+  useEffect(() => {
+    if (!showPlugins) return
+    const handler = (e: MouseEvent) => {
+      if (pluginsRef.current && !pluginsRef.current.contains(e.target as Node)) setShowPlugins(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showPlugins])
 
   // Regenerate alerts when published notes change
   useEffect(() => {
@@ -42,39 +67,39 @@ export default function App() {
     setAlerts(updated)
   }, [agents, publishedNotes])
 
-  const openNoteTab = useCallback((id: string) => {
+  const openNoteInEditor = useCallback((id: string) => {
+    setEditingNoteId(id)
     setActiveId(id)
-    setView('feed')
     setOpenTabs((prev) => prev.includes(id) ? prev : [...prev, id])
   }, [setActiveId])
 
   const closeTab = useCallback((id: string) => {
     setOpenTabs((prev) => {
       const next = prev.filter((t) => t !== id)
-      if (activeId === id) {
-        if (next.length > 0) setActiveId(next[next.length - 1])
-        else setActiveId(null as unknown as string)
+      if (editingNoteId === id) {
+        if (next.length > 0) { setEditingNoteId(next[next.length - 1]); setActiveId(next[next.length - 1]) }
+        else { setEditingNoteId(null); setActiveId(null as unknown as string) }
       }
       return next
     })
-  }, [activeId, setActiveId])
+  }, [editingNoteId, setActiveId])
 
   const handleCreateFromChat = useCallback((title: string, content: string) => {
     const note = addNote()
     updateNote(note.id, { title, content })
-    openNoteTab(note.id)
-  }, [addNote, updateNote, openNoteTab])
+    openNoteInEditor(note.id)
+  }, [addNote, updateNote, openNoteInEditor])
 
-  const handleOpenNote = useCallback((id: string) => { openNoteTab(id) }, [openNoteTab])
+  const handleOpenNote = useCallback((id: string) => { openNoteInEditor(id) }, [openNoteInEditor])
 
   const handleNavigate = useCallback((title: string) => {
     const existing = notes.find((n) => n.title.toLowerCase() === title.toLowerCase())
-    if (existing) { openNoteTab(existing.id) }
-    else { const note = addNote(); updateNote(note.id, { title }); openNoteTab(note.id) }
-  }, [notes, addNote, updateNote, openNoteTab])
+    if (existing) { openNoteInEditor(existing.id) }
+    else { const note = addNote(); updateNote(note.id, { title }); openNoteInEditor(note.id) }
+  }, [notes, addNote, updateNote, openNoteInEditor])
 
-  const handleSidebarSelect = useCallback((id: string) => { openNoteTab(id) }, [openNoteTab])
-  const handleAddNote = useCallback(() => { const note = addNote(); openNoteTab(note.id) }, [addNote, openNoteTab])
+  const handleSidebarSelect = useCallback((id: string) => { openNoteInEditor(id) }, [openNoteInEditor])
+  const handleAddNote = useCallback(() => { const note = addNote(); openNoteInEditor(note.id) }, [addNote, openNoteInEditor])
 
   const handleSaveChat = useCallback((session: ChatSession) => {
     setChatSessions((prev) => {
@@ -88,31 +113,21 @@ export default function App() {
     })
   }, [])
 
-  const handleNewChat = useCallback(() => {
-    setActiveChatId(null)
-    setShowHistory(false)
-  }, [])
-
-  const handleOpenChat = useCallback((id: string) => {
-    setActiveChatId(id)
-    setShowHistory(false)
-  }, [])
+  const handleNewChat = useCallback(() => { setActiveChatId(null); setShowHistory(false) }, [])
+  const handleOpenChat = useCallback((id: string) => { setActiveChatId(id); setShowHistory(false) }, [])
 
   const handlePublish = useCallback(() => {
-    if (!activeNote) return
-    publishNote(activeNote, 'You')
-    updateNote(activeNote.id, { published: true })
+    if (!editingNote) return
+    publishNote(editingNote, 'You')
+    updateNote(editingNote.id, { published: true })
     setPublishedNotes(loadPublished())
-  }, [activeNote, updateNote])
+  }, [editingNote, updateNote])
 
   // Agent handlers
   const handleCreateAgent = useCallback((data: Omit<Agent, 'id' | 'createdAt' | 'notes' | 'followers' | 'following'>) => {
     const agent: Agent = {
-      ...data,
-      id: `agent-${Date.now()}`,
-      createdAt: Date.now(),
-      notes: [],
-      followers: Math.floor(Math.random() * 500) + 10,
+      ...data, id: `agent-${Date.now()}`, createdAt: Date.now(),
+      notes: [], followers: Math.floor(Math.random() * 500) + 10,
       following: Math.floor(Math.random() * 50) + 1,
     }
     saveAgent(agent)
@@ -127,10 +142,7 @@ export default function App() {
 
   const handleOpenProfile = useCallback((agentId: string) => {
     setProfileAgentId(agentId)
-  }, [])
-
-  const handleBackFromProfile = useCallback(() => {
-    setProfileAgentId(null)
+    setPluginPanel('agents')
   }, [])
 
   const handleMarkAlertRead = useCallback((alertId: string) => {
@@ -141,19 +153,33 @@ export default function App() {
     })
   }, [])
 
-  const tabNotes = openTabs.map((id) => notes.find((n) => n.id === id)).filter(Boolean)
+  // Project handlers
+  const handleSwitchProject = useCallback((id: string) => {
+    setActiveProjectIdState(id)
+    setActiveProjectId(id)
+  }, [])
 
+  const handleCreateProject = useCallback((name: string, emoji: string) => {
+    const project: Project = { id: `proj-${Date.now()}`, name, emoji, createdAt: Date.now() }
+    const updated = [...projects, project]
+    setProjects(updated)
+    saveProjects(updated)
+    handleSwitchProject(project.id)
+  }, [projects, handleSwitchProject])
+
+  const tabNotes = openTabs.map((id) => notes.find((n) => n.id === id)).filter(Boolean)
   const unreadAlerts = alerts.filter((a) => !a.read).length
 
-  const modes: { id: View; icon: (p?: object) => React.ReactNode; label: string; badge?: number }[] = [
+  const modes: { id: View; icon: (p?: object) => React.ReactNode; label: string }[] = [
     { id: 'feed', icon: Icons.rss, label: 'Feed' },
     { id: 'chat', icon: Icons.messageCircle, label: 'Chat' },
-    { id: 'agents', icon: Icons.bot, label: 'Agents', badge: unreadAlerts },
-    { id: 'graph', icon: Icons.graph, label: 'Graph' },
   ]
 
   const activeSession = activeChatId ? chatSessions.find((s) => s.id === activeChatId) : undefined
   const profileAgent = profileAgentId ? agents.find((a) => a.id === profileAgentId) : undefined
+
+  // If editing, show editor overlay on top
+  const showEditor = editingNoteId !== null && editingNote !== undefined
 
   return (
     <div className="app">
@@ -163,6 +189,10 @@ export default function App() {
         onSelect={handleSidebarSelect}
         onAdd={handleAddNote}
         onDelete={deleteNote}
+        projects={projects}
+        activeProjectId={activeProjectId}
+        onSwitchProject={handleSwitchProject}
+        onCreateProject={handleCreateProject}
       />
 
       <div className="app-main">
@@ -173,12 +203,11 @@ export default function App() {
               {modes.map((m) => (
                 <button
                   key={m.id}
-                  className={`zw-mode-tab ${view === m.id ? 'active' : ''}`}
-                  onClick={() => { setView(m.id); setProfileAgentId(null) }}
+                  className={`zw-mode-tab ${view === m.id && !showEditor ? 'active' : ''}`}
+                  onClick={() => { setView(m.id); setEditingNoteId(null); setPluginPanel(null); setProfileAgentId(null) }}
                 >
                   {m.icon()}
                   <span>{m.label}</span>
-                  {m.badge && m.badge > 0 ? <span className="zw-mode-tab__badge">{m.badge}</span> : null}
                 </button>
               ))}
             </div>
@@ -192,7 +221,7 @@ export default function App() {
           </div>
 
           <div className="header__right">
-            {view === 'chat' && (
+            {view === 'chat' && !showEditor && (
               <button
                 className={`header__icon-btn ${showHistory ? 'active' : ''}`}
                 onClick={() => setShowHistory(!showHistory)}
@@ -201,16 +230,49 @@ export default function App() {
                 {Icons.clock()}
               </button>
             )}
-            {view === 'feed' && activeNote && (
+            {showEditor && editingNote && (
               <button
-                className={`header__publish-btn ${activeNote.published ? 'published' : ''}`}
+                className={`header__publish-btn ${editingNote.published ? 'published' : ''}`}
                 onClick={handlePublish}
-                title={activeNote.published ? 'Published' : 'Publish note'}
+                title={editingNote.published ? 'Published' : 'Publish note'}
               >
-                {activeNote.published ? Icons.check() : Icons.upload()}
-                <span>{activeNote.published ? 'Published' : 'Publish'}</span>
+                {editingNote.published ? Icons.check() : Icons.upload()}
+                <span>{editingNote.published ? 'Published' : 'Publish'}</span>
               </button>
             )}
+
+            {/* Plugins button */}
+            <div style={{ position: 'relative' }} ref={pluginsRef}>
+              <button
+                className={`header__icon-btn ${pluginPanel ? 'active' : ''}`}
+                onClick={() => setShowPlugins(!showPlugins)}
+                title="Plugins"
+              >
+                {Icons.puzzle()}
+                {unreadAlerts > 0 && <span className="header__icon-badge">{unreadAlerts}</span>}
+              </button>
+              {showPlugins && (
+                <div className="header__plugins-menu">
+                  <div className="header__plugins-menu-title">Plugins</div>
+                  <button
+                    className={`header__plugins-item ${pluginPanel === 'agents' ? 'active' : ''}`}
+                    onClick={() => {
+                      setPluginPanel(pluginPanel === 'agents' ? null : 'agents')
+                      setShowPlugins(false)
+                      setProfileAgentId(null)
+                    }}
+                  >
+                    {Icons.bot()}
+                    <div className="header__plugins-item-info">
+                      <span>Agents</span>
+                      <span className="header__plugins-item-desc">Characters & personas</span>
+                    </div>
+                    {unreadAlerts > 0 && <span className="header__plugins-badge">{unreadAlerts}</span>}
+                  </button>
+                </div>
+              )}
+            </div>
+
             <button className="header__invite-btn">
               {Icons.userPlus()}
               <span>Invite</span>
@@ -218,15 +280,15 @@ export default function App() {
           </div>
         </header>
 
-        {/* File tabs bar (feed mode only) */}
-        {view === 'feed' && tabNotes.length > 0 && (
+        {/* Editor tabs bar */}
+        {showEditor && tabNotes.length > 0 && (
           <div className="tabs-bar">
             <div className="tabs-bar__tabs">
               {tabNotes.map((note) => note && (
                 <button
                   key={note.id}
-                  className={`tab ${activeId === note.id ? 'active' : ''}`}
-                  onClick={() => setActiveId(note.id)}
+                  className={`tab ${editingNoteId === note.id ? 'active' : ''}`}
+                  onClick={() => { setEditingNoteId(note.id); setActiveId(note.id) }}
                 >
                   <span className="tab__circle" />
                   <span className="tab__label">{note.title || 'Untitled'}</span>
@@ -243,19 +305,38 @@ export default function App() {
         )}
 
         {/* Content */}
-        {view === 'feed' ? (
+        {showEditor ? (
           <div className="content-area">
-            {activeNote ? (
-              <Editor note={activeNote} onUpdate={updateNote} onNavigate={handleNavigate} />
-            ) : (
-              <div className="chat-welcome">
-                <div className="chat-welcome__inner">
-                  <ZarnettiLogo className="welcome-logo" />
-                  <p className="chat-welcome__sub">Select a note or create a new one</p>
-                </div>
-              </div>
-            )}
+            <Editor note={editingNote!} onUpdate={updateNote} onNavigate={handleNavigate} />
           </div>
+        ) : pluginPanel === 'agents' ? (
+          profileAgent ? (
+            <ProfileView
+              agent={profileAgent}
+              publishedNotes={publishedNotes}
+              allAgents={agents}
+              onBack={() => setProfileAgentId(null)}
+              onOpenProfile={handleOpenProfile}
+              onOpenNote={handleOpenNote}
+            />
+          ) : (
+            <AgentsView
+              agents={agents}
+              alerts={alerts}
+              publishedNotes={publishedNotes}
+              onCreateAgent={handleCreateAgent}
+              onDeleteAgent={handleDeleteAgent}
+              onOpenProfile={handleOpenProfile}
+              onMarkAlertRead={handleMarkAlertRead}
+            />
+          )
+        ) : view === 'feed' ? (
+          <FeedView
+            publishedNotes={publishedNotes}
+            agents={agents}
+            onOpenNote={handleOpenNote}
+            onOpenProfile={handleOpenProfile}
+          />
         ) : view === 'chat' ? (
           <div className="content-area" style={{ position: 'relative' }}>
             <HomeScreen
@@ -286,41 +367,14 @@ export default function App() {
                       className={`chat-history-panel__item ${activeChatId === session.id ? 'active' : ''}`}
                       onClick={() => handleOpenChat(session.id)}
                     >
-                      <div className="chat-history-panel__item-title">
-                        {session.title || 'Untitled chat'}
-                      </div>
-                      <div className="chat-history-panel__item-meta">
-                        {session.messages.length} msgs
-                      </div>
+                      <div className="chat-history-panel__item-title">{session.title || 'Untitled chat'}</div>
+                      <div className="chat-history-panel__item-meta">{session.messages.length} msgs</div>
                     </button>
                   ))}
                 </div>
               </div>
             )}
           </div>
-        ) : view === 'agents' ? (
-          profileAgent ? (
-            <ProfileView
-              agent={profileAgent}
-              publishedNotes={publishedNotes}
-              allAgents={agents}
-              onBack={handleBackFromProfile}
-              onOpenProfile={handleOpenProfile}
-              onOpenNote={handleOpenNote}
-            />
-          ) : (
-            <AgentsView
-              agents={agents}
-              alerts={alerts}
-              publishedNotes={publishedNotes}
-              onCreateAgent={handleCreateAgent}
-              onDeleteAgent={handleDeleteAgent}
-              onOpenProfile={handleOpenProfile}
-              onMarkAlertRead={handleMarkAlertRead}
-            />
-          )
-        ) : view === 'graph' ? (
-          <GraphView notes={notes} onOpenNote={handleOpenNote} />
         ) : null}
       </div>
     </div>

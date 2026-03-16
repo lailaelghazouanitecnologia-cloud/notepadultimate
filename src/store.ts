@@ -1,4 +1,4 @@
-import type { Note, Agent, Alert } from './types'
+import type { Note, Agent, Alert, Project } from './types'
 
 const STORAGE_KEY = 'zarnetti-notes'
 const PUBLISHED_KEY = 'zarnetti-published'
@@ -43,6 +43,37 @@ export function publishNote(note: Note, author: string, authorId?: string): void
   if (existing >= 0) published[existing] = entry
   else published.push(entry)
   localStorage.setItem(PUBLISHED_KEY, JSON.stringify(published))
+}
+
+// ── Projects ──
+const PROJECTS_KEY = 'zarnetti-projects'
+const ACTIVE_PROJECT_KEY = 'zarnetti-active-project'
+
+export function loadProjects(): Project[] {
+  try {
+    const raw = localStorage.getItem(PROJECTS_KEY)
+    const projects: Project[] = raw ? JSON.parse(raw) : []
+    if (projects.length === 0) {
+      const def: Project = { id: 'default', name: 'Zarnetti', emoji: '📁', createdAt: Date.now() }
+      localStorage.setItem(PROJECTS_KEY, JSON.stringify([def]))
+      return [def]
+    }
+    return projects
+  } catch {
+    return [{ id: 'default', name: 'Zarnetti', emoji: '📁', createdAt: Date.now() }]
+  }
+}
+
+export function saveProjects(projects: Project[]): void {
+  localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects))
+}
+
+export function getActiveProjectId(): string {
+  return localStorage.getItem(ACTIVE_PROJECT_KEY) || 'default'
+}
+
+export function setActiveProjectId(id: string): void {
+  localStorage.setItem(ACTIVE_PROJECT_KEY, id)
 }
 
 // ── Agents ──

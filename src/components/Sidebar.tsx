@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Note } from '../types'
+import type { Note, Project } from '../types'
 import { ZarnettiLogo, Identicon, Icons } from '../lib/icons'
 
 interface SidebarProps {
@@ -8,10 +8,23 @@ interface SidebarProps {
   onSelect: (id: string) => void
   onAdd: () => void
   onDelete: (id: string) => void
+  projects: Project[]
+  activeProjectId: string
+  onSwitchProject: (id: string) => void
+  onCreateProject: (name: string, emoji: string) => void
 }
 
-export function Sidebar({ notes, activeId, onSelect, onAdd, onDelete }: SidebarProps) {
+export function Sidebar({
+  notes, activeId, onSelect, onAdd, onDelete,
+  projects, activeProjectId, onSwitchProject, onCreateProject,
+}: SidebarProps) {
   const [search, setSearch] = useState('')
+  const [showProjects, setShowProjects] = useState(false)
+  const [showNewProject, setShowNewProject] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newEmoji, setNewEmoji] = useState('📁')
+
+  const activeProject = projects.find((p) => p.id === activeProjectId) || projects[0]
 
   const filtered = notes.filter(
     (n) =>
@@ -21,6 +34,17 @@ export function Sidebar({ notes, activeId, onSelect, onAdd, onDelete }: SidebarP
 
   const formatDate = (ts: number) =>
     new Date(ts).toLocaleDateString('es', { day: 'numeric', month: 'short' })
+
+  const handleCreate = () => {
+    if (!newName.trim()) return
+    onCreateProject(newName.trim(), newEmoji)
+    setNewName('')
+    setNewEmoji('📁')
+    setShowNewProject(false)
+    setShowProjects(false)
+  }
+
+  const PROJECT_EMOJIS = ['📁', '🚀', '📚', '🎨', '💡', '🔬', '🎵', '🌍', '⚡', '🎯']
 
   return (
     <aside className="zw-sb">
@@ -49,12 +73,79 @@ export function Sidebar({ notes, activeId, onSelect, onAdd, onDelete }: SidebarP
 
       {/* Content panel */}
       <div className="zw-sb-content">
+        {/* Project switcher */}
         <div className="zw-ws-dropdown">
-          <button className="zw-ws-trigger">
-            {Icons.files()}
-            <span>Zarnetti</span>
+          <button
+            className="zw-ws-trigger"
+            onClick={() => setShowProjects(!showProjects)}
+          >
+            <span className="zw-ws-emoji">{activeProject?.emoji || '📁'}</span>
+            <span>{activeProject?.name || 'Zarnetti'}</span>
             {Icons.chevronDown()}
           </button>
+          {showProjects && (
+            <div className="zw-ws-menu">
+              <div className="zw-ws-menu__label">Projects</div>
+              {projects.map((p) => (
+                <button
+                  key={p.id}
+                  className={`zw-ws-menu__item ${p.id === activeProjectId ? 'active' : ''}`}
+                  onClick={() => { onSwitchProject(p.id); setShowProjects(false) }}
+                >
+                  <span className="zw-ws-menu__emoji">{p.emoji}</span>
+                  <span>{p.name}</span>
+                  {p.id === activeProjectId && (
+                    <span className="zw-ws-menu__check">{Icons.check()}</span>
+                  )}
+                </button>
+              ))}
+              <div className="zw-ws-menu__divider" />
+              {!showNewProject ? (
+                <button
+                  className="zw-ws-menu__item zw-ws-menu__new"
+                  onClick={() => setShowNewProject(true)}
+                >
+                  {Icons.plus()}
+                  <span>New project</span>
+                </button>
+              ) : (
+                <div className="zw-ws-menu__create">
+                  <div className="zw-ws-menu__create-emojis">
+                    {PROJECT_EMOJIS.map((e) => (
+                      <button
+                        key={e}
+                        className={`zw-ws-menu__create-emoji ${newEmoji === e ? 'active' : ''}`}
+                        onClick={() => setNewEmoji(e)}
+                      >
+                        {e}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="text"
+                    className="zw-ws-menu__create-input"
+                    placeholder="Project name..."
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleCreate() }}
+                    autoFocus
+                  />
+                  <div className="zw-ws-menu__create-actions">
+                    <button className="zw-ws-menu__create-cancel" onClick={() => setShowNewProject(false)}>
+                      Cancel
+                    </button>
+                    <button
+                      className="zw-ws-menu__create-submit"
+                      onClick={handleCreate}
+                      disabled={!newName.trim()}
+                    >
+                      Create
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="zw-sb-content-top">
