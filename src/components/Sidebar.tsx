@@ -348,24 +348,16 @@ export function Sidebar({
           </div>
         </button>
 
-        <div className="zw-sb-bottom-actions">
-          <button className="zw-sb-action-btn" title="Add people">
-            {Icons.userPlus()}
-          </button>
-          <button className="zw-sb-action-btn" title="Get apps and extensions">
-            {Icons.download()}
-          </button>
-          <button className="zw-sb-action-btn zw-sb-action-btn--upgrade" title="Upgrade plan">
-            {Icons.crown()}
-          </button>
-        </div>
-
         <button
           className="zw-sb-project-btn"
           onClick={() => setShowProjects(!showProjects)}
         >
           <span className="truncate">{activeProject?.name || 'Zarnetti'}</span>
           {Icons.chevronDown()}
+        </button>
+
+        <button className="zw-sb-action-btn" title="Get apps and extensions">
+          {Icons.download()}
         </button>
 
         {showAvatarMenu && (
@@ -381,6 +373,11 @@ export function Sidebar({
             <button className="zw-avatar-menu__item" onClick={() => setShowAvatarMenu(false)}>
               {Icons.moon()}
               <span>Appearance</span>
+            </button>
+            <div className="zw-avatar-menu__divider" />
+            <button className="zw-avatar-menu__item zw-avatar-menu__item--upgrade" onClick={() => setShowAvatarMenu(false)}>
+              {Icons.crown()}
+              <span>Upgrade plan</span>
             </button>
             <div className="zw-avatar-menu__divider" />
             <button className="zw-avatar-menu__item" onClick={() => setShowAvatarMenu(false)}>

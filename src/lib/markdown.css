@@ -25,23 +25,23 @@
 
 /* Links */
 .zn-preview a {
-  color: var(--accent-11);
+  color: var(--zw-link, #5cc8d4);
   text-decoration: none;
   cursor: pointer;
   transition: color var(--transition);
 }
-.zn-preview a:hover { text-decoration: underline; text-underline-offset: 2px; }
+.zn-preview a:hover { color: #7ddde7; text-decoration: underline; text-underline-offset: 2px; }
 
 /* Wiki link */
 .zn-wikilink {
-  color: var(--accent-11);
+  color: var(--zw-link, #5cc8d4);
   text-decoration: none;
   cursor: pointer;
   padding: 0 2px;
   border-radius: 3px;
-  transition: background var(--transition);
+  transition: background var(--transition), color var(--transition);
 }
-.zn-wikilink:hover { background: var(--accent-a3); }
+.zn-wikilink:hover { background: rgba(92,200,212,0.1); color: #7ddde7; }
 
 /* Inline code */
 .zn-preview code {

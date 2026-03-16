@@ -347,7 +347,7 @@ export default function App() {
               )}
             </div>
 
-            {/* Publish — far right, always present for layout stability */}
+            {/* Publish — always present for layout stability */}
             <button
               className={`header__publish-btn ${editingNote?.published ? 'published' : ''} ${!(showEditor && editingNote) ? 'header__publish-btn--hidden' : ''}`}
               onClick={handlePublish}
@@ -356,6 +356,14 @@ export default function App() {
             >
               {editingNote?.published ? Icons.check() : Icons.upload()}
               <span>{editingNote?.published ? 'Published' : 'Publish'}</span>
+            </button>
+
+            {/* Add people — far right, borderless */}
+            <button
+              className="header__icon-btn header__icon-btn--borderless"
+              title="Add people"
+            >
+              {Icons.userPlus()}
             </button>
           </div>
         </header>
