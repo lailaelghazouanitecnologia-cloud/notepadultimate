@@ -276,28 +276,38 @@ html, body {
 
 .zw-sb-content-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; }
 
-/* Sidebar items */
+/* Sidebar items — compact */
 .zw-sb-items { padding: 0 4px; }
 .zw-sb-item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 5px 8px; border-radius: 5px; cursor: pointer;
-  color: var(--foreground); font-size: 13px;
+  display: flex; align-items: center; gap: 5px;
+  padding: 2px 6px; border-radius: 4px; cursor: pointer;
+  color: var(--foreground); font-size: 11px;
   border: none; background: transparent; width: 100%; text-align: left;
   transition: background 0.12s ease; font-family: var(--font-sans);
+  height: 24px;
 }
 .zw-sb-item:hover { background: rgba(255,255,255,0.05); }
 .zw-sb-item.active { background: rgba(255,255,255,0.07); }
-.zw-sb-item svg { width: 14px; height: 14px; color: var(--muted-foreground); flex-shrink: 0; }
+.zw-sb-item svg { width: 13px; height: 13px; color: var(--muted-foreground); flex-shrink: 0; }
+.zw-sb-item__label {
+  flex: 1; min-width: 0; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; font-weight: 500;
+}
 
-/* Trailing delete */
-.zw-sb-item-trailing { margin-left: auto; opacity: 0; transition: opacity 0.1s ease; }
+/* Trailing actions */
+.zw-sb-item-trailing { margin-left: auto; display: flex; gap: 0; opacity: 0; transition: opacity 0.1s ease; }
 .zw-sb-item:hover .zw-sb-item-trailing { opacity: 1; }
 .zw-sb-item-menu {
-  width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
-  border: none; background: transparent; color: var(--muted-foreground); border-radius: 4px; cursor: pointer;
+  width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;
+  border: none; background: transparent; color: var(--muted-foreground); border-radius: 3px; cursor: pointer;
 }
 .zw-sb-item-menu:hover { background: rgba(255,255,255,0.08); color: var(--destructive); }
-.zw-sb-item-menu svg { width: 12px; height: 12px; }
+.zw-sb-item-menu svg { width: 10px; height: 10px; }
+
+/* Folder tree */
+.zw-sb-folder { }
+.zw-sb-item--folder { font-weight: 600; }
+.zw-sb-folder__children { padding-left: 12px; }
 
 /* ═══════════════════════════════════════════════════
    CONTENT AREA
@@ -486,6 +496,29 @@ html, body {
 .home-research__section-label {
   font-size: 10px; font-weight: 600; text-transform: uppercase;
   letter-spacing: 0.06em; color: var(--muted-foreground); padding: 8px 4px 4px;
+}
+
+/* ── Zarnet search engine results ── */
+.zarnet-results { max-width: 640px; margin: 16px auto 0; padding: 0 4px; }
+.zarnet-results__count {
+  font-size: 11px; color: var(--muted-foreground); margin-bottom: 16px; opacity: 0.7;
+}
+.zarnet-result {
+  margin-bottom: 20px; cursor: pointer; transition: opacity 0.1s;
+}
+.zarnet-result:hover { opacity: 0.85; }
+.zarnet-result__url {
+  font-size: 11px; color: var(--muted-foreground); margin-bottom: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.zarnet-result__title {
+  font-size: 16px; font-weight: 400; line-height: 1.3;
+  color: var(--zw-accent); margin: 0 0 4px;
+}
+.zarnet-result__title:hover { text-decoration: underline; }
+.zarnet-result__snippet {
+  font-size: 12px; line-height: 1.55; color: var(--muted-foreground); margin: 0;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 
 /* Chat messages inside research view */

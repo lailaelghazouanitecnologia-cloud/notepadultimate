@@ -7,6 +7,14 @@ export interface Note {
   published?: boolean
   author?: string
   authorId?: string
+  folderId?: string  // parent folder
+}
+
+export interface Folder {
+  id: string
+  name: string
+  parentId?: string  // nested folders
+  createdAt: number
 }
 
 export interface Agent {

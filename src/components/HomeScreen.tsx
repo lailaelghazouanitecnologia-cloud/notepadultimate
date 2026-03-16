@@ -281,54 +281,38 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
             </div>
           </div>
 
-          {/* Live search results */}
+          {/* Search engine results */}
           {showingResults && (
-            <div className="home-research__results">
-              <div className="home-research__results-header">
-                <span className="home-research__results-count">
-                  {allResults.length} result{allResults.length !== 1 ? 's' : ''}
-                </span>
+            <div className="zarnet-results">
+              <div className="zarnet-results__count">
+                About {allResults.length} result{allResults.length !== 1 ? 's' : ''} ({(Math.random() * 0.5 + 0.1).toFixed(2)} seconds)
               </div>
               {liveResults.own.length > 0 && (
                 <>
-                  <div className="home-research__section-label">Your notes</div>
-                  {liveResults.own.map((note, i) => (
-                    <article
-                      key={note.id}
-                      className={`home-research__result ${i < liveResults.own.length - 1 ? 'has-border' : ''}`}
-                      onClick={() => onOpenNote(note.id)}
-                    >
-                      <p className="home-research__result-meta">note</p>
-                      <h3 className="home-research__result-title">{note.title || 'Untitled'}</h3>
-                      <p className="home-research__result-snippet">
-                        {note.content.slice(0, 120) || 'Empty note'}
-                      </p>
-                      <div className="home-research__result-footer">
-                        <span>{formatRelativeDate(note.updatedAt)}</span>
+                  {liveResults.own.map((note) => (
+                    <article key={note.id} className="zarnet-result" onClick={() => onOpenNote(note.id)}>
+                      <div className="zarnet-result__url">
+                        zarnet://notes/{note.id.slice(0, 8)} › {formatRelativeDate(note.updatedAt)}
                       </div>
+                      <h3 className="zarnet-result__title">{note.title || 'Untitled'}</h3>
+                      <p className="zarnet-result__snippet">
+                        {note.content.slice(0, 180) || 'Empty note'}
+                      </p>
                     </article>
                   ))}
                 </>
               )}
               {liveResults.community.length > 0 && (
                 <>
-                  <div className="home-research__section-label" style={{ marginTop: liveResults.own.length > 0 ? 12 : 0 }}>Community</div>
-                  {liveResults.community.map((note, i) => (
-                    <article
-                      key={note.id}
-                      className={`home-research__result ${i < liveResults.community.length - 1 ? 'has-border' : ''}`}
-                      onClick={() => onOpenNote(note.id)}
-                    >
-                      <p className="home-research__result-meta">
-                        {note.author || 'Unknown'} &middot; published
-                      </p>
-                      <h3 className="home-research__result-title">{note.title || 'Untitled'}</h3>
-                      <p className="home-research__result-snippet">
-                        {note.content.slice(0, 120) || 'Empty note'}
-                      </p>
-                      <div className="home-research__result-footer">
-                        <span>{formatRelativeDate(note.updatedAt)}</span>
+                  {liveResults.community.map((note) => (
+                    <article key={note.id} className="zarnet-result" onClick={() => onOpenNote(note.id)}>
+                      <div className="zarnet-result__url">
+                        zarnet://community/{(note.author || 'unknown').toLowerCase().replace(/\s/g, '-')} › published
                       </div>
+                      <h3 className="zarnet-result__title">{note.title || 'Untitled'}</h3>
+                      <p className="zarnet-result__snippet">
+                        {note.content.slice(0, 180) || 'Empty note'}
+                      </p>
                     </article>
                   ))}
                 </>

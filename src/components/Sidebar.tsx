@@ -1,12 +1,12 @@
-import { useState, useRef, useEffect } from 'react'
-import type { Note, Project } from '../types'
+import { useState, useRef, useEffect, useMemo } from 'react'
+import type { Note, Project, Folder } from '../types'
 import { ZarnettiLogo, Identicon, Icons, FileTypeIcon } from '../lib/icons'
 
 interface SidebarProps {
   notes: Note[]
   activeId: string | null
   onSelect: (id: string) => void
-  onAdd: () => void
+  onAdd: (folderId?: string) => void
   onDelete: (id: string) => void
   projects: Project[]
   activeProjectId: string
@@ -14,28 +14,61 @@ interface SidebarProps {
   onCreateProject: (name: string, emoji: string) => void
   collapsed: boolean
   onToggleCollapse: () => void
+  folders: Folder[]
+  onCreateFolder: (name: string, parentId?: string) => void
+  onDeleteFolder: (id: string) => void
+  onMoveNote: (noteId: string, folderId?: string) => void
 }
 
 export function Sidebar({
   notes, activeId, onSelect, onAdd, onDelete,
   projects, activeProjectId, onSwitchProject, onCreateProject,
   collapsed, onToggleCollapse,
+  folders, onCreateFolder, onDeleteFolder, onMoveNote,
 }: SidebarProps) {
   const [search, setSearch] = useState('')
   const [showProjects, setShowProjects] = useState(false)
   const [showAvatarMenu, setShowAvatarMenu] = useState(false)
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
+  const [creatingFolder, setCreatingFolder] = useState<string | null>(null) // null = root, or parentId
+  const [newFolderName, setNewFolderName] = useState('')
   const avatarRef = useRef<HTMLDivElement>(null)
+  const folderInputRef = useRef<HTMLInputElement>(null)
 
   const activeProject = projects.find((p) => p.id === activeProjectId) || projects[0]
 
-  const filtered = notes.filter(
-    (n) =>
-      n.title.toLowerCase().includes(search.toLowerCase()) ||
-      n.content.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = useMemo(() => {
+    if (!search) return notes
+    const q = search.toLowerCase()
+    return notes.filter(
+      (n) =>
+        n.title.toLowerCase().includes(q) ||
+        n.content.toLowerCase().includes(q)
+    )
+  }, [notes, search])
 
   const formatDate = (ts: number) =>
     new Date(ts).toLocaleDateString('es', { day: 'numeric', month: 'short' })
+
+  const toggleFolder = (id: string) => {
+    setExpandedFolders((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const handleCreateFolder = () => {
+    if (!newFolderName.trim()) return
+    onCreateFolder(newFolderName.trim(), creatingFolder === '__root__' ? undefined : creatingFolder || undefined)
+    setNewFolderName('')
+    setCreatingFolder(null)
+  }
+
+  useEffect(() => {
+    if (creatingFolder !== null) folderInputRef.current?.focus()
+  }, [creatingFolder])
 
   // Close avatar menu on outside click
   useEffect(() => {
@@ -46,6 +79,82 @@ export function Sidebar({
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [showAvatarMenu])
+
+  // Group notes by folder
+  const rootNotes = filtered.filter((n) => !n.folderId)
+  const notesByFolder = useMemo(() => {
+    const map = new Map<string, Note[]>()
+    for (const n of filtered) {
+      if (n.folderId) {
+        const arr = map.get(n.folderId) || []
+        arr.push(n)
+        map.set(n.folderId, arr)
+      }
+    }
+    return map
+  }, [filtered])
+
+  const rootFolders = folders.filter((f) => !f.parentId)
+
+  const renderNote = (note: Note) => (
+    <button
+      key={note.id}
+      className={`zw-sb-item ${activeId === note.id ? 'active' : ''}`}
+      onClick={() => onSelect(note.id)}
+    >
+      {/\.\w+$/.test(note.title) ? <FileTypeIcon filename={note.title} /> : Icons.file()}
+      <span className="zw-sb-item__label">{note.title || 'Untitled'}</span>
+      <span className="zw-sb-item-trailing">
+        <button
+          className="zw-sb-item-menu"
+          onClick={(e) => { e.stopPropagation(); onDelete(note.id) }}
+          title="Delete"
+        >
+          {Icons.x()}
+        </button>
+      </span>
+    </button>
+  )
+
+  const renderFolder = (folder: Folder) => {
+    const isExpanded = expandedFolders.has(folder.id)
+    const folderNotes = notesByFolder.get(folder.id) || []
+    const childFolders = folders.filter((f) => f.parentId === folder.id)
+
+    return (
+      <div key={folder.id} className="zw-sb-folder">
+        <button className="zw-sb-item zw-sb-item--folder" onClick={() => toggleFolder(folder.id)}>
+          <svg viewBox="0 0 24 24" style={{ width: 12, height: 12, transition: 'transform 0.12s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', flexShrink: 0 }} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+          {Icons.folder()}
+          <span className="zw-sb-item__label">{folder.name}</span>
+          <span className="zw-sb-item-trailing">
+            <button
+              className="zw-sb-item-menu"
+              onClick={(e) => { e.stopPropagation(); onAdd(folder.id) }}
+              title="New file"
+            >
+              {Icons.plus()}
+            </button>
+            <button
+              className="zw-sb-item-menu"
+              onClick={(e) => { e.stopPropagation(); onDeleteFolder(folder.id) }}
+              title="Delete folder"
+            >
+              {Icons.x()}
+            </button>
+          </span>
+        </button>
+        {isExpanded && (
+          <div className="zw-sb-folder__children">
+            {childFolders.map(renderFolder)}
+            {folderNotes.map(renderNote)}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <aside className={`zw-sb ${collapsed ? 'collapsed' : ''}`}>
@@ -147,9 +256,14 @@ export function Sidebar({
 
         <div className="zw-sb-content-top">
           <span className="zw-sb-label">Files</span>
-          <button className="zw-sb-icon-btn" onClick={onAdd} title="New file">
-            {Icons.plus()}
-          </button>
+          <div style={{ display: 'flex', gap: 2 }}>
+            <button className="zw-sb-icon-btn" onClick={() => setCreatingFolder('__root__')} title="New folder">
+              {Icons.folder()}
+            </button>
+            <button className="zw-sb-icon-btn" onClick={() => onAdd()} title="New file">
+              {Icons.plus()}
+            </button>
+          </div>
         </div>
 
         <div className="zw-sb-search">
@@ -166,38 +280,36 @@ export function Sidebar({
         </div>
 
         <div className="zw-sb-content-scroll">
-          {filtered.length === 0 && (
+          {/* New folder input */}
+          {creatingFolder !== null && (
+            <div style={{ padding: '2px 4px' }}>
+              <div className="zw-sb-item" style={{ gap: 4 }}>
+                {Icons.folder()}
+                <input
+                  ref={folderInputRef}
+                  type="text"
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleCreateFolder()
+                    if (e.key === 'Escape') { setCreatingFolder(null); setNewFolderName('') }
+                  }}
+                  onBlur={() => { if (newFolderName.trim()) handleCreateFolder(); else { setCreatingFolder(null); setNewFolderName('') } }}
+                  placeholder="Folder name..."
+                  style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 11, color: 'var(--foreground)', fontFamily: 'var(--font-sans)' }}
+                />
+              </div>
+            </div>
+          )}
+
+          {filtered.length === 0 && folders.length === 0 && (
             <div style={{ textAlign: 'center', color: 'var(--muted-foreground)', fontSize: 11, padding: '24px 0' }}>
               {notes.length === 0 ? 'No notes yet' : 'No results'}
             </div>
           )}
           <div className="zw-sb-items">
-            {filtered.map((note) => (
-              <button
-                key={note.id}
-                className={`zw-sb-item ${activeId === note.id ? 'active' : ''}`}
-                onClick={() => onSelect(note.id)}
-              >
-                {/\.\w+$/.test(note.title) ? <FileTypeIcon filename={note.title} /> : Icons.file()}
-                <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                  <div style={{ fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {note.title || 'Untitled'}
-                  </div>
-                  <div style={{ fontSize: 10, color: 'var(--muted-foreground)', marginTop: 1 }}>
-                    {formatDate(note.updatedAt)}
-                  </div>
-                </div>
-                <span className="zw-sb-item-trailing">
-                  <button
-                    className="zw-sb-item-menu"
-                    onClick={(e) => { e.stopPropagation(); onDelete(note.id) }}
-                    title="Delete"
-                  >
-                    {Icons.x()}
-                  </button>
-                </span>
-              </button>
-            ))}
+            {rootFolders.map(renderFolder)}
+            {rootNotes.map(renderNote)}
           </div>
         </div>
       </div>

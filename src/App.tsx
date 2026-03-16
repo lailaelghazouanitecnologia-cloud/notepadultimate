@@ -13,8 +13,9 @@ import {
   loadAlerts, saveAlerts, generateAlerts,
   loadProjects, saveProjects, getActiveProjectId, setActiveProjectId,
   loadContracts, saveContract, deleteContract as deleteContractStore, getContractsForProject,
+  loadFolders, createFolder as createFolderStore, deleteFolder as deleteFolderStore,
 } from './store'
-import type { Agent, Alert, Project, Contract } from './types'
+import type { Agent, Alert, Project, Contract, Folder } from './types'
 
 export type View = 'feed' | 'chat'
 type PluginPanel = 'agents' | null
@@ -42,6 +43,7 @@ export default function App() {
   const [showPlugins, setShowPlugins] = useState(false)
   const pluginsRef = useRef<HTMLDivElement>(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [folders, setFolders] = useState<Folder[]>(() => loadFolders())
 
   // Projects
   const [projects, setProjects] = useState<Project[]>(() => loadProjects())
@@ -99,7 +101,22 @@ export default function App() {
   }, [notes, addNote, updateNote, openNoteInEditor])
 
   const handleSidebarSelect = useCallback((id: string) => { openNoteInEditor(id) }, [openNoteInEditor])
-  const handleAddNote = useCallback(() => { const note = addNote(); openNoteInEditor(note.id) }, [addNote, openNoteInEditor])
+  const handleAddNote = useCallback((folderId?: string) => {
+    const note = addNote()
+    if (folderId) updateNote(note.id, { folderId } as Partial<import('./types').Note>)
+    openNoteInEditor(note.id)
+  }, [addNote, updateNote, openNoteInEditor])
+  const handleCreateFolder = useCallback((name: string, parentId?: string) => {
+    createFolderStore(name, parentId)
+    setFolders(loadFolders())
+  }, [])
+  const handleDeleteFolder = useCallback((id: string) => {
+    deleteFolderStore(id)
+    setFolders(loadFolders())
+  }, [])
+  const handleMoveNote = useCallback((noteId: string, folderId?: string) => {
+    updateNote(noteId, { folderId } as Partial<import('./types').Note>)
+  }, [updateNote])
 
   const handleSaveChat = useCallback((session: ChatSession) => {
     setChatSessions((prev) => {
@@ -211,6 +228,10 @@ export default function App() {
         onCreateProject={handleCreateProject}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        folders={folders}
+        onCreateFolder={handleCreateFolder}
+        onDeleteFolder={handleDeleteFolder}
+        onMoveNote={handleMoveNote}
       />
 
       <div className="app-main">

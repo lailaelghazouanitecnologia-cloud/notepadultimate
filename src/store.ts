@@ -1,4 +1,4 @@
-import type { Note, Agent, Alert, Project, Contract } from './types'
+import type { Note, Agent, Alert, Project, Contract, Folder } from './types'
 
 const STORAGE_KEY = 'zarnetti-notes'
 const PUBLISHED_KEY = 'zarnetti-published'
@@ -165,6 +165,35 @@ export function loadAlerts(): Alert[] {
 
 export function saveAlerts(alerts: Alert[]): void {
   localStorage.setItem(ALERTS_KEY, JSON.stringify(alerts))
+}
+
+// ── Folders ──
+const FOLDERS_KEY = 'zarnetti-folders'
+
+export function loadFolders(): Folder[] {
+  try {
+    const raw = localStorage.getItem(FOLDERS_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
+  }
+}
+
+export function saveFolders(folders: Folder[]): void {
+  localStorage.setItem(FOLDERS_KEY, JSON.stringify(folders))
+}
+
+export function createFolder(name: string, parentId?: string): Folder {
+  const folder: Folder = { id: `folder-${Date.now()}`, name, parentId, createdAt: Date.now() }
+  const all = loadFolders()
+  all.push(folder)
+  saveFolders(all)
+  return folder
+}
+
+export function deleteFolder(id: string): void {
+  const all = loadFolders().filter((f) => f.id !== id)
+  saveFolders(all)
 }
 
 // ── Contracts ──
