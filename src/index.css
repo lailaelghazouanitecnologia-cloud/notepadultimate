@@ -509,9 +509,9 @@ html, body {
 .breadcrumb__title-input:focus { color: var(--foreground); }
 
 /* Editor */
-.editor-area { flex: 1; overflow-y: auto; padding: 32px 48px; }
-@media (min-width: 900px) { .editor-area { padding: 40px 64px; } }
-@media (min-width: 1200px) { .editor-area { padding: 48px 80px; } }
+.editor-area { flex: 1; overflow-y: auto; padding: 20px 32px; }
+@media (min-width: 900px) { .editor-area { padding: 24px 48px; } }
+@media (min-width: 1200px) { .editor-area { padding: 28px 56px; } }
 .editor-area__inner { max-width: 680px; margin: 0 auto; }
 .editor-title {
   width: 100%; font-size: 28px; font-weight: 600; letter-spacing: -0.3px; line-height: 1.2;
@@ -734,7 +734,7 @@ html, body {
   padding: 16px 16px 8px;
 }
 .zw-chat-messages__inner {
-  max-width: 720px; margin: 0 auto; width: 100%;
+  max-width: 608px; margin: 0 auto; width: 100%;
 }
 .zw-chat-messages__end { height: 48px; }
 
@@ -880,7 +880,7 @@ html, body {
 
 /* ── Input area — card style, centered ── */
 .zw-chat-input-area {
-  flex-shrink: 0; width: 100%; max-width: 760px;
+  flex-shrink: 0; width: 100%; max-width: 608px;
   margin: 0 auto; padding: 0 16px 8px;
 }
 .zw-chat-input-card {

@@ -261,8 +261,8 @@ export default function App() {
           </div>
         </header>
 
-        {/* Editor tabs bar */}
-        {showEditor && tabNotes.length > 0 && (
+        {/* Tabs bar — open files */}
+        {tabNotes.length > 0 && (
           <div className="tabs-bar">
             <div className="tabs-bar__tabs">
               {tabNotes.map((note) => note && (

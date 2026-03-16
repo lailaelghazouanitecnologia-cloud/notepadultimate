@@ -265,11 +265,6 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
     [handleChatSend]
   )
 
-  const handleBackToHome = useCallback(() => {
-    setViewMode('home')
-    if (streamIntervalRef.current) clearInterval(streamIntervalRef.current)
-    setStreaming({ status: 'idle', text: '', error: null })
-  }, [])
 
   const handleStop = useCallback(() => {
     if (streamIntervalRef.current) clearInterval(streamIntervalRef.current)
@@ -334,27 +329,6 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
     return (
       <div className="content-area">
         <div className="home-research">
-          {/* Header */}
-          <div className="zw-chat-header">
-            <div className="zw-chat-header__left">
-              <button className="zw-chat-header__btn" onClick={handleBackToHome} title="Back">
-                {Icons.arrowLeft()}
-              </button>
-              <span className="zw-chat-header__title">
-                {messages.find(m => m.role === 'user')?.content.slice(0, 40) || 'Chat'}
-              </span>
-            </div>
-            <div className="zw-chat-header__right">
-              <button
-                className="zw-chat-header__btn"
-                onClick={() => { setMessages([]); setViewMode('home'); if (streamIntervalRef.current) clearInterval(streamIntervalRef.current); setStreaming({ status: 'idle', text: '', error: null }) }}
-                title="New chat"
-              >
-                {Icons.plus()}
-              </button>
-            </div>
-          </div>
-
           {/* Messages */}
           <div className="zw-chat-messages" ref={scrollRef}>
             <div className="zw-chat-messages__inner">
