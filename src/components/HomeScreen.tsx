@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import type { Note } from '../types'
 import { ZarnettiLogo, Icons } from '../lib/icons'
 
@@ -22,11 +22,25 @@ const COMMANDS = [
   { cmd: '/help', args: '', desc: 'Show all commands' },
 ]
 
-function getGreeting(): { greeting: string; subtitle: string } {
+const FILTERS = ['Todo', 'Notas', 'Recientes', 'Favoritos'] as const
+
+function getGreeting(): string {
   const h = new Date().getHours()
-  if (h < 12) return { greeting: 'Good morning', subtitle: 'Search, create, or ask anything' }
-  if (h < 18) return { greeting: 'Good afternoon', subtitle: 'Search, create, or ask anything' }
-  return { greeting: 'Good evening', subtitle: 'Search, create, or ask anything' }
+  if (h < 12) return 'Good morning'
+  if (h < 18) return 'Good afternoon'
+  return 'Good evening'
+}
+
+function formatRelativeDate(ts: number): string {
+  const diff = Date.now() - ts
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  const days = Math.floor(hrs / 24)
+  if (days < 7) return `${days}d ago`
+  return new Date(ts).toLocaleDateString('es', { day: 'numeric', month: 'short' })
 }
 
 export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps) {
@@ -35,7 +49,8 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
   const [showCommands, setShowCommands] = useState(false)
   const [model, setModel] = useState('Sonnet 4.5')
   const [showModels, setShowModels] = useState(false)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [activeFilter, setActiveFilter] = useState(0)
+  const inputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const cmdRef = useRef<HTMLDivElement>(null)
   const modelRef = useRef<HTMLDivElement>(null)
@@ -61,6 +76,18 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [showModels])
+
+  const liveResults = useMemo(() => {
+    const q = input.trim().toLowerCase()
+    if (!q || q.startsWith('/')) return []
+    return notes.filter(
+      (n) => n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q)
+    )
+  }, [input, notes])
+
+  const recentNotes = useMemo(() => {
+    return [...notes].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 6)
+  }, [notes])
 
   const processCommand = useCallback((text: string): string => {
     const lower = text.toLowerCase().trim()
@@ -133,7 +160,7 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
   const selectCommand = (cmd: string) => {
     setInput(cmd + ' ')
     setShowCommands(false)
-    textareaRef.current?.focus()
+    inputRef.current?.focus()
   }
 
   const models = [
@@ -142,70 +169,49 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
     { id: 'haiku', label: 'Haiku 4.5', desc: 'Fastest' },
   ]
 
-  const isEmpty = messages.length === 0
-  const { greeting, subtitle } = getGreeting()
+  const hasMessages = messages.length > 0
   const totalTokens = messages.length * 280
+  const showingResults = liveResults.length > 0
+  const greeting = getGreeting()
 
   return (
     <div className="content-area">
-      <div className="home-chat">
-        {/* Messages / welcome */}
-        <div className="chat-messages">
-          {isEmpty && (
-            <div className="chat-welcome">
-              <div className="chat-welcome__inner">
-                <ZarnettiLogo className="welcome-logo" />
-                <h2 className="chat-welcome__title">{greeting}</h2>
-                <p className="chat-welcome__sub">{subtitle}</p>
-              </div>
+      <div className="home-research">
+        {/* Scrollable content */}
+        <div className="home-research__scroll">
+          {/* Welcome + Search — always visible at top */}
+          <div className="home-research__hero">
+            <div className="home-research__logo-box">
+              <ZarnettiLogo className="home-research__logo-svg" />
             </div>
-          )}
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`chat-msg ${msg.role === 'user' ? 'chat-msg--user' : 'chat-msg--ai'}`}
-            >
-              <div className={msg.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}>
-                {msg.role === 'assistant'
-                  ? msg.content.split('\n').map((line, j) => {
-                      const parsed = line
-                        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                        .replace(/`([^`]+)`/g, '<code>$1</code>')
-                        .replace(/^_(.+)_$/, '<em>$1</em>')
-                      return <div key={j} dangerouslySetInnerHTML={{ __html: parsed }} />
-                    })
-                  : msg.content
-                }
-              </div>
-              {msg.role === 'assistant' && (
-                <div className="chat-msg__actions">
-                  <button
-                    className="chat-msg__action-btn"
-                    onClick={() => navigator.clipboard.writeText(msg.content)}
-                    title="Copy"
-                  >
-                    {Icons.copy()}
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
+            <h2 className="home-research__title">{greeting}</h2>
+            <p className="home-research__subtitle">
+              Search your notes, create new ones, or ask anything. Your knowledge hub.
+            </p>
 
-        {/* Input — centered card */}
-        <div className="zw-chat-input-area">
-          <div className="zw-chat-input-card">
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Search or ask anything..."
-              className="zw-chat-textarea"
-            />
-            <div className="zw-chat-input-toolbar">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* Search input — rounded pill */}
+            <div className="home-research__search-wrap">
+              <div className="home-research__search-icon">{Icons.search()}</div>
+              <input
+                ref={inputRef}
+                type="text"
+                className="home-research__search-input"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Search or ask anything..."
+              />
+              <button
+                onClick={handleSend}
+                className={`home-research__search-send ${input.trim() ? 'active' : ''}`}
+              >
+                {Icons.arrowUp()}
+              </button>
+            </div>
+
+            {/* Connectors toolbar under search */}
+            <div className="home-research__toolbar">
+              <div className="home-research__toolbar-left">
                 {/* Model selector */}
                 <div style={{ position: 'relative' }} ref={modelRef}>
                   <button className="zw-chat-model-btn" onClick={() => setShowModels(!showModels)}>
@@ -233,36 +239,19 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
                     </div>
                   )}
                 </div>
-
-                {/* Connectors */}
-                <button className="zw-chat-tool-btn" title="Attach file">
-                  {Icons.paperclip()}
-                </button>
-                <button className="zw-chat-tool-btn" title="Mention">
-                  {Icons.atSign()}
-                </button>
-                <button className="zw-chat-tool-btn" title="Search web">
-                  {Icons.globe()}
-                </button>
-
+                <button className="zw-chat-tool-btn" title="Attach file">{Icons.paperclip()}</button>
+                <button className="zw-chat-tool-btn" title="Mention">{Icons.atSign()}</button>
+                <button className="zw-chat-tool-btn" title="Search web">{Icons.globe()}</button>
                 {/* / commands */}
                 <div style={{ position: 'relative' }} ref={cmdRef}>
-                  <button
-                    className="zw-cmd-btn"
-                    onClick={() => setShowCommands(!showCommands)}
-                    title="Commands"
-                  >
+                  <button className="zw-cmd-btn" onClick={() => setShowCommands(!showCommands)} title="Commands">
                     <span className="zw-cmd-btn__slash">/</span>
                   </button>
                   {showCommands && (
                     <div className="zw-cmd-menu">
                       <div className="zw-cmd-menu__title">Commands</div>
                       {COMMANDS.map((c) => (
-                        <button
-                          key={c.cmd}
-                          className="zw-cmd-menu__item"
-                          onClick={() => selectCommand(c.cmd)}
-                        >
+                        <button key={c.cmd} className="zw-cmd-menu__item" onClick={() => selectCommand(c.cmd)}>
                           <span className="zw-cmd-menu__cmd">{c.cmd}</span>
                           {c.args && <span className="zw-cmd-menu__args">{c.args}</span>}
                           <span className="zw-cmd-menu__desc">{c.desc}</span>
@@ -272,19 +261,124 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
                   )}
                 </div>
               </div>
-
-              <button
-                onClick={handleSend}
-                className={`zw-chat-send-btn ${input.trim() ? 'active' : ''}`}
-                aria-label="Send"
-              >
-                {Icons.arrowUp()}
-              </button>
             </div>
           </div>
+
+          {/* Live search results */}
+          {showingResults && (
+            <div className="home-research__results">
+              <div className="home-research__results-header">
+                <span className="home-research__results-count">
+                  {liveResults.length} result{liveResults.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+              {liveResults.map((note, i) => (
+                <article
+                  key={note.id}
+                  className={`home-research__result ${i < liveResults.length - 1 ? 'has-border' : ''}`}
+                  onClick={() => onOpenNote(note.id)}
+                >
+                  <p className="home-research__result-meta">note</p>
+                  <h3 className="home-research__result-title">{note.title || 'Untitled'}</h3>
+                  <p className="home-research__result-snippet">
+                    {note.content.slice(0, 120) || 'Empty note'}
+                  </p>
+                  <div className="home-research__result-footer">
+                    <span>{formatRelativeDate(note.updatedAt)}</span>
+                    <span>{note.content.trim().split(/\s+/).filter(Boolean).length} words</span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+
+          {/* Separator + recent notes (when no search active) */}
+          {!showingResults && !hasMessages && notes.length > 0 && (
+            <>
+              <div className="home-research__divider">
+                <div className="home-research__divider-line" />
+                <span className="home-research__divider-text">or check your latest notes</span>
+                <div className="home-research__divider-line" />
+              </div>
+
+              <div className="home-research__results">
+                <div className="home-research__results-header">
+                  <span className="home-research__results-count">
+                    {notes.length} note{notes.length !== 1 ? 's' : ''}
+                  </span>
+                  <div className="home-research__filters">
+                    {FILTERS.map((f, i) => (
+                      <button
+                        key={f}
+                        className={`home-research__filter ${activeFilter === i ? 'active' : ''}`}
+                        onClick={() => setActiveFilter(i)}
+                      >
+                        {f}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {recentNotes.map((note, i) => (
+                  <article
+                    key={note.id}
+                    className={`home-research__result ${i < recentNotes.length - 1 ? 'has-border' : ''}`}
+                    onClick={() => onOpenNote(note.id)}
+                  >
+                    <p className="home-research__result-meta">note</p>
+                    <h3 className="home-research__result-title">{note.title || 'Untitled'}</h3>
+                    <p className="home-research__result-snippet">
+                      {note.content.slice(0, 120) || 'Empty note'}
+                    </p>
+                    <div className="home-research__result-footer">
+                      <span>{formatRelativeDate(note.updatedAt)}</span>
+                      <span>{note.content.trim().split(/\s+/).filter(Boolean).length} words</span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Chat messages */}
+          {hasMessages && (
+            <div className="home-research__messages">
+              {messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`chat-msg ${msg.role === 'user' ? 'chat-msg--user' : 'chat-msg--ai'}`}
+                >
+                  <div className={msg.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}>
+                    {msg.role === 'assistant'
+                      ? msg.content.split('\n').map((line, j) => {
+                          const parsed = line
+                            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                            .replace(/`([^`]+)`/g, '<code>$1</code>')
+                            .replace(/^_(.+)_$/, '<em>$1</em>')
+                          return <div key={j} dangerouslySetInnerHTML={{ __html: parsed }} />
+                        })
+                      : msg.content
+                    }
+                  </div>
+                  {msg.role === 'assistant' && (
+                    <div className="chat-msg__actions">
+                      <button
+                        className="chat-msg__action-btn"
+                        onClick={() => navigator.clipboard.writeText(msg.content)}
+                        title="Copy"
+                      >
+                        {Icons.copy()}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
         </div>
 
-        {/* Footer — connectors + status */}
+        {/* Footer */}
         <div className="zw-chat-footer">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
             <span className="zw-chat-footer-name">Zarnetti</span>

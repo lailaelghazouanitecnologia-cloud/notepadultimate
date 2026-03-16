@@ -61,7 +61,13 @@ export function Editor({ note, onUpdate, onNavigate }: EditorProps) {
     <>
       {/* Mode toolbar */}
       <div className="breadcrumb">
-        <span>{note.title}</span>
+        <input
+          type="text"
+          className="breadcrumb__title-input"
+          value={note.title}
+          onChange={(e) => onUpdate(note.id, { title: e.target.value })}
+          placeholder="Untitled"
+        />
         <div className="breadcrumb__modes">
           <button className={`icon-btn ${mode === 'edit' ? 'active' : ''}`} onClick={() => setMode('edit')} aria-label="Edit">
             {Icons.edit()}
@@ -83,14 +89,6 @@ export function Editor({ note, onUpdate, onNavigate }: EditorProps) {
             style={mode === 'split' ? { borderRight: '1px solid var(--border-subtle)', flex: 1 } : { flex: 1 }}
           >
             <div className="editor-area__inner">
-              <input
-                type="text"
-                className="editor-title"
-                value={note.title}
-                onChange={(e) => onUpdate(note.id, { title: e.target.value })}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); textareaRef.current?.focus() } }}
-                placeholder="Untitled"
-              />
               <textarea
                 ref={textareaRef}
                 className="editor-textarea"
