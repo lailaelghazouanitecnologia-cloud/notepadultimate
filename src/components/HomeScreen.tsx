@@ -14,6 +14,14 @@ interface ChatMessage {
   content: string
 }
 
+const COMMANDS = [
+  { cmd: '/new', args: 'Title', desc: 'Create a new note' },
+  { cmd: '/search', args: 'query', desc: 'Search your notes' },
+  { cmd: '/list', args: '', desc: 'List all notes' },
+  { cmd: '/open', args: 'Title', desc: 'Open a note by name' },
+  { cmd: '/help', args: '', desc: 'Show all commands' },
+]
+
 function getGreeting(): { greeting: string; subtitle: string } {
   const h = new Date().getHours()
   if (h < 12) return { greeting: 'Good morning', subtitle: 'How can I help you today?' }
@@ -24,12 +32,24 @@ function getGreeting(): { greeting: string; subtitle: string } {
 export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps) {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const inputRef = useRef<HTMLDivElement>(null)
+  const [showCommands, setShowCommands] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const cmdRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // Close commands menu on outside click
+  useEffect(() => {
+    if (!showCommands) return
+    const handler = (e: MouseEvent) => {
+      if (cmdRef.current && !cmdRef.current.contains(e.target as Node)) setShowCommands(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showCommands])
 
   const processCommand = useCallback((text: string): string => {
     const lower = text.toLowerCase().trim()
@@ -52,7 +72,7 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
       return `**${notes.length} notes:**\n${notes.map((n) => `• **${n.title}**`).join('\n')}`
     }
     if (lower === '/help' || lower === '?') {
-      return `**Commands:**\n• \`/new Title\` — Create a new note\n• \`/search query\` — Search notes\n• \`/list\` — List all notes\n• \`/open Title\` — Open a note\n• Or just type to generate a note`
+      return `**Commands:**\n• \`/new Title\` — Create a note\n• \`/search query\` — Search notes\n• \`/list\` — List all notes\n• \`/open Title\` — Open a note\n• Or just type to generate a note`
     }
     if (lower.startsWith('/open ')) {
       const title = text.replace(/^\/open\s+/i, '').trim().toLowerCase()
@@ -73,9 +93,9 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
   const handleSend = useCallback(() => {
     const text = input.trim()
     if (!text) return
-
     setMessages((prev) => [...prev, { id: `msg-${Date.now()}`, role: 'user', content: text }])
     setInput('')
+    setShowCommands(false)
 
     setTimeout(() => {
       const response = processCommand(text)
@@ -93,12 +113,32 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
     [handleSend]
   )
 
+  const selectCommand = (cmd: string) => {
+    setInput(cmd + ' ')
+    setShowCommands(false)
+    textareaRef.current?.focus()
+  }
+
   const isEmpty = messages.length === 0
   const { greeting, subtitle } = getGreeting()
+  const totalTokens = messages.length * 280
 
   return (
     <div className="content-area">
       <div className="home-chat">
+        {/* Chat header */}
+        <div className="zw-chat-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {Icons.sparkles()}
+            <span>Zarnetti Chat</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ fontSize: 10, color: 'var(--muted-foreground)' }}>
+              {notes.length} notes
+            </span>
+          </div>
+        </div>
+
         {/* Messages */}
         <div className="chat-messages">
           {isEmpty && (
@@ -142,66 +182,69 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Manus-style chat input card */}
-        <div className="chat-input-card-wrap">
-          <div className="chat-input-card">
-            <div className="chat-input-card__editor">
-              <textarea
-                ref={inputRef as unknown as React.RefObject<HTMLTextAreaElement>}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Assign a task or ask anything"
-                className="chat-input-card__textarea"
-                rows={1}
-              />
+        {/* Input area — Zarhwell style */}
+        <div className="zw-chat-input-area">
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask anything..."
+            className="zw-chat-textarea"
+          />
+          <div className="zw-chat-input-toolbar">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, position: 'relative' }} ref={cmdRef}>
+              {/* / commands button */}
+              <button
+                className="zw-cmd-btn"
+                onClick={() => setShowCommands(!showCommands)}
+                title="Commands"
+              >
+                <span className="zw-cmd-btn__slash">/</span>
+              </button>
+              {showCommands && (
+                <div className="zw-cmd-menu">
+                  <div className="zw-cmd-menu__title">Commands</div>
+                  {COMMANDS.map((c) => (
+                    <button
+                      key={c.cmd}
+                      className="zw-cmd-menu__item"
+                      onClick={() => selectCommand(c.cmd)}
+                    >
+                      <span className="zw-cmd-menu__cmd">{c.cmd}</span>
+                      {c.args && <span className="zw-cmd-menu__args">{c.args}</span>}
+                      <span className="zw-cmd-menu__desc">{c.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="chat-input-card__toolbar">
-              <div className="chat-input-card__left">
-                <button className="chat-input-card__icon-btn" title="Add">
-                  {Icons.plus()}
-                </button>
-                <button className="chat-input-card__pill" title="Connect GitHub">
-                  {Icons.github()}
-                </button>
-              </div>
-              <div className="chat-input-card__right">
-                {isEmpty && (
-                  <div className="chat-input-card__shortcuts">
-                    {[
-                      { label: '/new', cmd: '/new ' },
-                      { label: '/search', cmd: '/search ' },
-                      { label: '/list', cmd: '/list' },
-                      { label: '/help', cmd: '/help' },
-                    ].map((s) => (
-                      <button
-                        key={s.cmd}
-                        className="shortcut-chip"
-                        onClick={() => { setInput(s.cmd); inputRef.current?.focus() }}
-                      >
-                        {s.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <button
-                  onClick={handleSend}
-                  className={`chat-send-btn ${input.trim() ? 'active' : ''}`}
-                  disabled={!input.trim()}
-                  aria-label="Send"
-                >
-                  {Icons.arrowUp()}
-                </button>
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button
+                onClick={handleSend}
+                className={`zw-chat-send-btn ${input.trim() ? 'active' : ''}`}
+                aria-label="Send"
+              >
+                {Icons.arrowUp()}
+              </button>
             </div>
           </div>
+        </div>
 
-          {/* Connect tools strip */}
-          <div className="chat-connect-strip">
-            <span className="chat-connect-strip__text">Connect your tools to Zarnetti</span>
-            <div className="chat-connect-strip__icons">
-              {Icons.github()}
+        {/* Footer — status bar with tokens + indicators */}
+        <div className="zw-chat-footer">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+            <span className="zw-chat-footer-name">Zarnetti Chat</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span className="zw-chat-op-indicator" data-op="read" />
+              <span className="zw-chat-op-indicator" data-op="idle" />
             </div>
+            <span className="zw-stat-sep" />
+            <span className="zw-chat-footer-stat">~{totalTokens} tokens</span>
+            <span className="zw-stat-sep" />
+            <span className="zw-chat-footer-stat">{messages.length} msgs</span>
           </div>
         </div>
       </div>
