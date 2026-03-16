@@ -9,7 +9,6 @@
   --zw-sidebar-w: 260px;
   --zw-breadcrumb-h: 28px;
   --animation-fast: 0.15s;
-  --animation-normal: 0.3s;
   --font-xxs: 10px;
   --font-xs: 11px;
   --font-sm: 12px;
@@ -19,7 +18,6 @@
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --layout-icon-size: 22px;
-  --layout-menu-h: 28px;
 }
 
 :root {
@@ -33,15 +31,12 @@
   --border: #2a2a2a;
   --input: #2a2a2a;
   --ring: #555;
-  --sidebar-background: #181818;
+  --surface: #141414;
+  --sidebar-background: #141414;
   --sidebar-foreground: #e0e0e0;
   --sidebar-border: #2a2a2a;
-  --sidebar-accent: #2a2a2a;
   --zw-accent: #a882ff;
   --zw-red: #e84057;
-  --color-header-bg: #141414;
-  --color-header-border: #2a2a2a;
-  --color-header-hover: #2a2a2a;
   --color-code-bg: #161616;
   --color-code-text: #c4a1ff;
   --destructive: #e84057;
@@ -65,35 +60,28 @@ html, body {
 ::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
 
 /* ═══════════════════════════════════════════════════
-   LAYOUT
+   LAYOUT — sidebar full height, header inside main
    ═══════════════════════════════════════════════════ */
-.app { display: flex; flex-direction: column; height: 100vh; }
+.app { display: flex; flex-direction: row; height: 100vh; }
+.app-main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
 
 /* ── Header ── */
 .header {
   height: var(--zw-header-h); display: flex; align-items: center;
   padding: 0 12px; gap: 12px; flex-shrink: 0;
-  background: var(--color-header-bg); border-bottom: 1px solid var(--color-header-border);
+  background: var(--surface); border-bottom: 1px solid var(--border);
 }
-.header__left { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-
-/* Avatar — GitHub-style identicon */
-.header__avatar {
-  width: 24px; height: 24px; border-radius: 4px; overflow: hidden; flex-shrink: 0;
-  border: 1px solid var(--border);
-}
-.header__avatar-img { width: 100%; height: 100%; display: block; }
-
+.header__left { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .header__logo { width: 14px; height: 14px; color: var(--zw-red); flex-shrink: 0; }
 
-/* Project dropdown trigger */
+/* Project dropdown */
 .header__project-btn {
-  display: flex; align-items: center; gap: 4px;
+  display: flex; align-items: center; gap: 6px;
   background: transparent; border: none; cursor: pointer;
   color: var(--foreground); font-family: var(--font-sans);
-  padding: 2px 6px; border-radius: 4px; transition: background 0.1s ease;
+  padding: 4px 8px; border-radius: 5px; transition: background 0.1s ease;
 }
-.header__project-btn:hover { background: var(--color-header-hover); }
+.header__project-btn:hover { background: rgba(255,255,255,0.05); }
 .header__title { font-size: 13px; font-weight: 600; user-select: none; }
 .header__project-btn svg { width: 12px; height: 12px; color: var(--muted-foreground); }
 
@@ -103,7 +91,7 @@ html, body {
   display: flex; align-items: center; gap: 6px;
   width: 25%; min-width: 160px; max-width: 320px;
   height: 26px; padding: 0 10px;
-  background: var(--muted); border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
   border-radius: 6px; transition: border-color 0.12s ease;
 }
 .header__search:focus-within { border-color: var(--ring); }
@@ -124,34 +112,32 @@ html, body {
   font-size: 12px; font-weight: 500; font-family: var(--font-sans);
   cursor: pointer; transition: all 0.12s ease;
 }
-.header__invite-btn:hover { background: var(--color-header-hover); color: var(--foreground); border-color: var(--ring); }
+.header__invite-btn:hover { background: rgba(255,255,255,0.05); color: var(--foreground); border-color: var(--ring); }
 .header__invite-btn svg { width: 14px; height: 14px; }
 
-/* Icon button (generic) */
+/* Generic icon button */
 .icon-btn {
   display: inline-flex; align-items: center; justify-content: center;
   background: none; border: none; cursor: pointer; border-radius: 4px; padding: 3px;
   color: var(--muted-foreground); transition: all var(--animation-fast) ease;
   width: var(--layout-icon-size); height: var(--layout-icon-size);
 }
-.icon-btn:hover { color: var(--foreground); background: var(--color-header-hover); }
+.icon-btn:hover { color: var(--foreground); background: rgba(255,255,255,0.05); }
 .icon-btn.active { color: var(--foreground); background: var(--accent); }
 .icon-btn svg { width: 16px; height: 16px; }
 
-.main-layout { flex: 1; display: flex; overflow: hidden; }
-
 /* ═══════════════════════════════════════════════════
-   SIDEBAR (Zarhwell: icon rail + content panel)
+   SIDEBAR (full height, Zarhwell: rail + content)
    ═══════════════════════════════════════════════════ */
 .zw-sb {
   width: var(--zw-sidebar-w); flex-shrink: 0;
   display: flex; flex-direction: row;
-  background: var(--sidebar-background);
+  background: var(--surface);
   border-right: 1px solid var(--sidebar-border);
-  overflow: hidden;
+  overflow: hidden; height: 100%;
 }
 
-/* Icon rail (left thin column) */
+/* Icon rail */
 .zw-sb-rail {
   width: 40px; flex-shrink: 0;
   display: flex; flex-direction: column; align-items: center;
@@ -176,7 +162,20 @@ html, body {
 .zw-sb-rail-btn.active { color: var(--foreground); background: rgba(255,255,255,0.07); }
 .zw-sb-rail-btn svg { width: 18px; height: 18px; }
 
-/* Content panel (right wider column) */
+/* Avatar at bottom of rail */
+.zw-sb-avatar-btn {
+  width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+  border: none; background: transparent; cursor: pointer; border-radius: 4px; transition: all 0.12s ease;
+}
+.zw-sb-avatar-btn:hover { opacity: 0.8; }
+.zw-sb-avatar {
+  width: 26px; height: 26px; border-radius: 4px;
+  overflow: hidden; border: 2px solid transparent; transition: border-color 0.12s ease;
+}
+.zw-sb-avatar-btn:hover .zw-sb-avatar { border-color: var(--zw-red); }
+.zw-sb-avatar-img { width: 100%; height: 100%; display: block; }
+
+/* Content panel */
 .zw-sb-content { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
 
 /* Workspace dropdown */
@@ -187,7 +186,7 @@ html, body {
   font-size: 11px; font-weight: 600; color: var(--foreground); transition: all 0.12s ease;
   font-family: var(--font-sans);
 }
-.zw-ws-trigger:hover { background: var(--accent); border-color: var(--border); }
+.zw-ws-trigger:hover { background: rgba(255,255,255,0.04); border-color: var(--border); }
 .zw-ws-trigger svg { width: 14px; height: 14px; color: var(--muted-foreground); flex-shrink: 0; }
 
 /* Content header */
@@ -204,7 +203,7 @@ html, body {
   border: none; background: transparent; color: var(--muted-foreground); border-radius: 5px;
   cursor: pointer; transition: all 0.12s ease;
 }
-.zw-sb-icon-btn:hover { background: var(--accent); color: var(--foreground); }
+.zw-sb-icon-btn:hover { background: rgba(255,255,255,0.05); color: var(--foreground); }
 .zw-sb-icon-btn svg { width: 14px; height: 14px; }
 
 /* Search */
@@ -236,7 +235,7 @@ html, body {
 .zw-sb-item.active { background: rgba(255,255,255,0.07); }
 .zw-sb-item svg { width: 14px; height: 14px; color: var(--muted-foreground); flex-shrink: 0; }
 
-/* Trailing delete button */
+/* Trailing delete */
 .zw-sb-item-trailing { margin-left: auto; opacity: 0; transition: opacity 0.1s ease; }
 .zw-sb-item:hover .zw-sb-item-trailing { opacity: 1; }
 .zw-sb-item-menu {
@@ -251,7 +250,7 @@ html, body {
    ═══════════════════════════════════════════════════ */
 .content-area { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--background); }
 
-/* Tabs bar */
+/* Tabs */
 .tabs-bar {
   display: flex; align-items: center; height: 34px; flex-shrink: 0;
   background: var(--background); border-bottom: 1px solid var(--border); padding: 0 8px;
@@ -316,7 +315,7 @@ html, body {
 .editor-textarea::placeholder { color: var(--muted-foreground); opacity: 0.45; }
 
 /* ═══════════════════════════════════════════════════
-   HOME / CHAT (Zarhwell AI Chat Panel)
+   HOME / CHAT — Search + command center
    ═══════════════════════════════════════════════════ */
 .home-chat { flex: 1; display: flex; flex-direction: column; background: var(--background); }
 
@@ -375,15 +374,14 @@ html, body {
 }
 .chat-msg__action-btn:hover { color: var(--foreground); background: var(--accent); }
 
-/* ── Chat input area — centered, compact ── */
-.zw-chat-input-wrap {
-  flex-shrink: 0; display: flex; justify-content: center;
-  padding: 8px 16px 6px; border-top: 1px solid var(--border); background: var(--background);
-}
+/* ── Chat input — centered card, NO border-top wrapper ── */
 .zw-chat-input-area {
-  width: 100%; max-width: 640px;
+  flex-shrink: 0; width: 100%; max-width: 640px;
+  margin: 0 auto 12px; padding: 0 16px;
+}
+.zw-chat-input-card {
   background: var(--card); border: 1px solid var(--border);
-  border-radius: 10px; overflow: hidden;
+  border-radius: 12px; overflow: hidden;
 }
 .zw-chat-textarea {
   display: block; width: 100%; background: transparent; border: none; outline: none;
@@ -415,7 +413,7 @@ html, body {
 .zw-cmd-btn:hover { background: var(--accent); color: var(--foreground); border-color: var(--ring); }
 .zw-cmd-btn__slash { font-size: 14px; font-weight: 600; font-family: var(--font-mono); }
 
-/* Commands dropdown menu */
+/* Commands dropdown */
 .zw-cmd-menu {
   position: absolute; bottom: 100%; left: 0; margin-bottom: 6px;
   background: var(--popover); border: 1px solid var(--border); border-radius: 10px;
@@ -436,7 +434,7 @@ html, body {
 .zw-cmd-menu__args { color: var(--muted-foreground); font-style: italic; font-size: 11px; }
 .zw-cmd-menu__desc { color: var(--muted-foreground); font-size: 11px; margin-left: auto; }
 
-/* Chat footer (status bar) */
+/* Chat footer */
 .zw-chat-footer {
   display: flex; align-items: center; justify-content: space-between; gap: 6px;
   padding: 4px 12px; background: var(--background); border-top: 1px solid var(--border);
@@ -472,8 +470,3 @@ html, body {
    ═══════════════════════════════════════════════════ */
 @keyframes scale-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes block-bounce { 0% { transform: scaleY(0.5); opacity: 0.35; } 100% { transform: scaleY(1); opacity: 1; } }
-.loading-block {
-  display: inline-block; width: 5px; height: 10px; border-radius: 1px;
-  background: var(--zw-red); animation: block-bounce 0.6s ease-in-out infinite alternate;
-}

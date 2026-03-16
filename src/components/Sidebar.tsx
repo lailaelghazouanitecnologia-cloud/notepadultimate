@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { Note } from '../types'
 import type { View } from '../App'
-import { ZarnettiLogo, Icons } from '../lib/icons'
+import { ZarnettiLogo, Identicon, Icons } from '../lib/icons'
 
 interface SidebarProps {
   notes: Note[]
@@ -52,15 +52,16 @@ export function Sidebar({ notes, activeId, onSelect, onAdd, onDelete, activeView
         </div>
         <div style={{ flex: 1 }} />
         <div className="zw-sb-rail-bottom">
-          <button className="zw-sb-rail-btn" title="Settings">
-            {Icons.settings()}
+          <button className="zw-sb-avatar-btn" title="Account">
+            <div className="zw-sb-avatar">
+              <Identicon className="zw-sb-avatar-img" />
+            </div>
           </button>
         </div>
       </div>
 
       {/* Right: content panel */}
       <div className="zw-sb-content">
-        {/* Workspace dropdown */}
         <div className="zw-ws-dropdown">
           <button className="zw-ws-trigger">
             {Icons.files()}
@@ -68,7 +69,6 @@ export function Sidebar({ notes, activeId, onSelect, onAdd, onDelete, activeView
           </button>
         </div>
 
-        {/* Section header */}
         <div className="zw-sb-content-top">
           <span className="zw-sb-label">Files</span>
           <button className="zw-sb-icon-btn" onClick={onAdd} title="New file">
@@ -76,7 +76,6 @@ export function Sidebar({ notes, activeId, onSelect, onAdd, onDelete, activeView
           </button>
         </div>
 
-        {/* Search */}
         <div className="zw-sb-search">
           <div className="zw-sb-search-input">
             {Icons.search()}
@@ -90,7 +89,6 @@ export function Sidebar({ notes, activeId, onSelect, onAdd, onDelete, activeView
           </div>
         </div>
 
-        {/* File list */}
         <div className="zw-sb-content-scroll">
           {filtered.length === 0 && (
             <div style={{ textAlign: 'center', color: 'var(--muted-foreground)', fontSize: 11, padding: '24px 0' }}>

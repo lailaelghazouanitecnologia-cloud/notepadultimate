@@ -24,9 +24,9 @@ const COMMANDS = [
 
 function getGreeting(): { greeting: string; subtitle: string } {
   const h = new Date().getHours()
-  if (h < 12) return { greeting: 'Good morning', subtitle: 'How can I help you today?' }
-  if (h < 18) return { greeting: 'Good afternoon', subtitle: 'What are you working on?' }
-  return { greeting: 'Good evening', subtitle: 'What can I assist you with?' }
+  if (h < 12) return { greeting: 'Good morning', subtitle: 'Search, create, or ask anything' }
+  if (h < 18) return { greeting: 'Good afternoon', subtitle: 'Search, create, or ask anything' }
+  return { greeting: 'Good evening', subtitle: 'Search, create, or ask anything' }
 }
 
 export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps) {
@@ -41,7 +41,6 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Close commands menu on outside click
   useEffect(() => {
     if (!showCommands) return
     const handler = (e: MouseEvent) => {
@@ -72,7 +71,7 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
       return `**${notes.length} notes:**\n${notes.map((n) => `• **${n.title}**`).join('\n')}`
     }
     if (lower === '/help' || lower === '?') {
-      return `**Commands:**\n• \`/new Title\` — Create a note\n• \`/search query\` — Search notes\n• \`/list\` — List all notes\n• \`/open Title\` — Open a note\n• Or just type to generate a note`
+      return `**Commands:**\n• \`/new Title\` — Create a note\n• \`/search query\` — Search notes\n• \`/list\` — List all notes\n• \`/open Title\` — Open a note\n• Or just type to search & generate`
     }
     if (lower.startsWith('/open ')) {
       const title = text.replace(/^\/open\s+/i, '').trim().toLowerCase()
@@ -84,8 +83,17 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
       return `No note found matching "${title}".`
     }
 
+    // Default: search first, then create
+    const query = text.toLowerCase()
+    const found = notes.filter(
+      (n) => n.title.toLowerCase().includes(query) || n.content.toLowerCase().includes(query)
+    )
+    if (found.length > 0) {
+      return `Found **${found.length}** note(s):\n${found.map((n) => `• **${n.title}**`).join('\n')}\n\n_Type \`/new ${text}\` to create a new note instead._`
+    }
+
     const title = text.length > 40 ? text.slice(0, 40) + '...' : text
-    const content = `# ${title}\n\n${text}\n\n---\n*Generated from Zarnetti chat*`
+    const content = `# ${title}\n\n${text}\n\n---\n*Generated from Zarnetti*`
     onCreateNote(title, content)
     return `Created note from your input. Opening editor.`
   }, [notes, onCreateNote, onOpenNote])
@@ -105,10 +113,7 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault()
-        handleSend()
-      }
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
     },
     [handleSend]
   )
@@ -126,11 +131,11 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
   return (
     <div className="content-area">
       <div className="home-chat">
-        {/* Chat header */}
+        {/* Header bar */}
         <div className="zw-chat-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {Icons.sparkles()}
-            <span>Zarnetti Chat</span>
+            <span>Zarnetti</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <span style={{ fontSize: 10, color: 'var(--muted-foreground)' }}>
@@ -139,7 +144,7 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
           </div>
         </div>
 
-        {/* Messages */}
+        {/* Messages / welcome */}
         <div className="chat-messages">
           {isEmpty && (
             <div className="chat-welcome">
@@ -161,6 +166,7 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
                       const parsed = line
                         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
                         .replace(/`([^`]+)`/g, '<code>$1</code>')
+                        .replace(/^_(.+)_$/, '<em>$1</em>')
                       return <div key={j} dangerouslySetInnerHTML={{ __html: parsed }} />
                     })
                   : msg.content
@@ -182,15 +188,15 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input area — centered, compact */}
-        <div className="zw-chat-input-wrap">
-          <div className="zw-chat-input-area">
+        {/* Input — centered card, no border-top wrapper */}
+        <div className="zw-chat-input-area">
+          <div className="zw-chat-input-card">
             <textarea
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask anything..."
+              placeholder="Search or ask anything..."
               className="zw-chat-textarea"
             />
             <div className="zw-chat-input-toolbar">
@@ -232,10 +238,10 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
           </div>
         </div>
 
-        {/* Footer — status bar with tokens + indicators */}
+        {/* Footer — connectors + status */}
         <div className="zw-chat-footer">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-            <span className="zw-chat-footer-name">Zarnetti Chat</span>
+            <span className="zw-chat-footer-name">Zarnetti</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
