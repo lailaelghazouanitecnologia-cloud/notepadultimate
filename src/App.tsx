@@ -276,15 +276,13 @@ export default function App() {
       <div className="app-main">
         <header className="header">
           <div className="header__left">
-            {sidebarCollapsed && (
-              <button
-                className="zw-sb-toggle"
-                onClick={() => setSidebarCollapsed(false)}
-                title="Open sidebar"
-              >
-                {Icons.menu()}
-              </button>
-            )}
+            <button
+              className={`zw-sb-toggle ${sidebarCollapsed ? '' : 'hidden'}`}
+              onClick={() => setSidebarCollapsed(false)}
+              title="Open sidebar"
+            >
+              {Icons.menu()}
+            </button>
             <div className="zw-mode-switcher">
               {modes.map((m) => (
                 <button
@@ -307,15 +305,14 @@ export default function App() {
           </div>
 
           <div className="header__right">
-            {view === 'chat' && !showEditor && !pluginPanel && (
-              <button
-                className={`header__icon-btn ${showHistory ? 'active' : ''}`}
-                onClick={() => setShowHistory(!showHistory)}
-                title="Chat history"
-              >
-                {Icons.clock()}
-              </button>
-            )}
+            <button
+              className={`header__icon-btn ${showHistory ? 'active' : ''} ${!(view === 'chat' && !showEditor && !pluginPanel) ? 'header__icon-btn--hidden' : ''}`}
+              onClick={() => setShowHistory(!showHistory)}
+              title="Chat history"
+              tabIndex={view === 'chat' && !showEditor && !pluginPanel ? 0 : -1}
+            >
+              {Icons.clock()}
+            </button>
 
             {/* Plugins dropdown */}
             <div style={{ position: 'relative' }} ref={pluginsRef}>
@@ -350,17 +347,16 @@ export default function App() {
               )}
             </div>
 
-            {/* Publish — far right */}
-            {showEditor && editingNote && (
-              <button
-                className={`header__publish-btn ${editingNote.published ? 'published' : ''}`}
-                onClick={handlePublish}
-                title={editingNote.published ? 'Published' : 'Publish note'}
-              >
-                {editingNote.published ? Icons.check() : Icons.upload()}
-                <span>{editingNote.published ? 'Published' : 'Publish'}</span>
-              </button>
-            )}
+            {/* Publish — far right, always present for layout stability */}
+            <button
+              className={`header__publish-btn ${editingNote?.published ? 'published' : ''} ${!(showEditor && editingNote) ? 'header__publish-btn--hidden' : ''}`}
+              onClick={handlePublish}
+              title={editingNote?.published ? 'Published' : 'Publish note'}
+              tabIndex={showEditor && editingNote ? 0 : -1}
+            >
+              {editingNote?.published ? Icons.check() : Icons.upload()}
+              <span>{editingNote?.published ? 'Published' : 'Publish'}</span>
+            </button>
           </div>
         </header>
 
