@@ -7,7 +7,7 @@ export type PluginPanel = 'agents' | null
 export interface ChatSession {
   id: string
   title: string
-  messages: { id: string; role: 'user' | 'assistant'; content: string }[]
+  messages: { id: string; role: 'user' | 'assistant'; content: string; timestamp?: number }[]
   createdAt: number
 }
 
