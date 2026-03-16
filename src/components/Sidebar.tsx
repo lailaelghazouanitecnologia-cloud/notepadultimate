@@ -158,160 +158,150 @@ export function Sidebar({
 
   return (
     <aside className={`zw-sb ${collapsed ? 'collapsed' : ''}`}>
-      {/* Icon rail */}
-      <div className="zw-sb-rail">
-        <div className="zw-sb-rail-top">
-          <div className="zw-sb-rail-logo">
-            <ZarnettiLogo className="zw-sb-rail-logo-svg" />
-          </div>
-          <button className="zw-sb-rail-btn active" title="Files">
-            {Icons.files()}
-          </button>
-          <button className="zw-sb-rail-btn" title="Search">
-            {Icons.search()}
+      {/* Top bar: workspace button + close */}
+      <div className="zw-sb-topbar">
+        <button
+          className="zw-sb-topbar__team"
+          onClick={() => setShowProjects(!showProjects)}
+        >
+          <ZarnettiLogo className="zw-sb-topbar__logo" />
+          <span className="zw-sb-topbar__name">{activeProject?.name || 'Zarnetti'}</span>
+          {Icons.chevronDown({ className: 'zw-sb-topbar__chevron' })}
+        </button>
+        <button
+          className="zw-sb-topbar__close"
+          onClick={onToggleCollapse}
+          title="Close sidebar"
+        >
+          {Icons.panelLeftClose()}
+        </button>
+      </div>
+
+      {/* Project switcher dropdown */}
+      {showProjects && (
+        <div className="zw-ws-menu" style={{ margin: '0 8px' }}>
+          {projects.map((p) => (
+            <button
+              key={p.id}
+              className={`zw-ws-menu-item ${p.id === activeProjectId ? 'active' : ''}`}
+              onClick={() => { onSwitchProject(p.id); setShowProjects(false) }}
+            >
+              <span className="truncate">{p.name}</span>
+              {p.id === activeProjectId && (
+                <span className="zw-ws-menu-check">{Icons.check()}</span>
+              )}
+            </button>
+          ))}
+          <div className="zw-ws-menu-divider" />
+          <button
+            className="zw-ws-menu-item"
+            onClick={() => {
+              onCreateProject(`Project ${projects.length + 1}`, '📁')
+              setShowProjects(false)
+            }}
+          >
+            {Icons.plus()}
+            <span>New project</span>
           </button>
         </div>
-        <div style={{ flex: 1 }} />
-        <div className="zw-sb-rail-bottom" ref={avatarRef} style={{ position: 'relative' }}>
-          <button
-            className="zw-sb-toggle"
-            onClick={onToggleCollapse}
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {collapsed ? Icons.panelLeft() : Icons.panelLeftClose()}
-          </button>
-          <button
-            className="zw-sb-avatar-btn"
-            title="Account"
-            onClick={() => setShowAvatarMenu(!showAvatarMenu)}
-          >
-            <div className="zw-sb-avatar">
-              <Identicon className="zw-sb-avatar-img" />
-            </div>
-          </button>
-          {showAvatarMenu && (
-            <div className="zw-avatar-menu">
-              <div className="zw-avatar-menu__header">
-                <div className="zw-avatar-menu__name">User</div>
-                <div className="zw-avatar-menu__handle">@user</div>
-              </div>
-              <button className="zw-avatar-menu__item" onClick={() => setShowAvatarMenu(false)}>
-                {Icons.settings()}
-                <span>Settings</span>
-              </button>
-              <button className="zw-avatar-menu__item" onClick={() => setShowAvatarMenu(false)}>
-                {Icons.moon()}
-                <span>Appearance</span>
-              </button>
-              <div className="zw-avatar-menu__divider" />
-              <button className="zw-avatar-menu__item" onClick={() => setShowAvatarMenu(false)}>
-                {Icons.logOut()}
-                <span>Log out</span>
-              </button>
-            </div>
-          )}
+      )}
+
+      {/* Search */}
+      <div className="zw-sb-search">
+        <div className="zw-sb-search-wrap">
+          <span className="zw-sb-search-icon">{Icons.search()}</span>
+          <input
+            type="text"
+            className="zw-sb-search-field"
+            placeholder="Search..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <span className="zw-sb-search-kbd">
+            {Icons.command()}K
+          </span>
         </div>
       </div>
 
-      {/* Content panel */}
-      <div className="zw-sb-content">
-        {/* Project switcher */}
-        <div className="zw-ws-dropdown">
-          <button
-            className="zw-ws-trigger"
-            onClick={() => setShowProjects(!showProjects)}
-          >
+      {/* Files header */}
+      <div className="zw-sb-content-top">
+        <span className="zw-sb-label">Files</span>
+        <div style={{ display: 'flex', gap: 2 }}>
+          <button className="zw-sb-icon-btn" onClick={() => setCreatingFolder('__root__')} title="New folder">
             {Icons.folder()}
-            <span className="truncate">{activeProject?.name || 'Zarnetti'}</span>
-            {Icons.chevronDown()}
           </button>
-          {showProjects && (
-            <div className="zw-ws-menu">
-              {projects.map((p) => (
-                <button
-                  key={p.id}
-                  className={`zw-ws-menu-item ${p.id === activeProjectId ? 'active' : ''}`}
-                  onClick={() => { onSwitchProject(p.id); setShowProjects(false) }}
-                >
-                  <span className="truncate">{p.name}</span>
-                  {p.id === activeProjectId && (
-                    <span className="zw-ws-menu-check">{Icons.check()}</span>
-                  )}
-                </button>
-              ))}
-              <div className="zw-ws-menu-divider" />
-              <button
-                className="zw-ws-menu-item"
-                onClick={() => {
-                  onCreateProject(`Project ${projects.length + 1}`, '📁')
-                  setShowProjects(false)
-                }}
-              >
-                {Icons.plus()}
-                <span>New project</span>
-              </button>
-            </div>
-          )}
+          <button className="zw-sb-icon-btn" onClick={() => onAdd()} title="New file">
+            {Icons.plus()}
+          </button>
         </div>
+      </div>
 
-        <div className="zw-sb-content-top">
-          <span className="zw-sb-label">Files</span>
-          <div style={{ display: 'flex', gap: 2 }}>
-            <button className="zw-sb-icon-btn" onClick={() => setCreatingFolder('__root__')} title="New folder">
+      {/* File tree */}
+      <div className="zw-sb-content-scroll">
+        {creatingFolder !== null && (
+          <div style={{ padding: '2px 4px' }}>
+            <div className="zw-sb-item" style={{ gap: 4 }}>
               {Icons.folder()}
-            </button>
-            <button className="zw-sb-icon-btn" onClick={() => onAdd()} title="New file">
-              {Icons.plus()}
-            </button>
-          </div>
-        </div>
-
-        <div className="zw-sb-search">
-          <div className="zw-sb-search-input">
-            {Icons.search()}
-            <input
-              type="text"
-              className="zw-sb-search-field"
-              placeholder="Search notes..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="zw-sb-content-scroll">
-          {/* New folder input */}
-          {creatingFolder !== null && (
-            <div style={{ padding: '2px 4px' }}>
-              <div className="zw-sb-item" style={{ gap: 4 }}>
-                {Icons.folder()}
-                <input
-                  ref={folderInputRef}
-                  type="text"
-                  value={newFolderName}
-                  onChange={(e) => setNewFolderName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleCreateFolder()
-                    if (e.key === 'Escape') { setCreatingFolder(null); setNewFolderName('') }
-                  }}
-                  onBlur={() => { if (newFolderName.trim()) handleCreateFolder(); else { setCreatingFolder(null); setNewFolderName('') } }}
-                  placeholder="Folder name..."
-                  style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 11, color: 'var(--foreground)', fontFamily: 'var(--font-sans)' }}
-                />
-              </div>
+              <input
+                ref={folderInputRef}
+                type="text"
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreateFolder()
+                  if (e.key === 'Escape') { setCreatingFolder(null); setNewFolderName('') }
+                }}
+                onBlur={() => { if (newFolderName.trim()) handleCreateFolder(); else { setCreatingFolder(null); setNewFolderName('') } }}
+                placeholder="Folder name..."
+                style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 11, color: 'var(--foreground)', fontFamily: 'var(--font-sans)' }}
+              />
             </div>
-          )}
-
-          {filtered.length === 0 && folders.length === 0 && (
-            <div style={{ textAlign: 'center', color: 'var(--muted-foreground)', fontSize: 11, padding: '24px 0' }}>
-              {notes.length === 0 ? 'No notes yet' : 'No results'}
-            </div>
-          )}
-          <div className="zw-sb-items">
-            {rootFolders.map(renderFolder)}
-            {rootNotes.map(renderNote)}
           </div>
+        )}
+
+        {filtered.length === 0 && folders.length === 0 && (
+          <div style={{ textAlign: 'center', color: 'var(--muted-foreground)', fontSize: 11, padding: '24px 0' }}>
+            {notes.length === 0 ? 'No notes yet' : 'No results'}
+          </div>
+        )}
+        <div className="zw-sb-items">
+          {rootFolders.map(renderFolder)}
+          {rootNotes.map(renderNote)}
         </div>
+      </div>
+
+      {/* Bottom: avatar */}
+      <div className="zw-sb-bottom" ref={avatarRef} style={{ position: 'relative' }}>
+        <button
+          className="zw-sb-avatar-btn"
+          title="Account"
+          onClick={() => setShowAvatarMenu(!showAvatarMenu)}
+        >
+          <div className="zw-sb-avatar">
+            <Identicon className="zw-sb-avatar-img" />
+          </div>
+        </button>
+        {showAvatarMenu && (
+          <div className="zw-avatar-menu">
+            <div className="zw-avatar-menu__header">
+              <div className="zw-avatar-menu__name">User</div>
+              <div className="zw-avatar-menu__handle">@user</div>
+            </div>
+            <button className="zw-avatar-menu__item" onClick={() => setShowAvatarMenu(false)}>
+              {Icons.settings()}
+              <span>Settings</span>
+            </button>
+            <button className="zw-avatar-menu__item" onClick={() => setShowAvatarMenu(false)}>
+              {Icons.moon()}
+              <span>Appearance</span>
+            </button>
+            <div className="zw-avatar-menu__divider" />
+            <button className="zw-avatar-menu__item" onClick={() => setShowAvatarMenu(false)}>
+              {Icons.logOut()}
+              <span>Log out</span>
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   )
