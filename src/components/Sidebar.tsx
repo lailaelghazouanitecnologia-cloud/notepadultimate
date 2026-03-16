@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { Note } from '../types'
+import type { View } from '../App'
 import { ZarnettiLogo, Icons } from '../lib/icons'
 
 interface SidebarProps {
@@ -8,11 +9,12 @@ interface SidebarProps {
   onSelect: (id: string) => void
   onAdd: () => void
   onDelete: (id: string) => void
+  activeView: View
+  onViewChange: (view: View) => void
 }
 
-export function Sidebar({ notes, activeId, onSelect, onAdd, onDelete }: SidebarProps) {
+export function Sidebar({ notes, activeId, onSelect, onAdd, onDelete, activeView, onViewChange }: SidebarProps) {
   const [search, setSearch] = useState('')
-  const [showAvatar, setShowAvatar] = useState(false)
 
   const filtered = notes.filter(
     (n) =>
@@ -23,6 +25,12 @@ export function Sidebar({ notes, activeId, onSelect, onAdd, onDelete }: SidebarP
   const formatDate = (ts: number) =>
     new Date(ts).toLocaleDateString('es', { day: 'numeric', month: 'short' })
 
+  const navItems: { id: View; icon: (p?: object) => React.ReactNode; label: string }[] = [
+    { id: 'home', icon: Icons.sparkles, label: 'Chat' },
+    { id: 'files', icon: Icons.files, label: 'Files' },
+    { id: 'graph', icon: Icons.graph, label: 'Graph' },
+  ]
+
   return (
     <aside className="zw-sb">
       {/* Left: icon rail */}
@@ -31,23 +39,21 @@ export function Sidebar({ notes, activeId, onSelect, onAdd, onDelete }: SidebarP
           <div className="zw-sb-rail-logo">
             <ZarnettiLogo className="zw-sb-rail-logo-svg" />
           </div>
-          <button className="zw-sb-rail-btn active" title="Files">
-            {Icons.files()}
-          </button>
-          <button className="zw-sb-rail-btn" title="Search">
-            {Icons.search()}
-          </button>
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              className={`zw-sb-rail-btn ${activeView === item.id ? 'active' : ''}`}
+              onClick={() => onViewChange(item.id)}
+              title={item.label}
+            >
+              {item.icon()}
+            </button>
+          ))}
         </div>
         <div style={{ flex: 1 }} />
         <div className="zw-sb-rail-bottom">
-          <button
-            className="zw-sb-avatar-btn"
-            title="Settings"
-            onClick={() => setShowAvatar(!showAvatar)}
-          >
-            <div className="zw-sb-avatar">
-              <span className="zw-sb-avatar-text">ZN</span>
-            </div>
+          <button className="zw-sb-rail-btn" title="Settings">
+            {Icons.settings()}
           </button>
         </div>
       </div>

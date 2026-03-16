@@ -1,12 +1,13 @@
 import { useState, useCallback } from 'react'
-import { ActivityBar, type View } from './components/ActivityBar'
 import { Sidebar } from './components/Sidebar'
 import { Editor } from './components/Editor'
 import { HomeScreen } from './components/HomeScreen'
 import { GraphView } from './components/GraphView'
 import { useNotes } from './hooks/useNotes'
 import { useTheme } from './hooks/useTheme'
-import { ZarnettiLogo, Icons } from './lib/icons'
+import { ZarnettiLogo, Identicon, Icons } from './lib/icons'
+
+export type View = 'home' | 'files' | 'graph'
 
 export default function App() {
   const { notes, activeNote, activeId, setActiveId, addNote, updateNote, deleteNote } = useNotes()
@@ -26,7 +27,6 @@ export default function App() {
     setOpenTabs((prev) => {
       const next = prev.filter((t) => t !== id)
       if (activeId === id) {
-        // Switch to another tab or deselect
         if (next.length > 0) {
           setActiveId(next[next.length - 1])
         } else {
@@ -67,42 +67,56 @@ export default function App() {
     openNoteTab(note.id)
   }, [addNote, openNoteTab])
 
-  // Get note titles for tabs
   const tabNotes = openTabs.map((id) => notes.find((n) => n.id === id)).filter(Boolean)
 
   return (
     <div className="app">
-      {/* Header — Zarhwell style with logo */}
+      {/* Header */}
       <header className="header">
         <div className="header__left">
+          <div className="header__avatar">
+            <Identicon className="header__avatar-img" />
+          </div>
           <ZarnettiLogo className="header__logo" />
-          <span className="header__title">Zarnetti</span>
+          <button className="header__project-btn">
+            <span className="header__title">Zarnetti</span>
+            {Icons.chevronDown()}
+          </button>
         </div>
-        <div className="header__spacer" />
+
+        <div className="header__center">
+          <div className="header__search">
+            {Icons.search()}
+            <input
+              type="text"
+              className="header__search-input"
+              placeholder="Search..."
+            />
+          </div>
+        </div>
+
         <div className="header__right">
-          <span style={{ fontSize: 10, color: 'var(--muted-foreground)' }}>
-            {notes.length} notes
-          </span>
+          <button className="header__invite-btn">
+            {Icons.userPlus()}
+            <span>Invite</span>
+          </button>
         </div>
       </header>
 
       <div className="main-layout">
-        <ActivityBar activeView={view} onViewChange={setView} />
+        <Sidebar
+          notes={notes}
+          activeId={activeId}
+          onSelect={handleSidebarSelect}
+          onAdd={handleAddNote}
+          onDelete={deleteNote}
+          activeView={view}
+          onViewChange={setView}
+        />
 
-        {view === 'files' && (
-          <Sidebar
-            notes={notes}
-            activeId={activeId}
-            onSelect={handleSidebarSelect}
-            onAdd={handleAddNote}
-            onDelete={deleteNote}
-          />
-        )}
-
-        {/* Content area with tabs */}
+        {/* Content area */}
         {view === 'files' ? (
           <div className="content-area">
-            {/* Tabs bar (Zarhwell ContentTabsBar) */}
             {tabNotes.length > 0 && (
               <div className="tabs-bar">
                 <div className="tabs-bar__tabs">

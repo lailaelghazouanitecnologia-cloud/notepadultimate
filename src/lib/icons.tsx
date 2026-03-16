@@ -24,6 +24,30 @@ export function ZarnettiLogo({ className }: { className?: string }) {
   )
 }
 
+/** GitHub-style 5x5 identicon avatar */
+export function Identicon({ className }: { className?: string }) {
+  // Symmetric 5x5 grid pattern (left half mirrored)
+  const pattern = [
+    [0,1,1,1,0],
+    [1,0,1,0,1],
+    [1,1,0,1,1],
+    [0,1,1,1,0],
+    [1,0,0,0,1],
+  ]
+  const size = 5
+  const cell = 100 / size
+  return (
+    <svg viewBox="0 0 100 100" className={className} xmlns="http://www.w3.org/2000/svg">
+      <rect width="100" height="100" fill="#2a2a2a" />
+      {pattern.map((row, y) =>
+        row.map((on, x) =>
+          on ? <rect key={`${x}-${y}`} x={x * cell} y={y * cell} width={cell} height={cell} fill="#a882ff" /> : null
+        )
+      )}
+    </svg>
+  )
+}
+
 export const Icons = {
   files: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"/></svg>,
   search: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>,
@@ -44,4 +68,6 @@ export const Icons = {
   x: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M18 6L6 18M6 6l12 12"/></svg>,
   messageCircle: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/></svg>,
   github: (p?: object) => <svg viewBox="0 0 16 16" fill="currentColor" {...p}><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>,
+  chevronDown: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>,
+  userPlus: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M19 8.25V11.5m0 0V14.75m0-3.25H22.25m-3.25 0H15.75"/><path d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128H5.228A2 2 0 013.25 17.21a6.75 6.75 0 0111.503-4.152M10.5 6.75a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"/></svg>,
 }

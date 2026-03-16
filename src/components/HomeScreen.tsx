@@ -182,51 +182,52 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input area — Zarhwell style */}
-        <div className="zw-chat-input-area">
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask anything..."
-            className="zw-chat-textarea"
-          />
-          <div className="zw-chat-input-toolbar">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, position: 'relative' }} ref={cmdRef}>
-              {/* / commands button */}
-              <button
-                className="zw-cmd-btn"
-                onClick={() => setShowCommands(!showCommands)}
-                title="Commands"
-              >
-                <span className="zw-cmd-btn__slash">/</span>
-              </button>
-              {showCommands && (
-                <div className="zw-cmd-menu">
-                  <div className="zw-cmd-menu__title">Commands</div>
-                  {COMMANDS.map((c) => (
-                    <button
-                      key={c.cmd}
-                      className="zw-cmd-menu__item"
-                      onClick={() => selectCommand(c.cmd)}
-                    >
-                      <span className="zw-cmd-menu__cmd">{c.cmd}</span>
-                      {c.args && <span className="zw-cmd-menu__args">{c.args}</span>}
-                      <span className="zw-cmd-menu__desc">{c.desc}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <button
-                onClick={handleSend}
-                className={`zw-chat-send-btn ${input.trim() ? 'active' : ''}`}
-                aria-label="Send"
-              >
-                {Icons.arrowUp()}
-              </button>
+        {/* Input area — centered, compact */}
+        <div className="zw-chat-input-wrap">
+          <div className="zw-chat-input-area">
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask anything..."
+              className="zw-chat-textarea"
+            />
+            <div className="zw-chat-input-toolbar">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, position: 'relative' }} ref={cmdRef}>
+                <button
+                  className="zw-cmd-btn"
+                  onClick={() => setShowCommands(!showCommands)}
+                  title="Commands"
+                >
+                  <span className="zw-cmd-btn__slash">/</span>
+                </button>
+                {showCommands && (
+                  <div className="zw-cmd-menu">
+                    <div className="zw-cmd-menu__title">Commands</div>
+                    {COMMANDS.map((c) => (
+                      <button
+                        key={c.cmd}
+                        className="zw-cmd-menu__item"
+                        onClick={() => selectCommand(c.cmd)}
+                      >
+                        <span className="zw-cmd-menu__cmd">{c.cmd}</span>
+                        {c.args && <span className="zw-cmd-menu__args">{c.args}</span>}
+                        <span className="zw-cmd-menu__desc">{c.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button
+                  onClick={handleSend}
+                  className={`zw-chat-send-btn ${input.trim() ? 'active' : ''}`}
+                  aria-label="Send"
+                >
+                  {Icons.arrowUp()}
+                </button>
+              </div>
             </div>
           </div>
         </div>
