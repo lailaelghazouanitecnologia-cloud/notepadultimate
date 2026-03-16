@@ -1,11 +1,14 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import type { Note } from '../types'
+import type { ChatSession } from '../App'
 import { ZarnettiLogo, Icons } from '../lib/icons'
 
 interface HomeScreenProps {
   notes: Note[]
   onCreateNote: (title: string, content: string) => void
   onOpenNote: (id: string) => void
+  onSaveChat: (session: ChatSession) => void
+  initialSession?: ChatSession
 }
 
 interface ChatMessage {
@@ -43,9 +46,10 @@ function formatRelativeDate(ts: number): string {
   return new Date(ts).toLocaleDateString('es', { day: 'numeric', month: 'short' })
 }
 
-export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps) {
+export function HomeScreen({ notes, onCreateNote, onOpenNote, onSaveChat, initialSession }: HomeScreenProps) {
+  const [sessionId] = useState(() => initialSession?.id || `chat-${Date.now()}`)
   const [input, setInput] = useState('')
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [messages, setMessages] = useState<ChatMessage[]>(initialSession?.messages || [])
   const [showCommands, setShowCommands] = useState(false)
   const [model, setModel] = useState('Sonnet 4.5')
   const [showModels, setShowModels] = useState(false)
@@ -58,6 +62,16 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // Save chat session when messages change
+  useEffect(() => {
+    if (messages.length === 0) return
+    const firstUserMsg = messages.find((m) => m.role === 'user')
+    const title = firstUserMsg
+      ? (firstUserMsg.content.length > 50 ? firstUserMsg.content.slice(0, 50) + '...' : firstUserMsg.content)
+      : 'New chat'
+    onSaveChat({ id: sessionId, title, messages, createdAt: Date.now() })
+  }, [messages, sessionId, onSaveChat])
 
   useEffect(() => {
     if (!showCommands) return

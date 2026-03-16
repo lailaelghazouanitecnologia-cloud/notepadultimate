@@ -7,17 +7,27 @@ import { useNotes } from './hooks/useNotes'
 import { useTheme } from './hooks/useTheme'
 import { ZarnettiLogo, Icons } from './lib/icons'
 
-export type View = 'search' | 'edit' | 'graph'
+export type View = 'feed' | 'chat' | 'graph'
+
+export interface ChatSession {
+  id: string
+  title: string
+  messages: { id: string; role: 'user' | 'assistant'; content: string }[]
+  createdAt: number
+}
 
 export default function App() {
   const { notes, activeNote, activeId, setActiveId, addNote, updateNote, deleteNote } = useNotes()
   useTheme()
-  const [view, setView] = useState<View>('search')
+  const [view, setView] = useState<View>('chat')
   const [openTabs, setOpenTabs] = useState<string[]>([])
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([])
+  const [activeChatId, setActiveChatId] = useState<string | null>(null)
+  const [showHistory, setShowHistory] = useState(false)
 
   const openNoteTab = useCallback((id: string) => {
     setActiveId(id)
-    setView('edit')
+    setView('feed')
     setOpenTabs((prev) => prev.includes(id) ? prev : [...prev, id])
   }, [setActiveId])
 
@@ -49,13 +59,37 @@ export default function App() {
   const handleSidebarSelect = useCallback((id: string) => { openNoteTab(id) }, [openNoteTab])
   const handleAddNote = useCallback(() => { const note = addNote(); openNoteTab(note.id) }, [addNote, openNoteTab])
 
+  const handleSaveChat = useCallback((session: ChatSession) => {
+    setChatSessions((prev) => {
+      const exists = prev.findIndex((s) => s.id === session.id)
+      if (exists >= 0) {
+        const next = [...prev]
+        next[exists] = session
+        return next
+      }
+      return [session, ...prev]
+    })
+  }, [])
+
+  const handleNewChat = useCallback(() => {
+    setActiveChatId(null)
+    setShowHistory(false)
+  }, [])
+
+  const handleOpenChat = useCallback((id: string) => {
+    setActiveChatId(id)
+    setShowHistory(false)
+  }, [])
+
   const tabNotes = openTabs.map((id) => notes.find((n) => n.id === id)).filter(Boolean)
 
   const modes: { id: View; icon: (p?: object) => React.ReactNode; label: string }[] = [
-    { id: 'search', icon: Icons.sparkles, label: 'Search' },
-    { id: 'edit', icon: Icons.edit, label: 'Edit' },
+    { id: 'feed', icon: Icons.rss, label: 'Feed' },
+    { id: 'chat', icon: Icons.messageCircle, label: 'Chat' },
     { id: 'graph', icon: Icons.graph, label: 'Graph' },
   ]
+
+  const activeSession = activeChatId ? chatSessions.find((s) => s.id === activeChatId) : undefined
 
   return (
     <div className="app">
@@ -94,6 +128,16 @@ export default function App() {
           </div>
 
           <div className="header__right">
+            {/* History button — visible in chat mode */}
+            {view === 'chat' && (
+              <button
+                className={`header__icon-btn ${showHistory ? 'active' : ''}`}
+                onClick={() => setShowHistory(!showHistory)}
+                title="Chat history"
+              >
+                {Icons.clock()}
+              </button>
+            )}
             <button className="header__invite-btn">
               {Icons.userPlus()}
               <span>Invite</span>
@@ -101,8 +145,8 @@ export default function App() {
           </div>
         </header>
 
-        {/* File tabs bar (edit mode only) */}
-        {view === 'edit' && tabNotes.length > 0 && (
+        {/* File tabs bar (feed mode only) */}
+        {view === 'feed' && tabNotes.length > 0 && (
           <div className="tabs-bar">
             <div className="tabs-bar__tabs">
               {tabNotes.map((note) => note && (
@@ -126,7 +170,7 @@ export default function App() {
         )}
 
         {/* Content */}
-        {view === 'edit' ? (
+        {view === 'feed' ? (
           <div className="content-area">
             {activeNote ? (
               <Editor note={activeNote} onUpdate={updateNote} onNavigate={handleNavigate} />
@@ -139,8 +183,48 @@ export default function App() {
               </div>
             )}
           </div>
-        ) : view === 'search' ? (
-          <HomeScreen notes={notes} onCreateNote={handleCreateFromChat} onOpenNote={handleOpenNote} />
+        ) : view === 'chat' ? (
+          <div className="content-area" style={{ position: 'relative' }}>
+            <HomeScreen
+              notes={notes}
+              onCreateNote={handleCreateFromChat}
+              onOpenNote={handleOpenNote}
+              onSaveChat={handleSaveChat}
+              initialSession={activeSession}
+              key={activeChatId || 'new'}
+            />
+            {/* History side panel */}
+            {showHistory && (
+              <div className="chat-history-panel">
+                <div className="chat-history-panel__header">
+                  <span className="chat-history-panel__title">History</span>
+                  <button className="chat-history-panel__new" onClick={handleNewChat}>
+                    {Icons.plus()}
+                    <span>New</span>
+                  </button>
+                </div>
+                <div className="chat-history-panel__list">
+                  {chatSessions.length === 0 && (
+                    <div className="chat-history-panel__empty">No conversations yet</div>
+                  )}
+                  {chatSessions.map((session) => (
+                    <button
+                      key={session.id}
+                      className={`chat-history-panel__item ${activeChatId === session.id ? 'active' : ''}`}
+                      onClick={() => handleOpenChat(session.id)}
+                    >
+                      <div className="chat-history-panel__item-title">
+                        {session.title || 'Untitled chat'}
+                      </div>
+                      <div className="chat-history-panel__item-meta">
+                        {session.messages.length} msgs
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         ) : view === 'graph' ? (
           <GraphView notes={notes} onOpenNote={handleOpenNote} />
         ) : null}

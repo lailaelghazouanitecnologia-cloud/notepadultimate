@@ -73,4 +73,6 @@ export const Icons = {
   paperclip: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>,
   atSign: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 006 0v-1a10 10 0 10-3.92 7.94"/></svg>,
   globe: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,
+  clock: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>,
+  rss: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1" fill="currentColor"/></svg>,
 }
