@@ -87,7 +87,6 @@ html, body {
   background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.04) 100%);
 }
 .header__left { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.header__icons { display: flex; align-items: center; gap: 6px; }
 .header__center { flex: 1; display: flex; justify-content: center; min-width: 0; }
 .header__search {
   display: flex; align-items: center; gap: 6px;

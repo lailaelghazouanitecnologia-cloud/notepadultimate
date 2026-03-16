@@ -166,6 +166,7 @@ export default function App() {
 
       <div className="app-main">
         <header className="header">
+          {/* LEFT: sidebar toggle + mode switcher */}
           <div className="header__left">
             <button
               className={`zw-sb-toggle ${sidebarCollapsed ? '' : 'hidden'}`}
@@ -186,60 +187,9 @@ export default function App() {
                 </button>
               ))}
             </div>
-
-            {/* Icon buttons — always left, stable position */}
-            <div className="header__icons">
-              <button
-                className={`header__icon-btn ${showHistory ? 'active' : ''} ${!(view === 'chat' && !showEditor && !pluginPanel) ? 'header__icon-btn--hidden' : ''}`}
-                onClick={() => setShowHistory(!showHistory)}
-                title="Chat history"
-                tabIndex={view === 'chat' && !showEditor && !pluginPanel ? 0 : -1}
-              >
-                {Icons.clock()}
-              </button>
-
-              {/* Plugins dropdown */}
-              <div style={{ position: 'relative' }} ref={pluginsRef}>
-                <button
-                  className={`header__icon-btn ${pluginPanel ? 'active' : ''}`}
-                  onClick={() => setShowPlugins(!showPlugins)}
-                  title="Plugins"
-                >
-                  {Icons.puzzle()}
-                  {unreadAlerts > 0 && <span className="header__icon-badge">{unreadAlerts}</span>}
-                </button>
-                {showPlugins && (
-                  <div className="header__plugins-menu">
-                    <div className="header__plugins-menu-title">Plugins</div>
-                    <button
-                      className={`header__plugins-item ${pluginPanel === 'agents' ? 'active' : ''}`}
-                      onClick={() => {
-                        setPluginPanel(pluginPanel === 'agents' ? null : 'agents')
-                        setShowPlugins(false)
-                        setProfileAgentId(null)
-                        setEditingNoteId(null)
-                      }}
-                    >
-                      {Icons.bot()}
-                      <div className="header__plugins-item-info">
-                        <span>Agents</span>
-                        <span className="header__plugins-item-desc">Characters & contracts</span>
-                      </div>
-                      {unreadAlerts > 0 && <span className="header__plugins-badge">{unreadAlerts}</span>}
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <button
-                className="header__icon-btn header__icon-btn--borderless"
-                title="Add people"
-              >
-                {Icons.userPlus()}
-              </button>
-            </div>
           </div>
 
+          {/* CENTER: search input */}
           <div className="header__center">
             <div className="header__search">
               {Icons.search()}
@@ -247,8 +197,58 @@ export default function App() {
             </div>
           </div>
 
+          {/* RIGHT: icon buttons + publish */}
           <div className="header__right">
-            {/* Publish — only visible when editing, positioned far right */}
+            <button
+              className={`header__icon-btn ${showHistory ? 'active' : ''} ${!(view === 'chat' && !showEditor && !pluginPanel) ? 'header__icon-btn--hidden' : ''}`}
+              onClick={() => setShowHistory(!showHistory)}
+              title="Chat history"
+              tabIndex={view === 'chat' && !showEditor && !pluginPanel ? 0 : -1}
+            >
+              {Icons.clock()}
+            </button>
+
+            {/* Plugins dropdown */}
+            <div style={{ position: 'relative' }} ref={pluginsRef}>
+              <button
+                className={`header__icon-btn ${pluginPanel ? 'active' : ''}`}
+                onClick={() => setShowPlugins(!showPlugins)}
+                title="Plugins"
+              >
+                {Icons.puzzle()}
+                {unreadAlerts > 0 && <span className="header__icon-badge">{unreadAlerts}</span>}
+              </button>
+              {showPlugins && (
+                <div className="header__plugins-menu">
+                  <div className="header__plugins-menu-title">Plugins</div>
+                  <button
+                    className={`header__plugins-item ${pluginPanel === 'agents' ? 'active' : ''}`}
+                    onClick={() => {
+                      setPluginPanel(pluginPanel === 'agents' ? null : 'agents')
+                      setShowPlugins(false)
+                      setProfileAgentId(null)
+                      setEditingNoteId(null)
+                    }}
+                  >
+                    {Icons.bot()}
+                    <div className="header__plugins-item-info">
+                      <span>Agents</span>
+                      <span className="header__plugins-item-desc">Characters & contracts</span>
+                    </div>
+                    {unreadAlerts > 0 && <span className="header__plugins-badge">{unreadAlerts}</span>}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <button
+              className="header__icon-btn header__icon-btn--borderless"
+              title="Add people"
+            >
+              {Icons.userPlus()}
+            </button>
+
+            {/* Publish — only when editing a note */}
             <button
               className={`header__publish-btn ${editingNote?.published ? 'published' : ''} ${!(showEditor && editingNote) ? 'header__publish-btn--hidden' : ''}`}
               onClick={handlePublish}
