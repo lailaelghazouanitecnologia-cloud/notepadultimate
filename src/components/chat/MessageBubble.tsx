@@ -2,7 +2,6 @@ import { useState, useCallback, memo } from 'react'
 import { Icons } from '../../lib/icons'
 import { renderMarkdown } from '../../lib/markdown'
 import type { ChatMessage } from '../../types/chat'
-import DOMPurify from 'dompurify'
 
 interface MessageBubbleProps {
   message: ChatMessage
@@ -101,7 +100,7 @@ export const AssistantMessage = memo(function AssistantMessage({ message }: Mess
       <div className="chat-bubble-ai">
         <div
           className="chat-ai-content zn-preview"
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }}
+          dangerouslySetInnerHTML={{ __html: html }}
         />
       </div>
       <div className="chat-msg__actions">

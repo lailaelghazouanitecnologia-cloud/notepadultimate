@@ -45,7 +45,7 @@ export interface Alert {
 
 export interface SystemEvent {
   id: string
-  type: 'welcome' | 'project_created' | 'project_switched' | 'update'
+  type: 'welcome' | 'project_created' | 'project_switched' | 'budget_alert' | 'system_update'
   message: string
   detail?: string
   createdAt: number

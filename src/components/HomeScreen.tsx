@@ -2,8 +2,8 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import type { Note } from '../types'
 import type { ChatSession } from '../contexts/UIContext'
 import { ZarnettiLogo, Icons } from '../lib/icons'
-import DOMPurify from 'dompurify'
 import { renderMarkdown } from '../lib/markdown'
+import '../lib/markdown.css'
 
 interface HomeScreenProps {
   notes: Note[]
@@ -351,9 +351,9 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
                   <div className={msg.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}>
                     {msg.role === 'assistant'
                       ? <div
-                          className="chat-ai-content"
+                          className="chat-ai-content zn-preview"
                           dangerouslySetInnerHTML={{
-                            __html: DOMPurify.sanitize(renderMarkdown(msg.content))
+                            __html: renderMarkdown(msg.content)
                           }}
                         />
                       : msg.content
@@ -391,9 +391,9 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
                 <div className="chat-msg chat-msg--ai">
                   <div className="chat-bubble-ai">
                     <div
-                      className="chat-ai-content"
+                      className="chat-ai-content zn-preview"
                       dangerouslySetInnerHTML={{
-                        __html: DOMPurify.sanitize(renderMarkdown(streaming.text))
+                        __html: renderMarkdown(streaming.text)
                       }}
                     />
                     <span className="chat-cursor" />

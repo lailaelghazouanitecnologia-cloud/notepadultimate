@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { Note, Agent, SystemEvent } from '../types'
 import { Icons } from '../lib/icons'
+import { detectFiles } from '../lib/markdown'
 
 interface FeedViewProps {
   publishedNotes: Note[]
@@ -26,7 +27,21 @@ const EVENT_ICONS: Record<SystemEvent['type'], string> = {
   welcome: '👋',
   project_created: '📁',
   project_switched: '🔄',
-  update: '✨',
+  budget_alert: '💰',
+  system_update: '✨',
+}
+
+const FILE_TYPE_ICONS: Record<string, string> = {
+  js: '📄', ts: '📄', tsx: '📄', jsx: '📄', py: '📄', rust: '📄',
+  go: '📄', java: '📄', html: '📄', css: '📄', json: '📄',
+  xml: '📄', yaml: '📄', yml: '📄', md: '📝', txt: '📝',
+  pdf: '📕', doc: '📘', docx: '📘', xlsx: '📊', csv: '📊',
+  zip: '📦', img: '🖼️', png: '🖼️', jpg: '🖼️', jpeg: '🖼️',
+  gif: '🖼️', svg: '🖼️', webp: '🖼️',
+}
+
+function getFileIcon(type: string): string {
+  return FILE_TYPE_ICONS[type.toLowerCase()] || '📎'
 }
 
 export function FeedView({ publishedNotes, agents, systemEvents, onOpenNote, onOpenProfile }: FeedViewProps) {
@@ -106,6 +121,8 @@ export function FeedView({ publishedNotes, agents, systemEvents, onOpenNote, onO
                 const authorName = note.author || 'You'
                 const authorHandle = agent?.handle || `@${(note.author || 'you').toLowerCase().replace(/\s+/g, '')}`
 
+                const files = detectFiles(note.content)
+
                 return (
                   <article key={note.id} className="feed-post" onClick={() => onOpenNote(note.id)}>
                     <div
@@ -135,6 +152,22 @@ export function FeedView({ publishedNotes, agents, systemEvents, onOpenNote, onO
                       </div>
                       {note.title && <div className="feed-post__title">{note.title}</div>}
                       <p className="feed-post__text">{note.content.slice(0, 400)}</p>
+                      {files.length > 0 && (
+                        <div className="feed-post__files">
+                          {files.slice(0, 4).map((f) => (
+                            <button
+                              key={f.name}
+                              className="feed-file-badge"
+                              onClick={(e) => { e.stopPropagation(); onOpenNote(note.id) }}
+                              title={f.name}
+                            >
+                              <span className="feed-file-badge__icon">{getFileIcon(f.type)}</span>
+                              <span className="feed-file-badge__name">{f.name}</span>
+                              <span className="feed-file-badge__type">{f.type.toUpperCase()}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                       {agent && agent.interests.length > 0 && (
                         <div className="feed-post__tags">
                           {agent.interests.slice(0, 3).map((t) => (

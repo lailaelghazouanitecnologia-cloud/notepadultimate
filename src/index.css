@@ -87,6 +87,7 @@ html, body {
   background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.04) 100%);
 }
 .header__left { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.header__icons { display: flex; align-items: center; gap: 6px; }
 .header__center { flex: 1; display: flex; justify-content: center; min-width: 0; }
 .header__search {
   display: flex; align-items: center; gap: 6px;
@@ -153,7 +154,7 @@ html, body {
   box-shadow: var(--zw-red-shadow);
 }
 .header__publish-btn:hover { opacity: 0.9; }
-.header__publish-btn--hidden { visibility: hidden; pointer-events: none; }
+.header__publish-btn--hidden { display: none; }
 .header__publish-btn.published {
   background: transparent; border-color: var(--border); color: var(--muted-foreground);
 }
@@ -1483,6 +1484,26 @@ html, body {
   font-size: 12px; color: var(--zw-accent); cursor: pointer;
 }
 .feed-post__tag:hover { text-decoration: underline; }
+
+/* File badges */
+.feed-post__files { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.feed-file-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px 4px 6px; border-radius: 8px;
+  background: var(--accent); border: 1px solid var(--border);
+  cursor: pointer; transition: all 0.12s ease;
+  font-family: var(--font-sans); font-size: 0;
+}
+.feed-file-badge:hover { background: var(--gray-a4, rgba(255,255,255,0.06)); border-color: var(--ring); }
+.feed-file-badge__icon { font-size: 14px; line-height: 1; }
+.feed-file-badge__name {
+  font-size: 11px; font-weight: 500; color: var(--foreground);
+  max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.feed-file-badge__type {
+  font-size: 9px; font-weight: 600; color: var(--muted-foreground);
+  letter-spacing: 0.3px; opacity: 0.7;
+}
 
 /* Actions */
 .feed-post__actions {

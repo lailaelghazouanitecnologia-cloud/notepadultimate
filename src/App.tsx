@@ -13,7 +13,8 @@ import { useAgentsContext } from './contexts/AgentsContext'
 import { useProjectContext } from './contexts/ProjectContext'
 import { useUIContext } from './contexts/UIContext'
 import type { View } from './contexts/UIContext'
-import { addSystemEvent } from './store'
+// store utilities available if needed
+// import { addSystemEvent } from './store'
 
 const MemoizedSidebar = memo(Sidebar)
 const MemoizedEditor = memo(Editor)
@@ -106,7 +107,6 @@ export default function App() {
     setTimeout(() => {
       publishNote(editingNote, 'You')
       updateNote(editingNote.id, { published: true })
-      addSystemEvent('update', `"${editingNote.title || 'Untitled'}" published`, publishMessage || undefined)
       setPublishState('done')
       setTimeout(() => {
         setShowPublishModal(false)
@@ -186,6 +186,58 @@ export default function App() {
                 </button>
               ))}
             </div>
+
+            {/* Icon buttons — always left, stable position */}
+            <div className="header__icons">
+              <button
+                className={`header__icon-btn ${showHistory ? 'active' : ''} ${!(view === 'chat' && !showEditor && !pluginPanel) ? 'header__icon-btn--hidden' : ''}`}
+                onClick={() => setShowHistory(!showHistory)}
+                title="Chat history"
+                tabIndex={view === 'chat' && !showEditor && !pluginPanel ? 0 : -1}
+              >
+                {Icons.clock()}
+              </button>
+
+              {/* Plugins dropdown */}
+              <div style={{ position: 'relative' }} ref={pluginsRef}>
+                <button
+                  className={`header__icon-btn ${pluginPanel ? 'active' : ''}`}
+                  onClick={() => setShowPlugins(!showPlugins)}
+                  title="Plugins"
+                >
+                  {Icons.puzzle()}
+                  {unreadAlerts > 0 && <span className="header__icon-badge">{unreadAlerts}</span>}
+                </button>
+                {showPlugins && (
+                  <div className="header__plugins-menu">
+                    <div className="header__plugins-menu-title">Plugins</div>
+                    <button
+                      className={`header__plugins-item ${pluginPanel === 'agents' ? 'active' : ''}`}
+                      onClick={() => {
+                        setPluginPanel(pluginPanel === 'agents' ? null : 'agents')
+                        setShowPlugins(false)
+                        setProfileAgentId(null)
+                        setEditingNoteId(null)
+                      }}
+                    >
+                      {Icons.bot()}
+                      <div className="header__plugins-item-info">
+                        <span>Agents</span>
+                        <span className="header__plugins-item-desc">Characters & contracts</span>
+                      </div>
+                      {unreadAlerts > 0 && <span className="header__plugins-badge">{unreadAlerts}</span>}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <button
+                className="header__icon-btn header__icon-btn--borderless"
+                title="Add people"
+              >
+                {Icons.userPlus()}
+              </button>
+            </div>
           </div>
 
           <div className="header__center">
@@ -196,49 +248,7 @@ export default function App() {
           </div>
 
           <div className="header__right">
-            <button
-              className={`header__icon-btn ${showHistory ? 'active' : ''} ${!(view === 'chat' && !showEditor && !pluginPanel) ? 'header__icon-btn--hidden' : ''}`}
-              onClick={() => setShowHistory(!showHistory)}
-              title="Chat history"
-              tabIndex={view === 'chat' && !showEditor && !pluginPanel ? 0 : -1}
-            >
-              {Icons.clock()}
-            </button>
-
-            {/* Plugins dropdown */}
-            <div style={{ position: 'relative' }} ref={pluginsRef}>
-              <button
-                className={`header__icon-btn ${pluginPanel ? 'active' : ''}`}
-                onClick={() => setShowPlugins(!showPlugins)}
-                title="Plugins"
-              >
-                {Icons.puzzle()}
-                {unreadAlerts > 0 && <span className="header__icon-badge">{unreadAlerts}</span>}
-              </button>
-              {showPlugins && (
-                <div className="header__plugins-menu">
-                  <div className="header__plugins-menu-title">Plugins</div>
-                  <button
-                    className={`header__plugins-item ${pluginPanel === 'agents' ? 'active' : ''}`}
-                    onClick={() => {
-                      setPluginPanel(pluginPanel === 'agents' ? null : 'agents')
-                      setShowPlugins(false)
-                      setProfileAgentId(null)
-                      setEditingNoteId(null)
-                    }}
-                  >
-                    {Icons.bot()}
-                    <div className="header__plugins-item-info">
-                      <span>Agents</span>
-                      <span className="header__plugins-item-desc">Characters & contracts</span>
-                    </div>
-                    {unreadAlerts > 0 && <span className="header__plugins-badge">{unreadAlerts}</span>}
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Publish */}
+            {/* Publish — only visible when editing, positioned far right */}
             <button
               className={`header__publish-btn ${editingNote?.published ? 'published' : ''} ${!(showEditor && editingNote) ? 'header__publish-btn--hidden' : ''}`}
               onClick={handlePublish}
@@ -247,13 +257,6 @@ export default function App() {
             >
               {editingNote?.published ? Icons.check() : Icons.upload()}
               <span>{editingNote?.published ? 'Published' : 'Publish'}</span>
-            </button>
-
-            <button
-              className="header__icon-btn header__icon-btn--borderless"
-              title="Add people"
-            >
-              {Icons.userPlus()}
             </button>
           </div>
         </header>

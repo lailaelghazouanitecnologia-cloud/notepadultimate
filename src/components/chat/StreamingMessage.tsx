@@ -1,7 +1,6 @@
 import { memo } from 'react'
 import { renderMarkdown } from '../../lib/markdown'
 import type { StreamingState } from '../../types/chat'
-import DOMPurify from 'dompurify'
 
 interface StreamingMessageProps {
   state: StreamingState
@@ -27,7 +26,7 @@ export const StreamingMessage = memo(function StreamingMessage({ state }: Stream
         <div className="chat-bubble-ai">
           <div
             className="chat-ai-content zn-preview"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderMarkdown(state.text)) }}
+            dangerouslySetInnerHTML={{ __html: renderMarkdown(state.text) }}
           />
           <span className="chat-cursor" />
         </div>
