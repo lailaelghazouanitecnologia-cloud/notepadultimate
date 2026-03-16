@@ -179,7 +179,7 @@ html, body {
 .zw-sb-topbar__name {
   flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   font-size: 13px; font-weight: 600; letter-spacing: -0.02em;
-  background: linear-gradient(180deg, #b4787a 0%, #8a6263 40%, #6b5455 70%, #4a3a3b 100%);
+  background: linear-gradient(180deg, #e0454a 0%, #c23038 40%, #9b2530 70%, #6e1a22 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   background-clip: text;
 }

@@ -184,7 +184,7 @@ export function Sidebar({
           onClick={onToggleCollapse}
           title="Close sidebar"
         >
-          {Icons.panelLeftClose()}
+          {Icons.panelLeft()}
         </button>
       </div>
 
