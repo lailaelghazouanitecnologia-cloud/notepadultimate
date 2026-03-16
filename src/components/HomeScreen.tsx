@@ -452,6 +452,7 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
     <div className="content-area">
       <div className="home-research">
         <div className="home-research__scroll">
+         <div className="home-research__scroll-inner">
           <div className="home-research__spacer" />
           {/* Hero */}
           <div className="home-research__hero">
@@ -602,6 +603,7 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
             </div>
           )}
           <div className="home-research__spacer" />
+         </div>
         </div>
 
         {/* Footer */}
