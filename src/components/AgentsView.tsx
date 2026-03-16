@@ -18,10 +18,11 @@ interface AgentsViewProps {
 type Tab = 'characters' | 'create' | 'contracts' | 'alerts'
 
 export function AgentsView({
-  agents, alerts, publishedNotes, contracts,
+  agents, alerts, publishedNotes: _publishedNotes, contracts,
   onCreateAgent, onDeleteAgent, onOpenProfile, onMarkAlertRead,
   onCreateContract, onDeleteContract,
 }: AgentsViewProps) {
+  void _publishedNotes
   const [tab, setTab] = useState<Tab>('characters')
   const [search, setSearch] = useState('')
 

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, memo } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { Editor } from './components/Editor'
 import { HomeScreen } from './components/HomeScreen'
@@ -6,98 +6,67 @@ import { FeedView } from './components/FeedView'
 import { GraphView } from './components/GraphView'
 import { AgentsView } from './components/AgentsView'
 import { ProfileView } from './components/ProfileView'
-import { useNotes } from './hooks/useNotes'
 import { useTheme } from './hooks/useTheme'
 import { Icons, FileTypeIcon } from './lib/icons'
-import {
-  publishNote, loadPublished, loadAgents, saveAgent, deleteAgent as deleteAgentStore,
-  loadAlerts, saveAlerts, generateAlerts,
-  loadProjects, saveProjects, getActiveProjectId, setActiveProjectId,
-  loadContracts, saveContract, deleteContract as deleteContractStore, getContractsForProject,
-  loadFolders, createFolder as createFolderStore, deleteFolder as deleteFolderStore,
-  loadSystemEvents, addSystemEvent,
-} from './store'
-import type { Agent, Alert, Project, Contract, Folder, SystemEvent } from './types'
+import { useNotesContext } from './contexts/NotesContext'
+import { useAgentsContext } from './contexts/AgentsContext'
+import { useProjectContext } from './contexts/ProjectContext'
+import { useUIContext } from './contexts/UIContext'
+import type { View } from './contexts/UIContext'
+import { addSystemEvent } from './store'
 
-export type View = 'feed' | 'chat' | 'graph'
-type PluginPanel = 'agents' | null
-
-export interface ChatSession {
-  id: string
-  title: string
-  messages: { id: string; role: 'user' | 'assistant'; content: string }[]
-  createdAt: number
-}
+const MemoizedSidebar = memo(Sidebar)
+const MemoizedEditor = memo(Editor)
+const MemoizedFeedView = memo(FeedView)
+const MemoizedHomeScreen = memo(HomeScreen)
+const MemoizedGraphView = memo(GraphView)
+const MemoizedAgentsView = memo(AgentsView)
+const MemoizedProfileView = memo(ProfileView)
 
 export default function App() {
-  const { notes, activeId, setActiveId, addNote, updateNote, deleteNote } = useNotes()
-  useTheme()
-  const [view, setView] = useState<View>('feed')
-  const [openTabs, setOpenTabs] = useState<string[]>([])
-  const [chatSessions, setChatSessions] = useState<ChatSession[]>([])
-  const [activeChatId, setActiveChatId] = useState<string | null>(null)
-  const [showHistory, setShowHistory] = useState(false)
-  const [publishedNotes, setPublishedNotes] = useState(() => loadPublished())
-  const [showPublishModal, setShowPublishModal] = useState(false)
-  const [publishMessage, setPublishMessage] = useState('')
-  const [publishState, setPublishState] = useState<'idle' | 'loading' | 'done'>('idle')
-  const [agents, setAgents] = useState<Agent[]>(() => loadAgents())
-  const [alerts, setAlerts] = useState<Alert[]>(() => loadAlerts())
-  const [profileAgentId, setProfileAgentId] = useState<string | null>(null)
-  const [pluginPanel, setPluginPanel] = useState<PluginPanel>(null)
-  const [showPlugins, setShowPlugins] = useState(false)
+  const { theme, toggleTheme } = useTheme()
+  const {
+    notes, activeId, setActiveId, addNote, updateNote, deleteNote,
+    publishedNotes, publishNote, folders, createFolder, deleteFolder,
+  } = useNotesContext()
+  const {
+    agents, alerts, unreadAlerts,
+    createAgent, deleteAgent, markAlertRead,
+    createContract, deleteContract, getProjectContracts,
+  } = useAgentsContext()
+  const { projects, activeProjectId, systemEvents, switchProject, createProject } = useProjectContext()
+  const {
+    view, setView,
+    sidebarCollapsed, toggleSidebar, setSidebarCollapsed,
+    pluginPanel, setPluginPanel,
+    editingNoteId, setEditingNoteId,
+    openTabs, openTab, closeTab,
+    profileAgentId, setProfileAgentId,
+    chatSessions, activeChatId,
+    showHistory, setShowHistory,
+    saveChat, newChat, openChat,
+  } = useUIContext()
+
+  const [showPlugins, setShowPlugins] = useLocalState(false)
+  const [showPublishModal, setShowPublishModal] = useLocalState(false)
+  const [publishMessage, setPublishMessage] = useLocalState('')
+  const [publishState, setPublishState] = useLocalState<'idle' | 'loading' | 'done'>('idle')
   const pluginsRef = useRef<HTMLDivElement>(null)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [folders, setFolders] = useState<Folder[]>(() => loadFolders())
 
-  // Projects
-  const [projects, setProjects] = useState<Project[]>(() => loadProjects())
-  const [activeProjectId, setActiveProjectIdState] = useState(() => getActiveProjectId())
-  const [systemEvents, setSystemEvents] = useState<SystemEvent[]>(() => {
-    const existing = loadSystemEvents()
-    if (existing.length === 0) {
-      const evt = addSystemEvent('welcome', 'Welcome to Zarnetti', 'Your workspace is ready. Create notes, publish to the feed, and explore agents.')
-      return [evt]
-    }
-    return existing
-  })
-
-  // Editing mode
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const editingNote = editingNoteId ? notes.find((n) => n.id === editingNoteId) : null
 
   // Close plugins dropdown on outside click
-  useEffect(() => {
-    if (!showPlugins) return
-    const handler = (e: MouseEvent) => {
-      if (pluginsRef.current && !pluginsRef.current.contains(e.target as Node)) setShowPlugins(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [showPlugins])
-
-  // Regenerate alerts when published notes change
-  useEffect(() => {
-    const updated = generateAlerts(agents, publishedNotes)
-    setAlerts(updated)
-  }, [agents, publishedNotes])
+  useClickOutside(pluginsRef, showPlugins, () => setShowPlugins(false))
 
   const openNoteInEditor = useCallback((id: string) => {
     setEditingNoteId(id)
     setActiveId(id)
-    setOpenTabs((prev) => prev.includes(id) ? prev : [...prev, id])
-  }, [setActiveId])
+    openTab(id)
+  }, [setActiveId, setEditingNoteId, openTab])
 
-  const closeTab = useCallback((id: string) => {
-    setOpenTabs((prev) => {
-      const next = prev.filter((t) => t !== id)
-      if (editingNoteId === id) {
-        if (next.length > 0) { setEditingNoteId(next[next.length - 1]); setActiveId(next[next.length - 1]) }
-        else { setEditingNoteId(null); setActiveId(null as unknown as string) }
-      }
-      return next
-    })
-  }, [editingNoteId, setActiveId])
+  const handleCloseTab = useCallback((id: string) => {
+    closeTab(id)
+  }, [closeTab])
 
   const handleCreateFromChat = useCallback((title: string, content: string) => {
     const note = addNote()
@@ -116,43 +85,20 @@ export default function App() {
   const handleSidebarSelect = useCallback((id: string) => { openNoteInEditor(id) }, [openNoteInEditor])
   const handleAddNote = useCallback((folderId?: string) => {
     const note = addNote()
-    if (folderId) updateNote(note.id, { folderId } as Partial<import('./types').Note>)
+    if (folderId) updateNote(note.id, { folderId })
     openNoteInEditor(note.id)
   }, [addNote, updateNote, openNoteInEditor])
-  const handleCreateFolder = useCallback((name: string, parentId?: string) => {
-    createFolderStore(name, parentId)
-    setFolders(loadFolders())
-  }, [])
-  const handleDeleteFolder = useCallback((id: string) => {
-    deleteFolderStore(id)
-    setFolders(loadFolders())
-  }, [])
+
   const handleMoveNote = useCallback((noteId: string, folderId?: string) => {
-    updateNote(noteId, { folderId } as Partial<import('./types').Note>)
+    updateNote(noteId, { folderId })
   }, [updateNote])
 
-  const handleSaveChat = useCallback((session: ChatSession) => {
-    setChatSessions((prev) => {
-      const exists = prev.findIndex((s) => s.id === session.id)
-      if (exists >= 0) {
-        const next = [...prev]
-        next[exists] = session
-        return next
-      }
-      return [session, ...prev]
-    })
-  }, [])
-
-  const handleNewChat = useCallback(() => { setActiveChatId(null); setShowHistory(false) }, [])
-  const handleOpenChat = useCallback((id: string) => { setActiveChatId(id); setShowHistory(false) }, [])
-
   const handlePublish = useCallback(() => {
-    if (!editingNote) return
-    if (editingNote.published) return
+    if (!editingNote || editingNote.published) return
     setPublishMessage('')
     setPublishState('idle')
     setShowPublishModal(true)
-  }, [editingNote])
+  }, [editingNote, setPublishMessage, setPublishState, setShowPublishModal])
 
   const handleConfirmPublish = useCallback(() => {
     if (!editingNote || publishState !== 'idle') return
@@ -160,88 +106,31 @@ export default function App() {
     setTimeout(() => {
       publishNote(editingNote, 'You')
       updateNote(editingNote.id, { published: true })
-      setPublishedNotes(loadPublished())
-      const evt = addSystemEvent('update', `"${editingNote.title || 'Untitled'}" published`, publishMessage || undefined)
-      setSystemEvents(prev => [...prev, evt])
+      addSystemEvent('update', `"${editingNote.title || 'Untitled'}" published`, publishMessage || undefined)
       setPublishState('done')
       setTimeout(() => {
         setShowPublishModal(false)
         setPublishState('idle')
       }, 1200)
     }, 600)
-  }, [editingNote, updateNote, publishMessage, publishState])
-
-  // Agent handlers
-  const handleCreateAgent = useCallback((data: Omit<Agent, 'id' | 'createdAt' | 'notes' | 'followers' | 'following'>) => {
-    const agent: Agent = {
-      ...data, id: `agent-${Date.now()}`, createdAt: Date.now(),
-      notes: [], followers: 0, following: 0,
-    }
-    saveAgent(agent)
-    setAgents(loadAgents())
-  }, [])
+  }, [editingNote, updateNote, publishMessage, publishState, publishNote, setPublishState, setShowPublishModal])
 
   const handleDeleteAgent = useCallback((id: string) => {
-    deleteAgentStore(id)
-    setAgents(loadAgents())
+    deleteAgent(id)
     if (profileAgentId === id) setProfileAgentId(null)
-  }, [profileAgentId])
+  }, [deleteAgent, profileAgentId, setProfileAgentId])
 
   const handleOpenProfile = useCallback((agentId: string) => {
     setProfileAgentId(agentId)
     setPluginPanel('agents')
-  }, [])
-
-  const handleMarkAlertRead = useCallback((alertId: string) => {
-    setAlerts((prev) => {
-      const updated = prev.map((a) => a.id === alertId ? { ...a, read: true } : a)
-      saveAlerts(updated)
-      return updated
-    })
-  }, [])
-
-  // Project handlers
-  const handleSwitchProject = useCallback((id: string) => {
-    setActiveProjectIdState(id)
-    setActiveProjectId(id)
-    const proj = projects.find(p => p.id === id)
-    if (proj) {
-      const evt = addSystemEvent('project_switched', `Switched to ${proj.name}`, `You are now working in "${proj.name}"`)
-      setSystemEvents(prev => [...prev, evt])
-    }
-  }, [projects])
-
-  const handleCreateProject = useCallback((name: string, emoji: string) => {
-    const project: Project = { id: `proj-${Date.now()}`, name, emoji, createdAt: Date.now() }
-    const updated = [...projects, project]
-    setProjects(updated)
-    saveProjects(updated)
-    const evt = addSystemEvent('project_created', `Project "${name}" created`, 'A new project has been added to your workspace.')
-    setSystemEvents(prev => [...prev, evt])
-    handleSwitchProject(project.id)
-  }, [projects, handleSwitchProject])
-
-  // Contracts
-  const [contracts, setContracts] = useState<Contract[]>(() => loadContracts())
+  }, [setProfileAgentId, setPluginPanel])
 
   const handleCreateContract = useCallback((agentId: string, name: string, description: string) => {
-    const contract: Contract = {
-      id: `contract-${Date.now()}`, agentId, projectId: activeProjectId,
-      name, description, status: 'active', createdAt: Date.now(),
-    }
-    saveContract(contract)
-    setContracts(loadContracts())
-  }, [activeProjectId])
+    createContract(agentId, name, description, activeProjectId)
+  }, [createContract, activeProjectId])
 
-  const handleDeleteContract = useCallback((id: string) => {
-    deleteContractStore(id)
-    setContracts(loadContracts())
-  }, [])
-
-  const projectContracts = getContractsForProject(activeProjectId)
-
+  const projectContracts = getProjectContracts(activeProjectId)
   const tabNotes = openTabs.map((id) => notes.find((n) => n.id === id)).filter(Boolean)
-  const unreadAlerts = alerts.filter((a) => !a.read).length
 
   const modes: { id: View; icon: (p?: object) => React.ReactNode; label: string }[] = [
     { id: 'feed', icon: Icons.rss, label: 'Feed' },
@@ -255,7 +144,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <Sidebar
+      <MemoizedSidebar
         notes={notes}
         activeId={activeId}
         onSelect={handleSidebarSelect}
@@ -263,14 +152,16 @@ export default function App() {
         onDelete={deleteNote}
         projects={projects}
         activeProjectId={activeProjectId}
-        onSwitchProject={handleSwitchProject}
-        onCreateProject={handleCreateProject}
+        onSwitchProject={switchProject}
+        onCreateProject={createProject}
         collapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        onToggleCollapse={toggleSidebar}
         folders={folders}
-        onCreateFolder={handleCreateFolder}
-        onDeleteFolder={handleDeleteFolder}
+        onCreateFolder={createFolder}
+        onDeleteFolder={deleteFolder}
         onMoveNote={handleMoveNote}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
       <div className="app-main">
@@ -347,7 +238,7 @@ export default function App() {
               )}
             </div>
 
-            {/* Publish — always present for layout stability */}
+            {/* Publish */}
             <button
               className={`header__publish-btn ${editingNote?.published ? 'published' : ''} ${!(showEditor && editingNote) ? 'header__publish-btn--hidden' : ''}`}
               onClick={handlePublish}
@@ -358,7 +249,6 @@ export default function App() {
               <span>{editingNote?.published ? 'Published' : 'Publish'}</span>
             </button>
 
-            {/* Add people — far right, borderless */}
             <button
               className="header__icon-btn header__icon-btn--borderless"
               title="Add people"
@@ -384,12 +274,12 @@ export default function App() {
                     <span className="tab__circle" />
                   )}
                   <span className="tab__label">{note.title || 'Untitled'}</span>
-                  <span className="tab__close" onClick={(e) => { e.stopPropagation(); closeTab(note.id) }}>
+                  <span className="tab__close" onClick={(e) => { e.stopPropagation(); handleCloseTab(note.id) }}>
                     {Icons.x()}
                   </span>
                 </button>
               ))}
-              <button className="tab-add" onClick={handleAddNote} aria-label="New tab">
+              <button className="tab-add" onClick={() => handleAddNote()} aria-label="New tab">
                 {Icons.plus()}
               </button>
             </div>
@@ -399,11 +289,11 @@ export default function App() {
         {/* Content */}
         {showEditor ? (
           <div className="content-area">
-            <Editor note={editingNote!} onUpdate={updateNote} onNavigate={handleNavigate} />
+            <MemoizedEditor note={editingNote!} onUpdate={updateNote} onNavigate={handleNavigate} />
           </div>
         ) : pluginPanel === 'agents' ? (
           profileAgent ? (
-            <ProfileView
+            <MemoizedProfileView
               agent={profileAgent}
               publishedNotes={publishedNotes}
               allAgents={agents}
@@ -412,21 +302,21 @@ export default function App() {
               onOpenNote={handleOpenNote}
             />
           ) : (
-            <AgentsView
+            <MemoizedAgentsView
               agents={agents}
               alerts={alerts}
               publishedNotes={publishedNotes}
               contracts={projectContracts}
-              onCreateAgent={handleCreateAgent}
+              onCreateAgent={createAgent}
               onDeleteAgent={handleDeleteAgent}
               onOpenProfile={handleOpenProfile}
-              onMarkAlertRead={handleMarkAlertRead}
+              onMarkAlertRead={markAlertRead}
               onCreateContract={handleCreateContract}
-              onDeleteContract={handleDeleteContract}
+              onDeleteContract={deleteContract}
             />
           )
         ) : view === 'feed' ? (
-          <FeedView
+          <MemoizedFeedView
             publishedNotes={publishedNotes}
             agents={agents}
             systemEvents={systemEvents}
@@ -435,12 +325,12 @@ export default function App() {
           />
         ) : view === 'chat' ? (
           <div className="content-area" style={{ position: 'relative' }}>
-            <HomeScreen
+            <MemoizedHomeScreen
               notes={notes}
               publishedNotes={publishedNotes}
               onCreateNote={handleCreateFromChat}
               onOpenNote={handleOpenNote}
-              onSaveChat={handleSaveChat}
+              onSaveChat={saveChat}
               initialSession={activeSession}
               key={activeChatId || 'new'}
             />
@@ -448,7 +338,7 @@ export default function App() {
               <div className="chat-history-panel">
                 <div className="chat-history-panel__header">
                   <span className="chat-history-panel__title">History</span>
-                  <button className="chat-history-panel__new" onClick={handleNewChat}>
+                  <button className="chat-history-panel__new" onClick={newChat}>
                     {Icons.plus()}
                     <span>New</span>
                   </button>
@@ -461,7 +351,7 @@ export default function App() {
                     <button
                       key={session.id}
                       className={`chat-history-panel__item ${activeChatId === session.id ? 'active' : ''}`}
-                      onClick={() => handleOpenChat(session.id)}
+                      onClick={() => openChat(session.id)}
                     >
                       <div className="chat-history-panel__item-title">{session.title || 'Untitled chat'}</div>
                       <div className="chat-history-panel__item-meta">{session.messages.length} msgs</div>
@@ -472,7 +362,7 @@ export default function App() {
             )}
           </div>
         ) : view === 'graph' ? (
-          <GraphView notes={notes} onOpenNote={handleOpenNote} onCreateNote={handleCreateFromChat} />
+          <MemoizedGraphView notes={notes} onOpenNote={handleOpenNote} onCreateNote={handleCreateFromChat} />
         ) : null}
       </div>
 
@@ -525,4 +415,23 @@ export default function App() {
       )}
     </div>
   )
+}
+
+// ── Utility hooks ──
+
+import { useState } from 'react'
+
+function useLocalState<T>(initial: T) {
+  return useState<T>(initial)
+}
+
+function useClickOutside(ref: React.RefObject<HTMLElement | null>, active: boolean, onClose: () => void) {
+  useEffect(() => {
+    if (!active) return
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [active, ref, onClose])
 }

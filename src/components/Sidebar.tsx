@@ -18,14 +18,18 @@ interface SidebarProps {
   onCreateFolder: (name: string, parentId?: string) => void
   onDeleteFolder: (id: string) => void
   onMoveNote: (noteId: string, folderId?: string) => void
+  theme?: 'light' | 'dark'
+  onToggleTheme?: () => void
 }
 
 export function Sidebar({
   notes, activeId, onSelect, onAdd, onDelete,
   projects, activeProjectId, onSwitchProject, onCreateProject,
   collapsed, onToggleCollapse,
-  folders, onCreateFolder, onDeleteFolder, onMoveNote,
+  folders, onCreateFolder, onDeleteFolder, onMoveNote: _onMoveNote,
+  theme, onToggleTheme,
 }: SidebarProps) {
+  void _onMoveNote
   const [search, setSearch] = useState('')
   const [showProjects, setShowProjects] = useState(false)
   const [showAvatarMenu, setShowAvatarMenu] = useState(false)
@@ -59,8 +63,9 @@ export function Sidebar({
     )
   }, [notes, search])
 
-  const formatDate = (ts: number) =>
+  const _formatDate = (ts: number) =>
     new Date(ts).toLocaleDateString('es', { day: 'numeric', month: 'short' })
+  void _formatDate
 
   const toggleFolder = (id: string) => {
     setExpandedFolders((prev) => {
@@ -370,9 +375,9 @@ export function Sidebar({
               {Icons.settings()}
               <span>Settings</span>
             </button>
-            <button className="zw-avatar-menu__item" onClick={() => setShowAvatarMenu(false)}>
-              {Icons.moon()}
-              <span>Appearance</span>
+            <button className="zw-avatar-menu__item" onClick={() => { onToggleTheme?.(); setShowAvatarMenu(false) }}>
+              {theme === 'dark' ? Icons.sun() : Icons.moon()}
+              <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
             </button>
             <div className="zw-avatar-menu__divider" />
             <button className="zw-avatar-menu__item zw-avatar-menu__item--upgrade" onClick={() => setShowAvatarMenu(false)}>

@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import type { Note } from '../types'
-import type { ChatSession } from '../App'
+import type { ChatSession } from '../contexts/UIContext'
 import { ZarnettiLogo, Icons } from '../lib/icons'
 
 interface HomeScreenProps {

@@ -1,6 +1,8 @@
 // Zarnetti Markdown Engine v2
 // Supports: all standard markdown + wiki-links + callouts + directives
 
+import DOMPurify from 'dompurify'
+
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
@@ -311,7 +313,11 @@ function renderBlock(block: Block): string {
 
 export function renderMarkdown(markdown: string): string {
   if (!markdown.trim()) return ''
-  return tokenize(markdown).map(renderBlock).join('\n')
+  const raw = tokenize(markdown).map(renderBlock).join('\n')
+  return DOMPurify.sanitize(raw, {
+    ADD_TAGS: ['mark'],
+    ADD_ATTR: ['data-link', 'target', 'rel', 'loading'],
+  })
 }
 
 // Extract wiki-links from markdown
