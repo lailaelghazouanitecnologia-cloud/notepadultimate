@@ -294,7 +294,6 @@ html, body {
 /* Avatar at bottom */
 .zw-sb-bottom {
   flex-shrink: 0; padding: 6px 8px;
-  border-top: 1px solid var(--border);
   display: flex; align-items: center; gap: 6px;
 }
 .zw-sb-avatar-btn {
