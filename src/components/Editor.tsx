@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import type { Note } from '../types'
-import { renderMarkdown } from '../lib/markdown'
+import { renderMarkdown, extractLinks } from '../lib/markdown'
 import '../lib/markdown.css'
 import { Icons } from '../lib/icons'
 
@@ -8,11 +8,12 @@ type ViewMode = 'edit' | 'preview' | 'split'
 
 interface EditorProps {
   note: Note
+  allNotes: Note[]
   onUpdate: (id: string, updates: Partial<Pick<Note, 'title' | 'content' | 'published'>>) => void
   onNavigate: (title: string) => void
 }
 
-export function Editor({ note, onUpdate, onNavigate }: EditorProps) {
+export function Editor({ note, allNotes, onUpdate, onNavigate }: EditorProps) {
   const [mode, setMode] = useState<ViewMode>('edit')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const previewRef = useRef<HTMLDivElement>(null)
@@ -54,20 +55,60 @@ export function Editor({ note, onUpdate, onNavigate }: EditorProps) {
     }
   }
 
+  const insertAtCursor = useCallback((text: string) => {
+    const ta = textareaRef.current
+    if (!ta) return
+    const start = ta.selectionStart
+    const end = ta.selectionEnd
+    const before = note.content.substring(0, start)
+    const after = note.content.substring(end)
+    onUpdate(note.id, { content: before + text + after })
+    requestAnimationFrame(() => {
+      ta.focus()
+      ta.selectionStart = ta.selectionEnd = start + text.length
+    })
+  }, [note.id, note.content, onUpdate])
+
+  const handleInsertImage = useCallback(() => {
+    insertAtCursor('![description](https://example.com/image.png)')
+  }, [insertAtCursor])
+
+  const handleInsertReference = useCallback(() => {
+    insertAtCursor('[[]]')
+    // Place cursor inside the brackets
+    requestAnimationFrame(() => {
+      const ta = textareaRef.current
+      if (ta) {
+        ta.selectionStart = ta.selectionEnd = ta.selectionStart - 2
+      }
+    })
+  }, [insertAtCursor])
+
+  // Backlinks: notes that reference this note
+  const backlinks = useMemo(() => {
+    return allNotes.filter(n => {
+      if (n.id === note.id) return false
+      const links = extractLinks(n.content)
+      return links.includes(note.id) || links.includes(note.title)
+    })
+  }, [allNotes, note.id, note.title])
+
   const renderedHtml = useMemo(() => renderMarkdown(note.content), [note.content])
   const wordCount = useMemo(() => note.content.trim().split(/\s+/).filter(Boolean).length, [note.content])
 
   return (
     <>
-      {/* Mode toolbar */}
+      {/* Toolbar */}
       <div className="breadcrumb">
-        <input
-          type="text"
-          className="breadcrumb__title-input"
-          value={note.title}
-          onChange={(e) => onUpdate(note.id, { title: e.target.value })}
-          placeholder="Untitled"
-        />
+        <div className="breadcrumb__toolbar">
+          <button className="icon-btn" onClick={handleInsertImage} title="Insert image">
+            {Icons.image()}
+          </button>
+          <button className="icon-btn" onClick={handleInsertReference} title="Insert reference [[]]">
+            {Icons.link()}
+          </button>
+          <span className="breadcrumb__sep" />
+        </div>
         <div className="breadcrumb__modes">
           <button className={`icon-btn ${mode === 'edit' ? 'active' : ''}`} onClick={() => setMode('edit')} aria-label="Edit">
             {Icons.edit()}
@@ -116,6 +157,28 @@ export function Editor({ note, onUpdate, onNavigate }: EditorProps) {
                   Start writing to see preview...
                 </p>
               )}
+
+              {/* Backlinks */}
+              {backlinks.length > 0 && (
+                <div className="editor-backlinks">
+                  <div className="editor-backlinks__title">
+                    {Icons.link()}
+                    <span>{backlinks.length} reference{backlinks.length !== 1 ? 's' : ''}</span>
+                  </div>
+                  {backlinks.map(bl => (
+                    <button
+                      key={bl.id}
+                      className="editor-backlinks__item"
+                      onClick={() => onNavigate(bl.id)}
+                    >
+                      <span className="editor-backlinks__name">{bl.title || 'Untitled'}</span>
+                      <span className="editor-backlinks__snippet">
+                        {bl.content.slice(0, 80)}...
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -126,6 +189,12 @@ export function Editor({ note, onUpdate, onNavigate }: EditorProps) {
         <span><span className="notch__value">{wordCount}</span> words</span>
         <span className="notch__divider" />
         <span><span className="notch__value">{note.content.length}</span> chars</span>
+        {backlinks.length > 0 && (
+          <>
+            <span className="notch__divider" />
+            <span><span className="notch__value">{backlinks.length}</span> refs</span>
+          </>
+        )}
       </div>
     </>
   )

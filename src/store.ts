@@ -20,43 +20,43 @@ function createSeedNotes(): Note[] {
   return [
     {
       id: ids.hub, title: 'Knowledge Map', createdAt: now, updatedAt: now,
-      content: `# Knowledge Map\n\nThis is the central hub connecting all areas of study.\n\nCore branches:\n- [[${ids.physics}]] — Fundamental laws\n- [[${ids.math}]] — The language of patterns\n- [[${ids.cs}]] — Computation & algorithms\n- [[${ids.philosophy}]] — Big questions\n- [[${ids.neuroscience}]] — The brain\n- [[${ids.ai}]] — Machine intelligence`,
+      content: `# Knowledge Map\n\nThis is the central hub connecting all areas of study.\n\n![Knowledge Graph](https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&h=300&fit=crop)\n\nCore branches:\n- [[${ids.physics}]] — Fundamental laws\n- [[${ids.math}]] — The language of patterns\n- [[${ids.cs}]] — Computation & algorithms\n- [[${ids.philosophy}]] — Big questions\n- [[${ids.neuroscience}]] — The brain\n- [[${ids.ai}]] — Machine intelligence\n\n> "The important thing is not to stop questioning." — Albert Einstein`,
     },
     {
       id: ids.physics, title: 'Physics', createdAt: now - 100000, updatedAt: now - 50000,
-      content: `# Physics\n\nThe study of matter, energy, and the fundamental forces.\n\nRelated:\n- [[${ids.math}]] — Mathematical foundations\n- [[${ids.quantum}]] — Quantum mechanics\n- [[${ids.philosophy}]] — Philosophy of science`,
+      content: `# Physics\n\nThe study of matter, energy, and the fundamental forces.\n\n![Double slit experiment](https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=600&h=300&fit=crop)\n\n## Key Areas\n- Classical mechanics\n- Thermodynamics\n- Electromagnetism\n- Relativity\n\nRelated:\n- [[${ids.math}]] — Mathematical foundations\n- [[${ids.quantum}]] — Quantum mechanics\n- [[${ids.philosophy}]] — Philosophy of science`,
     },
     {
       id: ids.math, title: 'Mathematics', createdAt: now - 200000, updatedAt: now - 80000,
-      content: `# Mathematics\n\nPatterns, structures, and logical reasoning.\n\nConnections:\n- [[${ids.physics}]] — Applied math in physics\n- [[${ids.cs}]] — Discrete math & algorithms\n- [[${ids.networks}]] — Graph theory & networks`,
+      content: `# Mathematics\n\nPatterns, structures, and logical reasoning.\n\n## Fundamental Branches\n1. **Algebra** — Structures and symmetry\n2. **Analysis** — Limits, continuity, calculus\n3. **Geometry** — Shape, space, dimension\n4. **Number Theory** — Properties of integers\n\nConnections:\n- [[${ids.physics}]] — Applied math in physics\n- [[${ids.cs}]] — Discrete math & algorithms\n- [[${ids.networks}]] — Graph theory & networks`,
     },
     {
       id: ids.cs, title: 'Computer Science', createdAt: now - 300000, updatedAt: now - 20000,
-      content: `# Computer Science\n\nAlgorithms, data structures, and computation.\n\nLinks:\n- [[${ids.math}]] — Theoretical CS\n- [[${ids.ai}]] — Artificial intelligence\n- [[${ids.networks}]] — Network theory`,
+      content: `# Computer Science\n\nAlgorithms, data structures, and computation.\n\n\`\`\`python\ndef fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        a, b = b, a + b\n    return a\n\`\`\`\n\n## Core Topics\n- Algorithms & complexity\n- Operating systems\n- Networking\n- Databases\n\nLinks:\n- [[${ids.math}]] — Theoretical CS\n- [[${ids.ai}]] — Artificial intelligence\n- [[${ids.networks}]] — Network theory`,
     },
     {
       id: ids.philosophy, title: 'Philosophy', createdAt: now - 400000, updatedAt: now - 90000,
-      content: `# Philosophy\n\nEthics, epistemology, and the nature of reality.\n\nRelated:\n- [[${ids.physics}]] — Philosophy of physics\n- [[${ids.neuroscience}]] — Philosophy of mind\n- [[${ids.ai}]] — AI ethics & consciousness`,
+      content: `# Philosophy\n\nEthics, epistemology, and the nature of reality.\n\n> "I think, therefore I am." — René Descartes\n\n## Branches\n- **Metaphysics** — What exists?\n- **Epistemology** — What can we know?\n- **Ethics** — What should we do?\n- **Logic** — What follows from what?\n\nRelated:\n- [[${ids.physics}]] — Philosophy of physics\n- [[${ids.neuroscience}]] — Philosophy of mind\n- [[${ids.ai}]] — AI ethics & consciousness`,
     },
     {
       id: ids.neuroscience, title: 'Neuroscience', createdAt: now - 500000, updatedAt: now - 30000,
-      content: `# Neuroscience\n\nHow the brain produces thought, perception, and behavior.\n\nConnections:\n- [[${ids.philosophy}]] — Mind-body problem\n- [[${ids.ai}]] — Neural networks inspiration\n- [[${ids.creativity}]] — Creative cognition`,
+      content: `# Neuroscience\n\nHow the brain produces thought, perception, and behavior.\n\n![Neural network](https://images.unsplash.com/photo-1559757175-5700dde675bc?w=600&h=300&fit=crop)\n\n## Key Concepts\n- **Neurons** — ~86 billion in the human brain\n- **Synapses** — Connections between neurons\n- **Plasticity** — The brain's ability to change\n\nConnections:\n- [[${ids.philosophy}]] — Mind-body problem\n- [[${ids.ai}]] — Neural networks inspiration\n- [[${ids.creativity}]] — Creative cognition`,
     },
     {
       id: ids.ai, title: 'Artificial Intelligence', createdAt: now - 600000, updatedAt: now - 10000,
-      content: `# Artificial Intelligence\n\nBuilding systems that learn, reason, and create.\n\nRelated:\n- [[${ids.cs}]] — Algorithms & computing\n- [[${ids.neuroscience}]] — Bio-inspired AI\n- [[${ids.philosophy}]] — Ethics of AI\n- [[${ids.quantum}]] — Quantum computing for AI`,
+      content: `# Artificial Intelligence\n\nBuilding systems that learn, reason, and create.\n\n![AI visualization](https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&h=300&fit=crop)\n\n## Milestones\n| Year | Event |\n|------|-------|\n| 1956 | Dartmouth Conference |\n| 1997 | Deep Blue beats Kasparov |\n| 2017 | Transformer architecture |\n| 2022 | Large Language Models |\n\nRelated:\n- [[${ids.cs}]] — Algorithms & computing\n- [[${ids.neuroscience}]] — Bio-inspired AI\n- [[${ids.philosophy}]] — Ethics of AI\n- [[${ids.quantum}]] — Quantum computing for AI`,
     },
     {
       id: ids.quantum, title: 'Quantum Mechanics', createdAt: now - 700000, updatedAt: now - 60000,
-      content: `# Quantum Mechanics\n\nThe physics of the very small — superposition, entanglement, uncertainty.\n\nLinks:\n- [[${ids.physics}]] — Classical to quantum\n- [[${ids.math}]] — Linear algebra & Hilbert spaces\n- [[${ids.ai}]] — Quantum machine learning`,
+      content: `# Quantum Mechanics\n\nThe physics of the very small — superposition, entanglement, uncertainty.\n\n## Core Principles\n- **Superposition** — Particles exist in multiple states\n- **Entanglement** — Instant correlations across distance\n- **Uncertainty** — Cannot know position and momentum exactly\n\nLinks:\n- [[${ids.physics}]] — Classical to quantum\n- [[${ids.math}]] — Linear algebra & Hilbert spaces\n- [[${ids.ai}]] — Quantum machine learning`,
     },
     {
       id: ids.creativity, title: 'Creativity & Innovation', createdAt: now - 800000, updatedAt: now - 40000,
-      content: `# Creativity & Innovation\n\nHow new ideas emerge from connecting disparate concepts.\n\nRelated:\n- [[${ids.neuroscience}]] — Neural basis of creativity\n- [[${ids.networks}]] — Innovation networks\n- [[${ids.philosophy}]] — Aesthetics`,
+      content: `# Creativity & Innovation\n\nHow new ideas emerge from connecting disparate concepts.\n\n## The Creative Process\n1. **Preparation** — Immerse in the domain\n2. **Incubation** — Let the subconscious work\n3. **Illumination** — The "aha!" moment\n4. **Verification** — Test and refine\n\nRelated:\n- [[${ids.neuroscience}]] — Neural basis of creativity\n- [[${ids.networks}]] — Innovation networks\n- [[${ids.philosophy}]] — Aesthetics`,
     },
     {
       id: ids.networks, title: 'Network Theory', createdAt: now - 900000, updatedAt: now - 70000,
-      content: `# Network Theory\n\nStudy of graphs, connections, and emergent behavior in complex systems.\n\nLinks:\n- [[${ids.math}]] — Graph theory\n- [[${ids.cs}]] — Distributed systems\n- [[${ids.creativity}]] — Creative networks`,
+      content: `# Network Theory\n\nStudy of graphs, connections, and emergent behavior in complex systems.\n\n## Key Properties\n- **Nodes** — Entities in the network\n- **Edges** — Connections between nodes\n- **Hubs** — Highly connected nodes\n- **Small world** — Short path between any two nodes\n\nLinks:\n- [[${ids.math}]] — Graph theory\n- [[${ids.cs}]] — Distributed systems\n- [[${ids.creativity}]] — Creative networks`,
     },
   ]
 }

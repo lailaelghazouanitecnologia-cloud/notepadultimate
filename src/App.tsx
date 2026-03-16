@@ -292,7 +292,7 @@ export default function App() {
         {/* Content */}
         {showEditor ? (
           <div className="content-area">
-            <MemoizedEditor note={editingNote!} onUpdate={updateNote} onNavigate={handleNavigate} />
+            <MemoizedEditor note={editingNote!} allNotes={notes} onUpdate={updateNote} onNavigate={handleNavigate} />
           </div>
         ) : pluginPanel === 'agents' ? (
           profileAgent ? (

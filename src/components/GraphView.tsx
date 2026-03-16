@@ -14,6 +14,7 @@ interface NodePos {
   x: number
   y: number
   links: string[]
+  linkCount: number
 }
 
 interface ContextMenu {
@@ -33,6 +34,21 @@ function extractLinks(content: string, allIds: Set<string>): string[] {
   return links
 }
 
+// Colors for nodes based on connection count
+const NODE_COLORS = [
+  'var(--muted-foreground)',  // 0 links
+  'var(--zw-link, #5cc8d4)', // 1-2 links
+  '#a78bfa',                  // 3-4 links (purple)
+  'var(--zw-red)',            // 5+ links (red/hub)
+]
+
+function getNodeColor(linkCount: number): string {
+  if (linkCount === 0) return NODE_COLORS[0]
+  if (linkCount <= 2) return NODE_COLORS[1]
+  if (linkCount <= 4) return NODE_COLORS[2]
+  return NODE_COLORS[3]
+}
+
 export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [dragging, setDragging] = useState<string | null>(null)
@@ -42,45 +58,55 @@ export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
   const [isPanning, setIsPanning] = useState(false)
   const panStart = useRef({ x: 0, y: 0, px: 0, py: 0 })
   const [ctxMenu, setCtxMenu] = useState<ContextMenu | null>(null)
+  const [hovered, setHovered] = useState<string | null>(null)
+  const dragMoved = useRef(false)
 
   const allIds = useMemo(() => new Set(notes.map(n => n.id)), [notes])
 
-  const [positions, setPositions] = useState<NodePos[]>(() => {
-    const cx = 500, cy = 400
-    return notes.map((n, i) => {
+  // Count all incoming + outgoing links per note
+  const linkCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    notes.forEach(n => {
       const links = extractLinks(n.content, allIds)
-      if (i === 0) return { id: n.id, title: n.title || 'Untitled', x: cx, y: cy, links }
-      const angle = ((i - 1) / (notes.length - 1)) * Math.PI * 2 - Math.PI / 2
-      const radius = 200 + (i % 2) * 60
-      return {
-        id: n.id,
-        title: n.title || 'Untitled',
-        x: cx + Math.cos(angle) * radius,
-        y: cy + Math.sin(angle) * radius,
-        links,
-      }
+      counts.set(n.id, (counts.get(n.id) || 0) + links.length)
+      links.forEach(lid => counts.set(lid, (counts.get(lid) || 0) + 1))
     })
-  })
+    return counts
+  }, [notes, allIds])
+
+  // Center on the container
+  const [positions, setPositions] = useState<NodePos[]>([])
+  const initialized = useRef(false)
 
   useEffect(() => {
+    const el = containerRef.current
+    const cx = el ? el.clientWidth / 2 : 500
+    const cy = el ? el.clientHeight / 2 : 400
+
     setPositions(prev => {
       const existing = new Map(prev.map(p => [p.id, p]))
-      const cx = 500, cy = 400
       return notes.map((n, i) => {
+        const links = extractLinks(n.content, allIds)
+        const lc = linkCounts.get(n.id) || 0
         const ex = existing.get(n.id)
-        if (ex) return { ...ex, title: n.title || 'Untitled', links: extractLinks(n.content, allIds) }
+        if (ex && initialized.current) {
+          return { ...ex, title: n.title || 'Untitled', links, linkCount: lc }
+        }
+        // Place hub (most connected) in center, others in orbit
         const angle = (i / Math.max(notes.length, 1)) * Math.PI * 2 - Math.PI / 2
-        const radius = 200 + (i % 2) * 60
+        const radius = lc > 4 ? 0 : 160 + (i % 3) * 70
         return {
           id: n.id,
           title: n.title || 'Untitled',
-          x: cx + Math.cos(angle) * radius,
-          y: cy + Math.sin(angle) * radius,
-          links: extractLinks(n.content, allIds),
+          x: cx + Math.cos(angle) * radius - 60,
+          y: cy + Math.sin(angle) * radius - 14,
+          links,
+          linkCount: lc,
         }
       })
     })
-  }, [notes, allIds])
+    initialized.current = true
+  }, [notes, allIds, linkCounts])
 
   const posMap = useMemo(() => new Map(positions.map(p => [p.id, p])), [positions])
 
@@ -90,11 +116,13 @@ export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
     const node = posMap.get(nodeId)
     if (!node) return
     setDragging(nodeId)
+    dragMoved.current = false
     setOffset({ x: e.clientX / zoom - node.x - pan.x, y: e.clientY / zoom - node.y - pan.y })
   }, [posMap, pan, zoom])
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (dragging) {
+      dragMoved.current = true
       setPositions(prev => prev.map(p =>
         p.id === dragging ? { ...p, x: e.clientX / zoom - offset.x - pan.x, y: e.clientY / zoom - offset.y - pan.y } : p
       ))
@@ -111,10 +139,15 @@ export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
     setIsPanning(false)
   }, [])
 
+  const handleNodeClick = useCallback((nodeId: string) => {
+    if (!dragMoved.current) {
+      onOpenNote(nodeId)
+    }
+  }, [onOpenNote])
+
   const handleBgMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button === 2) return
     if (ctxMenu) { setCtxMenu(null); return }
-    // Start panning on any left click that isn't on a node
     setIsPanning(true)
     panStart.current = { x: pan.x, y: pan.y, px: e.clientX, py: e.clientY }
   }, [pan, ctxMenu])
@@ -160,7 +193,7 @@ export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
         onCreateNote('Reference', '> Add your reference here\n\nSource: ')
         break
       case 'new-image':
-        onCreateNote('Image Note', '![Image description](url)\n\nCaption: ')
+        onCreateNote('Image Note', '![Image description](https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop)\n\nCaption: A beautiful landscape')
         break
     }
     setCtxMenu(null)
@@ -176,6 +209,16 @@ export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
     })
     return result
   }, [positions, posMap])
+
+  // Highlighted edges when hovering a node
+  const highlightedEdges = useMemo(() => {
+    if (!hovered) return new Set<number>()
+    const set = new Set<number>()
+    edges.forEach((edge, i) => {
+      if (edge.from.id === hovered || edge.to.id === hovered) set.add(i)
+    })
+    return set
+  }, [hovered, edges])
 
   return (
     <div className="content-area">
@@ -197,7 +240,7 @@ export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
                 y1={edge.from.y + 14}
                 x2={edge.to.x + 60}
                 y2={edge.to.y + 14}
-                className="graph-edge"
+                className={`graph-edge ${highlightedEdges.has(i) ? 'highlighted' : ''}`}
               />
             ))}
           </svg>
@@ -206,11 +249,14 @@ export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
             {positions.map(node => (
               <div
                 key={node.id}
-                className={`graph-node ${dragging === node.id ? 'dragging' : ''}`}
+                className={`graph-node ${dragging === node.id ? 'dragging' : ''} ${hovered === node.id ? 'hovered' : ''}`}
                 style={{ left: node.x, top: node.y }}
                 onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
-                onDoubleClick={() => onOpenNote(node.id)}
+                onMouseUp={() => handleNodeClick(node.id)}
+                onMouseEnter={() => setHovered(node.id)}
+                onMouseLeave={() => setHovered(null)}
               >
+                <span className="graph-node__dot" style={{ background: getNodeColor(node.linkCount) }} />
                 <span className="graph-node__title">{node.title}</span>
                 {node.links.length > 0 && (
                   <span className="graph-node__badge">{node.links.length}</span>
@@ -231,6 +277,26 @@ export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
           {Math.round(zoom * 100)}%
         </div>
 
+        {/* Legend */}
+        <div className="graph-legend">
+          <div className="graph-legend__item">
+            <span className="graph-legend__dot" style={{ background: NODE_COLORS[0] }} />
+            <span>Isolated</span>
+          </div>
+          <div className="graph-legend__item">
+            <span className="graph-legend__dot" style={{ background: NODE_COLORS[1] }} />
+            <span>1-2 links</span>
+          </div>
+          <div className="graph-legend__item">
+            <span className="graph-legend__dot" style={{ background: NODE_COLORS[2] }} />
+            <span>3-4 links</span>
+          </div>
+          <div className="graph-legend__item">
+            <span className="graph-legend__dot" style={{ background: NODE_COLORS[3] }} />
+            <span>Hub (5+)</span>
+          </div>
+        </div>
+
         {/* Context menu */}
         {ctxMenu && (
           <div
@@ -247,7 +313,7 @@ export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
             </button>
             <button className="graph-ctx-menu__item" onClick={() => handleCtxAction('new-image')}>
               {Icons.image()}
-              <span>New Image</span>
+              <span>New Image Note</span>
             </button>
           </div>
         )}
