@@ -7,6 +7,11 @@ import { UserMessage, AssistantMessage, StreamingMessage, EmptyState } from './c
 import type { ChatMessage, StreamingState } from './chat'
 import '../lib/markdown.css'
 
+interface AttachedFile {
+  id: string
+  title: string
+}
+
 interface HomeScreenProps {
   notes: Note[]
   publishedNotes: Note[]
@@ -14,6 +19,9 @@ interface HomeScreenProps {
   onOpenNote: (id: string) => void
   onSaveChat: (session: ChatSession) => void
   initialSession?: ChatSession
+  attachedFiles?: AttachedFile[]
+  onRemoveAttachedFile?: (id: string) => void
+  onFileDrop?: (e: React.DragEvent) => void
 }
 
 /** 'home' = search/welcome view, 'chat' = AI conversation thread */
@@ -51,7 +59,7 @@ function isCommand(text: string): boolean {
   return lower.startsWith('/') || lower === '?'
 }
 
-export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, onSaveChat, initialSession }: HomeScreenProps) {
+export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, onSaveChat, initialSession, attachedFiles = [], onRemoveAttachedFile, onFileDrop }: HomeScreenProps) {
   const [sessionId] = useState(() => initialSession?.id || `chat-${Date.now()}`)
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>(
@@ -182,6 +190,14 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
 
     setStreaming({ status: 'connecting', text: '', error: null })
 
+    // Build context from attached files
+    const contextNotes = attachedFiles.length > 0
+      ? notes.filter(n => attachedFiles.some(f => f.id === n.id))
+      : []
+    const contextLabel = contextNotes.length > 0
+      ? `Using context from: ${contextNotes.map(n => `**${n.title}**`).join(', ')}\n\n`
+      : ''
+
     setTimeout(() => {
       const query = userText.toLowerCase()
       const found = notes.filter(
@@ -190,9 +206,13 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
 
       let response: string
       if (found.length > 0) {
-        response = `I found **${found.length}** note${found.length !== 1 ? 's' : ''} related to your question:\n\n${found.slice(0, 3).map((n) => `### ${n.title}\n${n.content.slice(0, 150)}...`).join('\n\n')}\n\nWould you like me to elaborate on any of these?`
+        // Generate search result cards using special markers
+        const cards = found.slice(0, 3).map((n) =>
+          `<!--SEARCH_CARD:${n.id}:${n.title}:${n.content.slice(0, 120).replace(/\n/g, ' ')}-->`
+        ).join('\n')
+        response = `${contextLabel}I found **${found.length}** note${found.length !== 1 ? 's' : ''} related to your question:\n\n${cards}\n\nWould you like me to elaborate on any of these?`
       } else {
-        response = `I don't have specific notes about "${userText}", but I can help you create one. Would you like me to:\n\n- Create a new note with \`/new ${userText}\`\n- Search more broadly with \`/search ${userText.split(' ')[0]}\`\n- Or just tell me more about what you're looking for`
+        response = `${contextLabel}I don't have specific notes about "${userText}", but I can help you create one. Would you like me to:\n\n- Create a new note with \`/new ${userText}\`\n- Search more broadly with \`/search ${userText.split(' ')[0]}\`\n- Or just tell me more about what you're looking for`
       }
 
       let charIndex = 0
@@ -214,7 +234,7 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
         }
       }, 20)
     }, 600)
-  }, [notes])
+  }, [notes, attachedFiles])
 
   // Send message (unified for both views)
   const sendMessage = useCallback((text: string) => {
@@ -363,6 +383,7 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
                     key={msg.id}
                     message={msg}
                     onRetry={handleRetry}
+                    onOpenNote={onOpenNote}
                   />
                 )
               ))}
@@ -375,14 +396,29 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
 
           {/* Input */}
           <div className="zw-chat-input-area">
-            <div className="zw-chat-input-card">
+            <div
+              className="zw-chat-input-card"
+              onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy' }}
+              onDrop={onFileDrop}
+            >
+              {attachedFiles.length > 0 && (
+                <div className="zw-chat-attached">
+                  {attachedFiles.map((f) => (
+                    <span key={f.id} className="zw-chat-attached-chip">
+                      {Icons.file()}
+                      <span>{f.title}</span>
+                      <button className="zw-chat-attached-chip__x" onClick={() => onRemoveAttachedFile?.(f.id)}>{Icons.x()}</button>
+                    </span>
+                  ))}
+                </div>
+              )}
               <textarea
                 ref={chatInputRef}
                 className="zw-chat-textarea"
                 value={input}
                 onChange={handleTextareaInput}
                 onKeyDown={handleChatKeyDown}
-                placeholder="Reply..."
+                placeholder={attachedFiles.length > 0 ? 'Ask about attached files...' : 'Reply...'}
                 rows={1}
                 disabled={isStreaming}
               />

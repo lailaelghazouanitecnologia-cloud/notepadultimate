@@ -54,8 +54,53 @@ export default function App() {
   const [publishState, setPublishState] = useLocalState<'idle' | 'loading' | 'done'>('idle')
   const [renamingTabId, setRenamingTabId] = useLocalState<string | null>(null)
   const [tabRenameValue, setTabRenameValue] = useLocalState('')
+  const [showPeoplePanel, setShowPeoplePanel] = useLocalState(false)
+  const [sidebarWidth, setSidebarWidth] = useLocalState(260)
+  const [attachedFiles, setAttachedFiles] = useLocalState<{ id: string; title: string }[]>([])
   const pluginsRef = useRef<HTMLDivElement>(null)
   const tabRenameRef = useRef<HTMLInputElement>(null)
+  const resizingRef = useRef(false)
+
+  // Resizable sidebar divider
+  const handleDividerMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    resizingRef.current = true
+    const startX = e.clientX
+    const startW = sidebarWidth
+    const onMove = (ev: MouseEvent) => {
+      if (!resizingRef.current) return
+      const newW = Math.max(180, Math.min(480, startW + ev.clientX - startX))
+      setSidebarWidth(newW)
+    }
+    const onUp = () => {
+      resizingRef.current = false
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }, [sidebarWidth, setSidebarWidth])
+
+  // Handle file drop from sidebar into chat
+  const handleFileDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    const noteId = e.dataTransfer.getData('text/note-id')
+    const noteTitle = e.dataTransfer.getData('text/note-title')
+    if (noteId && noteTitle) {
+      setAttachedFiles(prev => {
+        if (prev.some(f => f.id === noteId)) return prev
+        return [...prev, { id: noteId, title: noteTitle }]
+      })
+    }
+  }, [setAttachedFiles])
+
+  const removeAttachedFile = useCallback((id: string) => {
+    setAttachedFiles(prev => prev.filter(f => f.id !== id))
+  }, [setAttachedFiles])
 
   const editingNote = editingNoteId ? notes.find((n) => n.id === editingNoteId) : null
 
@@ -166,12 +211,14 @@ export default function App() {
         onDelete={deleteNote}
         onRename={handleRenameNote}
         onDuplicate={handleDuplicateNote}
+        onDragNote={true}
         projects={projects}
         activeProjectId={activeProjectId}
         onSwitchProject={switchProject}
         onCreateProject={createProject}
         collapsed={sidebarCollapsed}
         onToggleCollapse={toggleSidebar}
+        width={sidebarWidth}
         folders={folders}
         onCreateFolder={createFolder}
         onDeleteFolder={deleteFolder}
@@ -179,6 +226,11 @@ export default function App() {
         theme={theme}
         onToggleTheme={toggleTheme}
       />
+
+      {/* Resizable divider */}
+      {!sidebarCollapsed && (
+        <div className="app-divider" onMouseDown={handleDividerMouseDown} />
+      )}
 
       <div className="app-main">
         <header className="header">
@@ -260,8 +312,9 @@ export default function App() {
             </div>
 
             <button
-              className="header__icon-btn header__icon-btn--borderless"
+              className={`header__icon-btn header__icon-btn--borderless ${showPeoplePanel ? 'active' : ''}`}
               title="Add people"
+              onClick={() => setShowPeoplePanel(!showPeoplePanel)}
             >
               {Icons.userPlus()}
             </button>
@@ -380,6 +433,9 @@ export default function App() {
               onOpenNote={handleOpenNote}
               onSaveChat={saveChat}
               initialSession={activeSession}
+              attachedFiles={attachedFiles}
+              onRemoveAttachedFile={removeAttachedFile}
+              onFileDrop={handleFileDrop}
               key={activeChatId || 'new'}
             />
             {showHistory && (
@@ -413,6 +469,48 @@ export default function App() {
           <MemoizedGraphView notes={notes} onOpenNote={handleOpenNote} onCreateNote={handleCreateFromChat} />
         ) : null}
       </div>
+
+      {/* People panel */}
+      {showPeoplePanel && (
+        <div className="people-panel">
+          <div className="people-panel__header">
+            <span className="people-panel__title">People</span>
+            <button className="people-panel__close" onClick={() => setShowPeoplePanel(false)}>
+              {Icons.x()}
+            </button>
+          </div>
+          <div className="people-panel__search">
+            {Icons.search()}
+            <input type="text" placeholder="Search or invite by email..." className="people-panel__search-input" />
+          </div>
+          <div className="people-panel__section">
+            <span className="people-panel__label">Members</span>
+            <div className="people-panel__member">
+              <div className="people-panel__avatar">Y</div>
+              <div className="people-panel__info">
+                <span className="people-panel__name">You</span>
+                <span className="people-panel__role">Owner</span>
+              </div>
+            </div>
+          </div>
+          <div className="people-panel__section">
+            <span className="people-panel__label">Agents</span>
+            {agents.slice(0, 4).map((a) => (
+              <div key={a.id} className="people-panel__member" onClick={() => handleOpenProfile(a.id)}>
+                <div className="people-panel__avatar">{a.avatar}</div>
+                <div className="people-panel__info">
+                  <span className="people-panel__name">{a.name}</span>
+                  <span className="people-panel__role">Agent</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <button className="people-panel__invite-btn">
+            {Icons.userPlus()}
+            <span>Invite people</span>
+          </button>
+        </div>
+      )}
 
       {/* Publish modal */}
       {showPublishModal && editingNote && (

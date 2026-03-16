@@ -10,12 +10,14 @@ interface SidebarProps {
   onDelete: (id: string) => void
   onRename: (id: string, newTitle: string) => void
   onDuplicate?: (id: string) => void
+  onDragNote?: boolean
   projects: Project[]
   activeProjectId: string
   onSwitchProject: (id: string) => void
   onCreateProject: (name: string, emoji: string) => void
   collapsed: boolean
   onToggleCollapse: () => void
+  width?: number
   folders: Folder[]
   onCreateFolder: (name: string, parentId?: string) => void
   onDeleteFolder: (id: string) => void
@@ -26,9 +28,9 @@ interface SidebarProps {
 }
 
 export function Sidebar({
-  notes, activeId, onSelect, onAdd, onDelete, onRename, onDuplicate,
+  notes, activeId, onSelect, onAdd, onDelete, onRename, onDuplicate, onDragNote,
   projects, activeProjectId, onSwitchProject, onCreateProject,
-  collapsed, onToggleCollapse,
+  collapsed, onToggleCollapse, width,
   folders, onCreateFolder, onDeleteFolder, onRenameFolder, onMoveNote: _onMoveNote,
   theme, onToggleTheme,
 }: SidebarProps) {
@@ -191,6 +193,12 @@ export function Sidebar({
       onClick={() => onSelect(note.id)}
       onDoubleClick={(e) => { e.preventDefault(); startRename(note.id, note.title || 'Untitled') }}
       onContextMenu={(e) => handleContextMenu(e, note.id, 'note')}
+      draggable={!!onDragNote}
+      onDragStart={(e) => {
+        e.dataTransfer.setData('text/note-id', note.id)
+        e.dataTransfer.setData('text/note-title', note.title || 'Untitled')
+        e.dataTransfer.effectAllowed = 'copy'
+      }}
     >
       {/\.\w+$/.test(note.title) ? <FileTypeIcon filename={note.title} /> : Icons.file()}
       {renamingId === note.id ? (
@@ -282,7 +290,7 @@ export function Sidebar({
   }
 
   return (
-    <aside className={`zw-sb ${collapsed ? 'collapsed' : ''}`}>
+    <aside className={`zw-sb ${collapsed ? 'collapsed' : ''}`} style={!collapsed && width ? { width } : undefined}>
       {/* Top bar: logo + close */}
       <div className="zw-sb-topbar">
         <div className="zw-sb-topbar__team">

@@ -98,21 +98,59 @@ export const UserMessage = memo(function UserMessage({
   )
 })
 
-/* ── Assistant message with markdown ── */
+/* ── Parse search cards from content ── */
+interface SearchCard {
+  id: string
+  title: string
+  snippet: string
+}
+
+function parseSearchCards(content: string): { cards: SearchCard[]; cleanContent: string } {
+  const cards: SearchCard[] = []
+  const cleanContent = content.replace(/<!--SEARCH_CARD:([^:]+):([^:]+):([^-]*)-->/g, (_, id, title, snippet) => {
+    cards.push({ id, title, snippet })
+    return ''
+  }).trim()
+  return { cards, cleanContent }
+}
+
+/* ── Assistant message with markdown + search cards ── */
 export const AssistantMessage = memo(function AssistantMessage({
   message,
   onRetry,
+  onOpenNote,
 }: {
   message: ChatMessage
   onRetry?: (content: string) => void
+  onOpenNote?: (id: string) => void
 }) {
+  const { cards, cleanContent } = parseSearchCards(message.content)
+
   return (
     <div className="zw-chat-msg zw-chat-msg-ai">
       <div className="zw-chat-bubble-ai">
         <div
           className="zw-chat-ai-content zn-preview"
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(message.content) }}
+          dangerouslySetInnerHTML={{ __html: renderMarkdown(cleanContent) }}
         />
+        {cards.length > 0 && (
+          <div className="zw-chat-search-cards">
+            {cards.map((card) => (
+              <button
+                key={card.id}
+                className="zw-chat-search-card"
+                onClick={() => onOpenNote?.(card.id)}
+              >
+                <div className="zw-chat-search-card__url">
+                  {Icons.file()}
+                  <span>zarnet.app / notes / {card.id.slice(0, 8)}</span>
+                </div>
+                <div className="zw-chat-search-card__title">{card.title}</div>
+                <div className="zw-chat-search-card__snippet">{card.snippet}</div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       <div className="zw-msg-actions">
         <CopyButton text={message.content} />
