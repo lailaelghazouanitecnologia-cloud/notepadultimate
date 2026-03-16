@@ -38,6 +38,7 @@ export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
   const [dragging, setDragging] = useState<string | null>(null)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [pan, setPan] = useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
   const [isPanning, setIsPanning] = useState(false)
   const panStart = useRef({ x: 0, y: 0, px: 0, py: 0 })
   const [ctxMenu, setCtxMenu] = useState<ContextMenu | null>(null)
@@ -48,7 +49,6 @@ export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
     const cx = 500, cy = 400
     return notes.map((n, i) => {
       const links = extractLinks(n.content, allIds)
-      // First node at center, rest in a radial layout
       if (i === 0) return { id: n.id, title: n.title || 'Untitled', x: cx, y: cy, links }
       const angle = ((i - 1) / (notes.length - 1)) * Math.PI * 2 - Math.PI / 2
       const radius = 200 + (i % 2) * 60
@@ -84,26 +84,27 @@ export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
 
   const posMap = useMemo(() => new Map(positions.map(p => [p.id, p])), [positions])
 
-  const handleMouseDown = useCallback((e: React.MouseEvent, nodeId: string) => {
+  const handleNodeMouseDown = useCallback((e: React.MouseEvent, nodeId: string) => {
     e.stopPropagation()
+    e.preventDefault()
     const node = posMap.get(nodeId)
     if (!node) return
     setDragging(nodeId)
-    setOffset({ x: e.clientX - node.x - pan.x, y: e.clientY - node.y - pan.y })
-  }, [posMap, pan])
+    setOffset({ x: e.clientX / zoom - node.x - pan.x, y: e.clientY / zoom - node.y - pan.y })
+  }, [posMap, pan, zoom])
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (dragging) {
       setPositions(prev => prev.map(p =>
-        p.id === dragging ? { ...p, x: e.clientX - offset.x - pan.x, y: e.clientY - offset.y - pan.y } : p
+        p.id === dragging ? { ...p, x: e.clientX / zoom - offset.x - pan.x, y: e.clientY / zoom - offset.y - pan.y } : p
       ))
     } else if (isPanning) {
       setPan({
-        x: e.clientX - panStart.current.px + panStart.current.x,
-        y: e.clientY - panStart.current.py + panStart.current.y,
+        x: (e.clientX - panStart.current.px) / zoom + panStart.current.x,
+        y: (e.clientY - panStart.current.py) / zoom + panStart.current.y,
       })
     }
-  }, [dragging, offset, pan, isPanning])
+  }, [dragging, offset, pan, zoom, isPanning])
 
   const handleMouseUp = useCallback(() => {
     setDragging(null)
@@ -111,25 +112,35 @@ export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
   }, [])
 
   const handleBgMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button === 2) return // don't pan on right click
+    if (e.button === 2) return
     if (ctxMenu) { setCtxMenu(null); return }
-    if (e.target === e.currentTarget || (e.target as HTMLElement).tagName === 'svg') {
-      setIsPanning(true)
-      panStart.current = { x: pan.x, y: pan.y, px: e.clientX, py: e.clientY }
-    }
+    // Start panning on any left click that isn't on a node
+    setIsPanning(true)
+    panStart.current = { x: pan.x, y: pan.y, px: e.clientX, py: e.clientY }
   }, [pan, ctxMenu])
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
-    const rect = containerRef.current?.getBoundingClientRect()
-    if (!rect) return
     setCtxMenu({
       x: e.clientX,
       y: e.clientY,
-      canvasX: e.clientX - rect.left - pan.x,
-      canvasY: e.clientY - rect.top - pan.y,
+      canvasX: e.clientX / zoom - pan.x,
+      canvasY: e.clientY / zoom - pan.y,
     })
-  }, [pan])
+  }, [pan, zoom])
+
+  // Zoom with scroll wheel
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      const delta = e.deltaY > 0 ? 0.9 : 1.1
+      setZoom(z => Math.min(3, Math.max(0.2, z * delta)))
+    }
+    el.addEventListener('wheel', handleWheel, { passive: false })
+    return () => el.removeEventListener('wheel', handleWheel)
+  }, [])
 
   // Close context menu on click outside
   useEffect(() => {
@@ -177,34 +188,36 @@ export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
         onMouseLeave={handleMouseUp}
         onContextMenu={handleContextMenu}
       >
-        <svg className="graph-edges" style={{ transform: `translate(${pan.x}px, ${pan.y}px)` }}>
-          {edges.map((edge, i) => (
-            <line
-              key={i}
-              x1={edge.from.x + 60}
-              y1={edge.from.y + 14}
-              x2={edge.to.x + 60}
-              y2={edge.to.y + 14}
-              className="graph-edge"
-            />
-          ))}
-        </svg>
+        <div className="graph-canvas" style={{ transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)` }}>
+          <svg className="graph-edges">
+            {edges.map((edge, i) => (
+              <line
+                key={i}
+                x1={edge.from.x + 60}
+                y1={edge.from.y + 14}
+                x2={edge.to.x + 60}
+                y2={edge.to.y + 14}
+                className="graph-edge"
+              />
+            ))}
+          </svg>
 
-        <div className="graph-nodes" style={{ transform: `translate(${pan.x}px, ${pan.y}px)` }}>
-          {positions.map(node => (
-            <div
-              key={node.id}
-              className={`graph-node ${dragging === node.id ? 'dragging' : ''}`}
-              style={{ left: node.x, top: node.y }}
-              onMouseDown={(e) => handleMouseDown(e, node.id)}
-              onDoubleClick={() => onOpenNote(node.id)}
-            >
-              <span className="graph-node__title">{node.title}</span>
-              {node.links.length > 0 && (
-                <span className="graph-node__badge">{node.links.length}</span>
-              )}
-            </div>
-          ))}
+          <div className="graph-nodes">
+            {positions.map(node => (
+              <div
+                key={node.id}
+                className={`graph-node ${dragging === node.id ? 'dragging' : ''}`}
+                style={{ left: node.x, top: node.y }}
+                onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
+                onDoubleClick={() => onOpenNote(node.id)}
+              >
+                <span className="graph-node__title">{node.title}</span>
+                {node.links.length > 0 && (
+                  <span className="graph-node__badge">{node.links.length}</span>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         {notes.length === 0 && (
@@ -212,6 +225,11 @@ export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
             <span>Right-click to create a note</span>
           </div>
         )}
+
+        {/* Zoom indicator */}
+        <div className="graph-zoom">
+          {Math.round(zoom * 100)}%
+        </div>
 
         {/* Context menu */}
         {ctxMenu && (
