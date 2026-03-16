@@ -130,7 +130,6 @@ html, body {
   height: var(--zw-header-h); display: flex; align-items: center;
   padding: 0 8px; gap: 6px; flex-shrink: 0;
   background: var(--background);
-  border-bottom: 1px solid var(--border);
 }
 .header__left { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
 .header__center { flex: 1; display: flex; justify-content: center; min-width: 0; }
@@ -2108,6 +2107,21 @@ html, body {
 }
 .graph-ctx-menu__item:hover { background: var(--accent); color: var(--foreground); }
 .graph-ctx-menu__item svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+/* Selection rect */
+.graph-selection-rect {
+  position: absolute; border: 1.5px dashed var(--zw-link, #2563eb);
+  background: rgba(37, 99, 235, 0.08); border-radius: 3px; pointer-events: none; z-index: 50;
+}
+.graph-node.selected {
+  border-color: var(--zw-link, #2563eb); box-shadow: 0 0 0 2px rgba(37,99,235,0.25); z-index: 5;
+}
+.graph-selection-info {
+  position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+  background: var(--popover); border: 1px solid var(--border); border-radius: 6px;
+  padding: 4px 12px; font-size: 11px; color: var(--foreground);
+  font-family: var(--font-sans); box-shadow: 0 2px 8px rgba(0,0,0,0.1); z-index: 20;
+}
 
 @keyframes scale-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }

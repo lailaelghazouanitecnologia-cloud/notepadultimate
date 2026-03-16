@@ -237,7 +237,21 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
       return
     }
 
-    // Regular message
+    // If on home view and there are matching results, stay in home (search mode)
+    if (viewMode === 'home') {
+      const q = text.trim().toLowerCase()
+      const hasResults = notes.some(
+        (n) => n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q)
+      ) || publishedNotes.some(
+        (n) => n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q)
+      )
+      if (hasResults) {
+        // Keep input so results stay visible — don't switch to chat
+        return
+      }
+    }
+
+    // Regular message — switch to chat
     const userMsg: ChatMessage = {
       id: `msg-${Date.now()}`, role: 'user', content: text, timestamp: Date.now(),
     }
@@ -246,7 +260,7 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
     setShowCommands(false)
     if (viewMode === 'home') setViewMode('chat')
     simulateAIResponse(text)
-  }, [isStreaming, processCommand, simulateAIResponse, viewMode])
+  }, [isStreaming, processCommand, simulateAIResponse, viewMode, notes, publishedNotes])
 
   const handleHomeSend = useCallback(() => sendMessage(input.trim()), [input, sendMessage])
   const handleChatSend = useCallback(() => sendMessage(input.trim()), [input, sendMessage])

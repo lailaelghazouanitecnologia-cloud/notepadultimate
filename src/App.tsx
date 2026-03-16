@@ -182,15 +182,8 @@ export default function App() {
 
       <div className="app-main">
         <header className="header">
-          {/* LEFT: sidebar toggle + mode switcher */}
+          {/* LEFT: mode switcher */}
           <div className="header__left">
-            <button
-              className={`zw-sb-toggle ${sidebarCollapsed ? '' : 'hidden'}`}
-              onClick={() => setSidebarCollapsed(false)}
-              title="Open sidebar"
-            >
-              {Icons.menu()}
-            </button>
             <div className="zw-mode-switcher">
               {modes.map((m) => (
                 <button
@@ -213,8 +206,17 @@ export default function App() {
             </div>
           </div>
 
-          {/* RIGHT: icon buttons + publish */}
+          {/* RIGHT: sidebar toggle + icon buttons + publish */}
           <div className="header__right">
+            <button
+              className={`header__icon-btn ${sidebarCollapsed ? '' : 'header__icon-btn--hidden'}`}
+              onClick={() => setSidebarCollapsed(false)}
+              title="Open sidebar"
+              tabIndex={sidebarCollapsed ? 0 : -1}
+            >
+              {Icons.menu()}
+            </button>
+
             <button
               className={`header__icon-btn ${showHistory ? 'active' : ''} ${!(view === 'chat' && !showEditor && !pluginPanel) ? 'header__icon-btn--hidden' : ''}`}
               onClick={() => setShowHistory(!showHistory)}

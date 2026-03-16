@@ -49,6 +49,13 @@ function getNodeColor(linkCount: number): string {
   return NODE_COLORS[3]
 }
 
+interface SelectionRect {
+  startX: number
+  startY: number
+  endX: number
+  endY: number
+}
+
 export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [dragging, setDragging] = useState<string | null>(null)
@@ -60,6 +67,10 @@ export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
   const [ctxMenu, setCtxMenu] = useState<ContextMenu | null>(null)
   const [hovered, setHovered] = useState<string | null>(null)
   const dragMoved = useRef(false)
+  const [selectedNodes, setSelectedNodes] = useState<Set<string>>(new Set())
+  const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(null)
+  const isRightDragging = useRef(false)
+  const rightDragStart = useRef({ x: 0, y: 0 })
 
   const allIds = useMemo(() => new Set(notes.map(n => n.id)), [notes])
 
@@ -133,13 +144,51 @@ export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
         x: (e.clientX - panStart.current.px) / zoom + panStart.current.x,
         y: (e.clientY - panStart.current.py) / zoom + panStart.current.y,
       })
+    } else if (isRightDragging.current) {
+      const dx = Math.abs(e.clientX - rightDragStart.current.x)
+      const dy = Math.abs(e.clientY - rightDragStart.current.y)
+      if (dx > 4 || dy > 4) {
+        const rect = containerRef.current?.getBoundingClientRect()
+        if (rect) {
+          setSelectionRect({
+            startX: rightDragStart.current.x - rect.left,
+            startY: rightDragStart.current.y - rect.top,
+            endX: e.clientX - rect.left,
+            endY: e.clientY - rect.top,
+          })
+        }
+      }
     }
   }, [dragging, offset, pan, zoom, isPanning])
 
-  const handleMouseUp = useCallback(() => {
+  const handleMouseUp = useCallback((e: React.MouseEvent) => {
+    if (isRightDragging.current && selectionRect) {
+      // Find nodes inside the selection rectangle
+      const rect = containerRef.current?.getBoundingClientRect()
+      if (rect) {
+        const minX = Math.min(selectionRect.startX, selectionRect.endX)
+        const maxX = Math.max(selectionRect.startX, selectionRect.endX)
+        const minY = Math.min(selectionRect.startY, selectionRect.endY)
+        const maxY = Math.max(selectionRect.startY, selectionRect.endY)
+        const selected = new Set<string>()
+        positions.forEach(node => {
+          const nodeScreenX = (node.x + pan.x + 60) * zoom
+          const nodeScreenY = (node.y + pan.y + 14) * zoom
+          if (nodeScreenX >= minX && nodeScreenX <= maxX && nodeScreenY >= minY && nodeScreenY <= maxY) {
+            selected.add(node.id)
+          }
+        })
+        setSelectedNodes(selected)
+      }
+      setSelectionRect(null)
+    } else if (e.button === 0 && !dragging && !isPanning) {
+      // Left click on background clears selection
+      setSelectedNodes(new Set())
+    }
+    isRightDragging.current = false
     setDragging(null)
     setIsPanning(false)
-  }, [])
+  }, [selectionRect, positions, pan, zoom, dragging, isPanning])
 
   const handleNodeClick = useCallback((nodeId: string) => {
     if (!dragMoved.current) {
@@ -148,7 +197,12 @@ export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
   }, [onOpenNote])
 
   const handleBgMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button === 2) return
+    if (e.button === 2) {
+      // Right-click: start selection drag
+      isRightDragging.current = true
+      rightDragStart.current = { x: e.clientX, y: e.clientY }
+      return
+    }
     if (ctxMenu) { setCtxMenu(null); return }
     setIsPanning(true)
     panStart.current = { x: pan.x, y: pan.y, px: e.clientX, py: e.clientY }
@@ -156,13 +210,18 @@ export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
+    // Only show context menu if we didn't drag (selection rect)
+    if (selectionRect) return
+    const dx = Math.abs(e.clientX - rightDragStart.current.x)
+    const dy = Math.abs(e.clientY - rightDragStart.current.y)
+    if (dx > 4 || dy > 4) return
     setCtxMenu({
       x: e.clientX,
       y: e.clientY,
       canvasX: e.clientX / zoom - pan.x,
       canvasY: e.clientY / zoom - pan.y,
     })
-  }, [pan, zoom])
+  }, [pan, zoom, selectionRect])
 
   // Zoom with scroll wheel
   useEffect(() => {
@@ -251,7 +310,7 @@ export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
             {positions.map(node => (
               <div
                 key={node.id}
-                className={`graph-node ${dragging === node.id ? 'dragging' : ''} ${hovered === node.id ? 'hovered' : ''}`}
+                className={`graph-node ${dragging === node.id ? 'dragging' : ''} ${hovered === node.id ? 'hovered' : ''} ${selectedNodes.has(node.id) ? 'selected' : ''}`}
                 style={{ left: node.x, top: node.y }}
                 onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
                 onMouseUp={() => handleNodeClick(node.id)}
@@ -278,6 +337,26 @@ export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
         <div className="graph-zoom">
           {Math.round(zoom * 100)}%
         </div>
+
+        {/* Selection rectangle */}
+        {selectionRect && (
+          <div
+            className="graph-selection-rect"
+            style={{
+              left: Math.min(selectionRect.startX, selectionRect.endX),
+              top: Math.min(selectionRect.startY, selectionRect.endY),
+              width: Math.abs(selectionRect.endX - selectionRect.startX),
+              height: Math.abs(selectionRect.endY - selectionRect.startY),
+            }}
+          />
+        )}
+
+        {/* Selected count */}
+        {selectedNodes.size > 0 && (
+          <div className="graph-selection-info">
+            {selectedNodes.size} node{selectedNodes.size !== 1 ? 's' : ''} selected
+          </div>
+        )}
 
         {/* Context menu */}
         {ctxMenu && (
