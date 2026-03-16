@@ -94,35 +94,9 @@ html, body {
   box-shadow: 0 1px 3px rgba(0,0,0,0.15);
 }
 
-/* Center search bar */
-.header__center { flex: 1; display: flex; justify-content: center; }
-.header__search {
-  display: flex; align-items: center; gap: 6px;
-  width: 25%; min-width: 160px; max-width: 320px;
-  height: 26px; padding: 0 10px;
-  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
-  border-radius: 6px; transition: border-color 0.12s ease;
-}
-.header__search:focus-within { border-color: var(--ring); }
-.header__search svg { width: 13px; height: 13px; color: var(--muted-foreground); flex-shrink: 0; opacity: 0.5; }
-.header__search-input {
-  flex: 1; border: none; outline: none; background: transparent;
-  font-size: 12px; color: var(--foreground); font-family: var(--font-sans);
-}
-.header__search-input::placeholder { color: var(--muted-foreground); opacity: .5; }
-
 /* Header right */
 .header__right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
-/* Ghost button — icon only, no border */
-.header__ghost-btn {
-  display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border: none; border-radius: 6px;
-  background: transparent; color: var(--muted-foreground);
-  cursor: pointer; transition: all 0.12s ease;
-}
-.header__ghost-btn:hover { color: var(--foreground); background: rgba(255,255,255,0.05); }
-.header__ghost-btn svg { width: 16px; height: 16px; }
 
 /* Header icon button (history, etc.) */
 .header__icon-btn {
@@ -431,20 +405,6 @@ html, body {
   white-space: nowrap; flex-shrink: 0;
 }
 
-/* Filter pills */
-.home-research__filters { display: flex; gap: 6px; margin-left: auto; }
-.home-research__filter {
-  padding: 3px 10px; border-radius: 6px; border: 1px solid var(--border);
-  background: var(--card); color: var(--muted-foreground);
-  font-size: 11px; font-weight: 500; cursor: pointer;
-  transition: all 0.12s ease; font-family: var(--font-sans);
-}
-.home-research__filter:hover { background: var(--accent); color: var(--foreground); }
-.home-research__filter.active {
-  background: var(--foreground); color: var(--background);
-  border-color: transparent;
-}
-
 /* Results */
 .home-research__results {
   max-width: 640px; margin: 16px auto 0;
@@ -558,40 +518,6 @@ html, body {
 .zw-chat-send-btn.active:hover { opacity: .9; }
 .zw-chat-send-btn svg { width: 14px; height: 14px; }
 
-/* Model selector */
-.zw-chat-model-btn {
-  display: flex; align-items: center; gap: 4px;
-  padding: 3px 8px; border: none; border-radius: 5px;
-  background: transparent; color: var(--muted-foreground);
-  font-size: 11px; font-weight: 500; cursor: pointer;
-  transition: all 0.12s ease; font-family: var(--font-sans);
-}
-.zw-chat-model-btn:hover { background: rgba(255,255,255,0.05); color: var(--foreground); }
-.zw-chat-model-btn svg { width: 12px; height: 12px; }
-.zw-chat-model-menu {
-  position: absolute; bottom: 100%; left: 0; margin-bottom: 6px;
-  background: var(--popover); border: 1px solid var(--border); border-radius: 10px;
-  padding: 4px; min-width: 180px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); z-index: 200;
-  animation: scale-in 0.12s ease;
-}
-.zw-chat-model-option {
-  display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px;
-  border: none; border-radius: 7px; background: transparent; color: var(--foreground);
-  cursor: pointer; text-align: left; transition: background 0.08s; font-family: var(--font-sans);
-}
-.zw-chat-model-option:hover { background: rgba(255,255,255,0.05); }
-.zw-chat-model-option.active { background: rgba(255,255,255,0.05); }
-
-/* Chat tool buttons (attach, mention, globe) */
-.zw-chat-tool-btn {
-  display: flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; border: none; border-radius: 5px;
-  background: transparent; color: var(--muted-foreground); cursor: pointer;
-  transition: all 0.12s ease;
-}
-.zw-chat-tool-btn:hover { background: rgba(255,255,255,0.05); color: var(--foreground); }
-.zw-chat-tool-btn svg { width: 14px; height: 14px; }
-
 /* / Commands button */
 .zw-cmd-btn {
   width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
@@ -634,12 +560,6 @@ html, body {
 .zw-chat-op-indicator[data-op="read"] { background: var(--zw-red); }
 .zw-chat-op-indicator[data-op="idle"] { background: var(--border); }
 .zw-stat-sep { width: 1px; height: 10px; background: var(--border); opacity: 0.5; }
-
-/* ═══════════════════════════════════════════════════
-   GRAPH VIEW
-   ═══════════════════════════════════════════════════ */
-.graph-view { flex: 1; position: relative; background: var(--background); }
-.graph-view canvas { width: 100%; height: 100%; }
 
 /* ═══════════════════════════════════════════════════
    STATUS NOTCH
@@ -1252,7 +1172,7 @@ html, body {
 .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ═══════════════════════════════════════════════════
-   PLUGINS DROPDOWN & BADGE
+   HEADER BADGES
    ═══════════════════════════════════════════════════ */
 .header__icon-badge {
   position: absolute; top: -2px; right: -2px;
@@ -1261,33 +1181,6 @@ html, body {
   line-height: 14px; pointer-events: none;
 }
 .header__icon-btn { position: relative; }
-.header__plugins-menu {
-  position: absolute; top: 100%; right: 0; margin-top: 6px;
-  background: var(--popover); border: 1px solid var(--border); border-radius: 10px;
-  padding: 4px; min-width: 220px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);
-  z-index: 200; animation: scale-in 0.12s ease;
-}
-.header__plugins-menu-title {
-  padding: 6px 10px 4px; font-size: 10px; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-foreground);
-}
-.header__plugins-item {
-  display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px;
-  border: none; border-radius: 7px; background: transparent; color: var(--foreground);
-  cursor: pointer; text-align: left; transition: background 0.08s;
-  font-family: var(--font-sans); font-size: 12px;
-}
-.header__plugins-item:hover { background: rgba(255,255,255,0.05); }
-.header__plugins-item.active { background: rgba(255,255,255,0.07); }
-.header__plugins-item svg { width: 16px; height: 16px; color: var(--muted-foreground); flex-shrink: 0; }
-.header__plugins-item-info { flex: 1; display: flex; flex-direction: column; gap: 1px; }
-.header__plugins-item-info span:first-child { font-weight: 600; }
-.header__plugins-item-desc { font-size: 10px; color: var(--muted-foreground); opacity: 0.7; }
-.header__plugins-badge {
-  background: var(--zw-red); color: #fff; font-size: 9px; font-weight: 700;
-  padding: 1px 5px; border-radius: 8px; min-width: 16px; text-align: center;
-  margin-left: auto;
-}
 
 /* ═══════════════════════════════════════════════════
    ANIMATIONS

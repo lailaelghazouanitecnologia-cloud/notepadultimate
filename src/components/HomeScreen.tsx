@@ -26,8 +26,6 @@ const COMMANDS = [
   { cmd: '/help', args: '', desc: 'Show all commands' },
 ]
 
-const FILTERS = ['Todo', 'Notas', 'Recientes', 'Favoritos'] as const
-
 function getGreeting(): string {
   const h = new Date().getHours()
   if (h < 12) return 'Good morning'
@@ -44,7 +42,7 @@ function formatRelativeDate(ts: number): string {
   if (hrs < 24) return `${hrs}h ago`
   const days = Math.floor(hrs / 24)
   if (days < 7) return `${days}d ago`
-  return new Date(ts).toLocaleDateString('es', { day: 'numeric', month: 'short' })
+  return new Date(ts).toLocaleDateString('en', { day: 'numeric', month: 'short' })
 }
 
 export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, onSaveChat, initialSession }: HomeScreenProps) {
@@ -52,13 +50,9 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>(initialSession?.messages || [])
   const [showCommands, setShowCommands] = useState(false)
-  const [model, setModel] = useState('Sonnet 4.5')
-  const [showModels, setShowModels] = useState(false)
-  const [activeFilter, setActiveFilter] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const cmdRef = useRef<HTMLDivElement>(null)
-  const modelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -82,15 +76,6 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [showCommands])
-
-  useEffect(() => {
-    if (!showModels) return
-    const handler = (e: MouseEvent) => {
-      if (modelRef.current && !modelRef.current.contains(e.target as Node)) setShowModels(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [showModels])
 
   const liveResults = useMemo(() => {
     const q = input.trim().toLowerCase()
@@ -152,7 +137,7 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
     }
 
     const title = text.length > 40 ? text.slice(0, 40) + '...' : text
-    const content = `# ${title}\n\n${text}\n\n---\n*Generated from Zarnetti*`
+    const content = `# ${title}\n\n${text}\n`
     onCreateNote(title, content)
     return `Created note from your input. Opening editor.`
   }, [notes, onCreateNote, onOpenNote])
@@ -183,14 +168,7 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
     inputRef.current?.focus()
   }
 
-  const models = [
-    { id: 'sonnet', label: 'Sonnet 4.5', desc: 'Fast & capable' },
-    { id: 'opus', label: 'Opus 4.6', desc: 'Most intelligent' },
-    { id: 'haiku', label: 'Haiku 4.5', desc: 'Fastest' },
-  ]
-
   const hasMessages = messages.length > 0
-  const totalTokens = messages.length * 280
   const allResults = [...liveResults.own, ...liveResults.community]
   const showingResults = allResults.length > 0
   const greeting = getGreeting()
@@ -198,19 +176,18 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
   return (
     <div className="content-area">
       <div className="home-research">
-        {/* Scrollable content */}
         <div className="home-research__scroll">
-          {/* Welcome + Search — always visible at top */}
+          {/* Hero */}
           <div className="home-research__hero">
             <div className="home-research__logo-box">
               <ZarnettiLogo className="home-research__logo-svg" />
             </div>
             <h2 className="home-research__title">{greeting}</h2>
             <p className="home-research__subtitle">
-              Search your notes, create new ones, or ask anything. Your knowledge hub.
+              Search your notes, create new ones, or use commands.
             </p>
 
-            {/* Search input — rounded pill */}
+            {/* Search */}
             <div className="home-research__search-wrap">
               <div className="home-research__search-icon">{Icons.search()}</div>
               <input
@@ -220,7 +197,7 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Search or ask anything..."
+                placeholder="Search or type a command..."
               />
               <button
                 onClick={handleSend}
@@ -230,40 +207,9 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
               </button>
             </div>
 
-            {/* Connectors toolbar under search */}
+            {/* Commands */}
             <div className="home-research__toolbar">
               <div className="home-research__toolbar-left">
-                {/* Model selector */}
-                <div style={{ position: 'relative' }} ref={modelRef}>
-                  <button className="zw-chat-model-btn" onClick={() => setShowModels(!showModels)}>
-                    {Icons.sparkles()}
-                    <span>{model}</span>
-                    {Icons.chevronDown()}
-                  </button>
-                  {showModels && (
-                    <div className="zw-chat-model-menu">
-                      {models.map((m) => (
-                        <button
-                          key={m.id}
-                          className={`zw-chat-model-option ${model === m.label ? 'active' : ''}`}
-                          onClick={() => { setModel(m.label); setShowModels(false) }}
-                        >
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 12, fontWeight: 500 }}>{m.label}</div>
-                            <div style={{ fontSize: 10, color: 'var(--muted-foreground)' }}>{m.desc}</div>
-                          </div>
-                          {model === m.label && (
-                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--zw-red)' }} />
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <button className="zw-chat-tool-btn" title="Attach file">{Icons.paperclip()}</button>
-                <button className="zw-chat-tool-btn" title="Mention">{Icons.atSign()}</button>
-                <button className="zw-chat-tool-btn" title="Search web">{Icons.globe()}</button>
-                {/* / commands */}
                 <div style={{ position: 'relative' }} ref={cmdRef}>
                   <button className="zw-cmd-btn" onClick={() => setShowCommands(!showCommands)} title="Commands">
                     <span className="zw-cmd-btn__slash">/</span>
@@ -309,7 +255,6 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
                       </p>
                       <div className="home-research__result-footer">
                         <span>{formatRelativeDate(note.updatedAt)}</span>
-                        <span>{note.content.trim().split(/\s+/).filter(Boolean).length} words</span>
                       </div>
                     </article>
                   ))}
@@ -333,7 +278,6 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
                       </p>
                       <div className="home-research__result-footer">
                         <span>{formatRelativeDate(note.updatedAt)}</span>
-                        <span>{note.content.trim().split(/\s+/).filter(Boolean).length} words</span>
                       </div>
                     </article>
                   ))}
@@ -342,33 +286,16 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
             </div>
           )}
 
-          {/* Separator + recent notes (when no search active) */}
-          {!showingResults && !hasMessages && notes.length > 0 && (
+          {/* Recent notes (when idle) */}
+          {!showingResults && !hasMessages && recentNotes.length > 0 && (
             <>
               <div className="home-research__divider">
                 <div className="home-research__divider-line" />
-                <span className="home-research__divider-text">or check your latest notes</span>
+                <span className="home-research__divider-text">Recent notes</span>
                 <div className="home-research__divider-line" />
               </div>
 
               <div className="home-research__results">
-                <div className="home-research__results-header">
-                  <span className="home-research__results-count">
-                    {notes.length} note{notes.length !== 1 ? 's' : ''}
-                  </span>
-                  <div className="home-research__filters">
-                    {FILTERS.map((f, i) => (
-                      <button
-                        key={f}
-                        className={`home-research__filter ${activeFilter === i ? 'active' : ''}`}
-                        onClick={() => setActiveFilter(i)}
-                      >
-                        {f}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
                 {recentNotes.map((note, i) => (
                   <article
                     key={note.id}
@@ -382,7 +309,6 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
                     </p>
                     <div className="home-research__result-footer">
                       <span>{formatRelativeDate(note.updatedAt)}</span>
-                      <span>{note.content.trim().split(/\s+/).filter(Boolean).length} words</span>
                     </div>
                   </article>
                 ))}
@@ -430,19 +356,8 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
 
         {/* Footer */}
         <div className="zw-chat-footer">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-            <span className="zw-chat-footer-name">Zarnetti</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span className="zw-chat-op-indicator" data-op="read" />
-              <span className="zw-chat-op-indicator" data-op="idle" />
-            </div>
-            <span className="zw-stat-sep" />
-            <span className="zw-chat-footer-stat">~{totalTokens} tokens</span>
-            <span className="zw-stat-sep" />
-            <span className="zw-chat-footer-stat">{messages.length} msgs</span>
-          </div>
+          <span className="zw-chat-footer-name">Zarnetti</span>
+          <span className="zw-chat-footer-stat">{notes.length} notes</span>
         </div>
       </div>
     </div>

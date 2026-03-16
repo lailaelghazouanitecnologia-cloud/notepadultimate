@@ -1,9 +1,7 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { Editor } from './components/Editor'
 import { HomeScreen } from './components/HomeScreen'
-// GraphView available as plugin
-// import { GraphView } from './components/GraphView'
 import { FeedView } from './components/FeedView'
 import { AgentsView } from './components/AgentsView'
 import { ProfileView } from './components/ProfileView'
@@ -18,7 +16,6 @@ import {
 import type { Agent, Alert, Project } from './types'
 
 export type View = 'feed' | 'chat'
-type PluginPanel = 'agents' | null
 
 export interface ChatSession {
   id: string
@@ -28,7 +25,7 @@ export interface ChatSession {
 }
 
 export default function App() {
-  const { notes, activeNote, activeId, setActiveId, addNote, updateNote, deleteNote } = useNotes()
+  const { notes, activeId, setActiveId, addNote, updateNote, deleteNote } = useNotes()
   useTheme()
   const [view, setView] = useState<View>('feed')
   const [openTabs, setOpenTabs] = useState<string[]>([])
@@ -39,27 +36,15 @@ export default function App() {
   const [agents, setAgents] = useState<Agent[]>(() => loadAgents())
   const [alerts, setAlerts] = useState<Alert[]>(() => loadAlerts())
   const [profileAgentId, setProfileAgentId] = useState<string | null>(null)
-  const [pluginPanel, setPluginPanel] = useState<PluginPanel>(null)
-  const [showPlugins, setShowPlugins] = useState(false)
-  const pluginsRef = useRef<HTMLDivElement>(null)
+  const [showAgents, setShowAgents] = useState(false)
 
   // Projects
   const [projects, setProjects] = useState<Project[]>(() => loadProjects())
   const [activeProjectId, setActiveProjectIdState] = useState(() => getActiveProjectId())
 
-  // Editing mode — when a note is open in editor
+  // Editing mode
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const editingNote = editingNoteId ? notes.find((n) => n.id === editingNoteId) : null
-
-  // Close plugins dropdown on outside click
-  useEffect(() => {
-    if (!showPlugins) return
-    const handler = (e: MouseEvent) => {
-      if (pluginsRef.current && !pluginsRef.current.contains(e.target as Node)) setShowPlugins(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [showPlugins])
 
   // Regenerate alerts when published notes change
   useEffect(() => {
@@ -127,8 +112,7 @@ export default function App() {
   const handleCreateAgent = useCallback((data: Omit<Agent, 'id' | 'createdAt' | 'notes' | 'followers' | 'following'>) => {
     const agent: Agent = {
       ...data, id: `agent-${Date.now()}`, createdAt: Date.now(),
-      notes: [], followers: Math.floor(Math.random() * 500) + 10,
-      following: Math.floor(Math.random() * 50) + 1,
+      notes: [], followers: 0, following: 0,
     }
     saveAgent(agent)
     setAgents(loadAgents())
@@ -142,7 +126,7 @@ export default function App() {
 
   const handleOpenProfile = useCallback((agentId: string) => {
     setProfileAgentId(agentId)
-    setPluginPanel('agents')
+    setShowAgents(true)
   }, [])
 
   const handleMarkAlertRead = useCallback((alertId: string) => {
@@ -177,8 +161,6 @@ export default function App() {
 
   const activeSession = activeChatId ? chatSessions.find((s) => s.id === activeChatId) : undefined
   const profileAgent = profileAgentId ? agents.find((a) => a.id === profileAgentId) : undefined
-
-  // If editing, show editor overlay on top
   const showEditor = editingNoteId !== null && editingNote !== undefined
 
   return (
@@ -196,15 +178,14 @@ export default function App() {
       />
 
       <div className="app-main">
-        {/* Header bar */}
         <header className="header">
           <div className="header__left">
             <div className="zw-mode-switcher">
               {modes.map((m) => (
                 <button
                   key={m.id}
-                  className={`zw-mode-tab ${view === m.id && !showEditor ? 'active' : ''}`}
-                  onClick={() => { setView(m.id); setEditingNoteId(null); setPluginPanel(null); setProfileAgentId(null) }}
+                  className={`zw-mode-tab ${view === m.id && !showEditor && !showAgents ? 'active' : ''}`}
+                  onClick={() => { setView(m.id); setEditingNoteId(null); setShowAgents(false); setProfileAgentId(null) }}
                 >
                   {m.icon()}
                   <span>{m.label}</span>
@@ -212,16 +193,9 @@ export default function App() {
               ))}
             </div>
           </div>
-
-          <div className="header__center">
-            <div className="header__search">
-              {Icons.search()}
-              <input type="text" className="header__search-input" placeholder="Search..." />
-            </div>
-          </div>
-
+          <div style={{ flex: 1 }} />
           <div className="header__right">
-            {view === 'chat' && !showEditor && (
+            {view === 'chat' && !showEditor && !showAgents && (
               <button
                 className={`header__icon-btn ${showHistory ? 'active' : ''}`}
                 onClick={() => setShowHistory(!showHistory)}
@@ -231,44 +205,17 @@ export default function App() {
               </button>
             )}
 
-            {/* Plugins button */}
-            <div style={{ position: 'relative' }} ref={pluginsRef}>
-              <button
-                className={`header__icon-btn ${pluginPanel ? 'active' : ''}`}
-                onClick={() => setShowPlugins(!showPlugins)}
-                title="Plugins"
-              >
-                {Icons.puzzle()}
-                {unreadAlerts > 0 && <span className="header__icon-badge">{unreadAlerts}</span>}
-              </button>
-              {showPlugins && (
-                <div className="header__plugins-menu">
-                  <div className="header__plugins-menu-title">Plugins</div>
-                  <button
-                    className={`header__plugins-item ${pluginPanel === 'agents' ? 'active' : ''}`}
-                    onClick={() => {
-                      setPluginPanel(pluginPanel === 'agents' ? null : 'agents')
-                      setShowPlugins(false)
-                      setProfileAgentId(null)
-                    }}
-                  >
-                    {Icons.bot()}
-                    <div className="header__plugins-item-info">
-                      <span>Agents</span>
-                      <span className="header__plugins-item-desc">Characters & personas</span>
-                    </div>
-                    {unreadAlerts > 0 && <span className="header__plugins-badge">{unreadAlerts}</span>}
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Invite — icon only, ghost button */}
-            <button className="header__ghost-btn" title="Invite">
-              {Icons.userPlus()}
+            {/* Agents toggle */}
+            <button
+              className={`header__icon-btn ${showAgents ? 'active' : ''}`}
+              onClick={() => { setShowAgents(!showAgents); setProfileAgentId(null); setEditingNoteId(null) }}
+              title="Agents"
+            >
+              {Icons.bot()}
+              {unreadAlerts > 0 && <span className="header__icon-badge">{unreadAlerts}</span>}
             </button>
 
-            {/* Publish — far right */}
+            {/* Publish — only when editing */}
             {showEditor && editingNote && (
               <button
                 className={`header__publish-btn ${editingNote.published ? 'published' : ''}`}
@@ -315,7 +262,7 @@ export default function App() {
           <div className="content-area">
             <Editor note={editingNote!} onUpdate={updateNote} onNavigate={handleNavigate} />
           </div>
-        ) : pluginPanel === 'agents' ? (
+        ) : showAgents ? (
           profileAgent ? (
             <ProfileView
               agent={profileAgent}
