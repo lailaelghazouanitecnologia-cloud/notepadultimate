@@ -279,26 +279,6 @@ export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
           {Math.round(zoom * 100)}%
         </div>
 
-        {/* Legend */}
-        <div className="graph-legend">
-          <div className="graph-legend__item">
-            <span className="graph-legend__dot" style={{ background: NODE_COLORS[0] }} />
-            <span>Isolated</span>
-          </div>
-          <div className="graph-legend__item">
-            <span className="graph-legend__dot" style={{ background: NODE_COLORS[1] }} />
-            <span>1-2 links</span>
-          </div>
-          <div className="graph-legend__item">
-            <span className="graph-legend__dot" style={{ background: NODE_COLORS[2] }} />
-            <span>3-4 links</span>
-          </div>
-          <div className="graph-legend__item">
-            <span className="graph-legend__dot" style={{ background: NODE_COLORS[3] }} />
-            <span>Hub (5+)</span>
-          </div>
-        </div>
-
         {/* Context menu */}
         {ctxMenu && (
           <div
