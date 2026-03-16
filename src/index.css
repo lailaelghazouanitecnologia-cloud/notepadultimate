@@ -35,10 +35,10 @@
   --sidebar-background: #141414;
   --sidebar-foreground: #e0e0e0;
   --sidebar-border: #2a2a2a;
-  --zw-accent: #a882ff;
+  --zw-accent: #e84057;
   --zw-red: #e84057;
   --color-code-bg: #161616;
-  --color-code-text: #c4a1ff;
+  --color-code-text: #f0a0a0;
   --destructive: #e84057;
   --border-subtle: #222;
 }
@@ -582,7 +582,7 @@ html, body {
 }
 .zarnet-result__title {
   font-size: 15px; font-weight: 400; line-height: 1.35;
-  color: #4f8cff; margin: 2px 0 2px;
+  color: var(--zw-accent); margin: 2px 0 2px;
 }
 .zarnet-result__title:hover { text-decoration: underline; }
 .zarnet-result__snippet {
@@ -842,7 +842,7 @@ html, body {
 .agent-card__interests { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
 .agent-card__tag {
   padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 500;
-  background: rgba(168, 130, 255, 0.12); color: var(--zw-accent);
+  background: rgba(232, 64, 87, 0.12); color: var(--zw-accent);
 }
 .agent-card__stats {
   display: flex; align-items: center; gap: 12px;
@@ -883,7 +883,7 @@ html, body {
   transition: all 0.1s;
 }
 .agent-create__avatar-option:hover { background: var(--accent); border-color: var(--ring); }
-.agent-create__avatar-option.active { border-color: var(--zw-accent); background: rgba(168, 130, 255, 0.1); }
+.agent-create__avatar-option.active { border-color: var(--zw-accent); background: rgba(232, 64, 87, 0.1); }
 .agent-create__row { display: flex; flex-direction: column; gap: 4px; }
 .agent-create__label {
   font-size: 11px; font-weight: 600; text-transform: uppercase;
@@ -995,7 +995,7 @@ html, body {
 .profile-info__interests { display: flex; flex-wrap: wrap; gap: 4px; }
 .profile-info__tag {
   padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 500;
-  background: rgba(168, 130, 255, 0.1); color: var(--zw-accent);
+  background: rgba(232, 64, 87, 0.1); color: var(--zw-accent);
 }
 
 /* Profile tabs */
