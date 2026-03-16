@@ -58,8 +58,8 @@ export function Editor({ note, onUpdate, onNavigate }: EditorProps) {
   const wordCount = useMemo(() => note.content.trim().split(/\s+/).filter(Boolean).length, [note.content])
 
   return (
-    <div className="content-area">
-      {/* Breadcrumb / toolbar */}
+    <>
+      {/* Mode toolbar */}
       <div className="breadcrumb">
         <span>{note.title}</span>
         <div className="breadcrumb__modes">
@@ -129,6 +129,6 @@ export function Editor({ note, onUpdate, onNavigate }: EditorProps) {
         <span className="notch__divider" />
         <span><span className="notch__value">{note.content.length}</span> chars</span>
       </div>
-    </div>
+    </>
   )
 }

@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import type { Note } from '../types'
-import { Icons } from '../lib/icons'
+import { ZarnettiLogo, Icons } from '../lib/icons'
 
 interface HomeScreenProps {
   notes: Note[]
@@ -12,7 +12,6 @@ interface ChatMessage {
   id: string
   role: 'user' | 'assistant'
   content: string
-  timestamp: string
 }
 
 function getGreeting(): { greeting: string; subtitle: string } {
@@ -25,7 +24,7 @@ function getGreeting(): { greeting: string; subtitle: string } {
 export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps) {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const inputRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -40,7 +39,6 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
       onCreateNote(title, '')
       return `Created note **"${title}"**. Switching to editor.`
     }
-
     if (lower.startsWith('/search ') || lower.startsWith('/find ')) {
       const query = text.replace(/^\/(search|find)\s+/i, '').trim().toLowerCase()
       const found = notes.filter(
@@ -49,16 +47,13 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
       if (found.length === 0) return `No notes found matching "${query}".`
       return `Found **${found.length}** note(s):\n${found.map((n) => `• **${n.title}**`).join('\n')}`
     }
-
     if (lower === '/list' || lower === '/notes') {
       if (notes.length === 0) return 'No notes yet. Use `/new Title` to create one.'
       return `**${notes.length} notes:**\n${notes.map((n) => `• **${n.title}**`).join('\n')}`
     }
-
     if (lower === '/help' || lower === '?') {
-      return `**Zarnetti Commands:**\n• \`/new Title\` — Create a new note\n• \`/search query\` — Search your notes\n• \`/list\` — List all notes\n• \`/open Title\` — Open a note by name\n• Or just type naturally to generate content`
+      return `**Commands:**\n• \`/new Title\` — Create a new note\n• \`/search query\` — Search notes\n• \`/list\` — List all notes\n• \`/open Title\` — Open a note\n• Or just type to generate a note`
     }
-
     if (lower.startsWith('/open ')) {
       const title = text.replace(/^\/open\s+/i, '').trim().toLowerCase()
       const note = notes.find((n) => n.title.toLowerCase().includes(title))
@@ -69,7 +64,6 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
       return `No note found matching "${title}".`
     }
 
-    // Default: generate note content
     const title = text.length > 40 ? text.slice(0, 40) + '...' : text
     const content = `# ${title}\n\n${text}\n\n---\n*Generated from Zarnetti chat*`
     onCreateNote(title, content)
@@ -80,24 +74,12 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
     const text = input.trim()
     if (!text) return
 
-    const userMsg: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      role: 'user',
-      content: text,
-      timestamp: new Date().toISOString(),
-    }
-    setMessages((prev) => [...prev, userMsg])
+    setMessages((prev) => [...prev, { id: `msg-${Date.now()}`, role: 'user', content: text }])
     setInput('')
 
     setTimeout(() => {
       const response = processCommand(text)
-      const aiMsg: ChatMessage = {
-        id: `msg-${Date.now()}-resp`,
-        role: 'assistant',
-        content: response,
-        timestamp: new Date().toISOString(),
-      }
-      setMessages((prev) => [...prev, aiMsg])
+      setMessages((prev) => [...prev, { id: `msg-${Date.now()}-r`, role: 'assistant', content: response }])
     }, 150)
   }, [input, processCommand])
 
@@ -111,37 +93,18 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
     [handleSend]
   )
 
-  const shortcuts = [
-    { label: 'New note', cmd: '/new ' },
-    { label: 'Search', cmd: '/search ' },
-    { label: 'List all', cmd: '/list' },
-    { label: 'Help', cmd: '/help' },
-  ]
-
   const isEmpty = messages.length === 0
   const { greeting, subtitle } = getGreeting()
 
   return (
     <div className="content-area">
-      <div className="home">
-        {/* Chat header */}
-        <div className="breadcrumb">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {Icons.sparkles()}
-            <span>Zarnetti Chat</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ fontSize: 10, color: 'var(--muted-foreground)' }}>
-              {notes.length} notes
-            </span>
-          </div>
-        </div>
-
+      <div className="home-chat">
         {/* Messages */}
         <div className="chat-messages">
           {isEmpty && (
             <div className="chat-welcome">
               <div className="chat-welcome__inner">
+                <ZarnettiLogo className="welcome-logo" />
                 <h2 className="chat-welcome__title">{greeting}</h2>
                 <p className="chat-welcome__sub">{subtitle}</p>
               </div>
@@ -179,53 +142,66 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote }: HomeScreenProps)
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input area */}
-        <div className="chat-input-area">
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask anything..."
-            className="chat-textarea"
-          />
-          <div className="chat-input-toolbar">
-            <div className="shortcut-chips">
-              {isEmpty && shortcuts.map((s) => (
-                <button
-                  key={s.cmd}
-                  className="shortcut-chip"
-                  onClick={() => { setInput(s.cmd); textareaRef.current?.focus() }}
-                >
-                  {Icons.bolt()}
-                  {s.label}
+        {/* Manus-style chat input card */}
+        <div className="chat-input-card-wrap">
+          <div className="chat-input-card">
+            <div className="chat-input-card__editor">
+              <textarea
+                ref={inputRef as unknown as React.RefObject<HTMLTextAreaElement>}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Assign a task or ask anything"
+                className="chat-input-card__textarea"
+                rows={1}
+              />
+            </div>
+            <div className="chat-input-card__toolbar">
+              <div className="chat-input-card__left">
+                <button className="chat-input-card__icon-btn" title="Add">
+                  {Icons.plus()}
                 </button>
-              ))}
+                <button className="chat-input-card__pill" title="Connect GitHub">
+                  {Icons.github()}
+                </button>
+              </div>
+              <div className="chat-input-card__right">
+                {isEmpty && (
+                  <div className="chat-input-card__shortcuts">
+                    {[
+                      { label: '/new', cmd: '/new ' },
+                      { label: '/search', cmd: '/search ' },
+                      { label: '/list', cmd: '/list' },
+                      { label: '/help', cmd: '/help' },
+                    ].map((s) => (
+                      <button
+                        key={s.cmd}
+                        className="shortcut-chip"
+                        onClick={() => { setInput(s.cmd); inputRef.current?.focus() }}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <button
+                  onClick={handleSend}
+                  className={`chat-send-btn ${input.trim() ? 'active' : ''}`}
+                  disabled={!input.trim()}
+                  aria-label="Send"
+                >
+                  {Icons.arrowUp()}
+                </button>
+              </div>
             </div>
-            <button
-              onClick={handleSend}
-              className={`chat-send-btn ${input.trim() ? 'active' : ''}`}
-              aria-label="Send"
-            >
-              {Icons.send()}
-            </button>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="chat-footer">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-            <span className="chat-footer__name">Zarnetti</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span className="chat-op-indicator" data-op="read" />
-              <span className="chat-op-indicator" data-op="idle" />
+          {/* Connect tools strip */}
+          <div className="chat-connect-strip">
+            <span className="chat-connect-strip__text">Connect your tools to Zarnetti</span>
+            <div className="chat-connect-strip__icons">
+              {Icons.github()}
             </div>
-            <span className="stat-sep" />
-            <span className="chat-footer__stat">{messages.length} msgs</span>
-            <span className="stat-sep" />
-            <span className="chat-footer__stat">{notes.length} notes</span>
           </div>
         </div>
       </div>

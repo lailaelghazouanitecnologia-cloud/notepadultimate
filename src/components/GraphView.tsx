@@ -29,15 +29,13 @@ export function GraphView({ notes, onOpenNote }: GraphViewProps) {
   const animRef = useRef<number>(0)
   const dragRef = useRef<{ node: GraphNode | null; offsetX: number; offsetY: number }>({ node: null, offsetX: 0, offsetY: 0 })
   const hoverRef = useRef<GraphNode | null>(null)
-  const sizeRef = useRef({ w: 0, h: 0 })
+  const initializedRef = useRef(false)
+  const tickRef = useRef(0)
 
-  // Build graph data
+  // Build graph data — position nodes in center of canvas
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const w = canvas.offsetWidth
-    const h = canvas.offsetHeight
-    sizeRef.current = { w, h }
+    initializedRef.current = false
+    tickRef.current = 0
 
     const edges: GraphEdge[] = []
     const titleToId = new Map(notes.map((n) => [n.title.toLowerCase(), n.id]))
@@ -55,16 +53,15 @@ export function GraphView({ notes, onOpenNote }: GraphViewProps) {
       }
     }
 
-    const cx = w / 2
-    const cy = h / 2
+    // Place nodes in a circle — will reposition once canvas size is known
     const nodes: GraphNode[] = notes.map((note, i) => {
       const angle = (2 * Math.PI * i) / Math.max(notes.length, 1)
-      const radius = Math.min(w, h) * 0.25
       return {
         id: note.id,
         title: note.title,
-        x: cx + Math.cos(angle) * radius,
-        y: cy + Math.sin(angle) * radius,
+        // Use normalized positions (0-1), will scale to canvas in draw
+        x: 0.5 + Math.cos(angle) * 0.25,
+        y: 0.5 + Math.sin(angle) * 0.25,
         vx: 0,
         vy: 0,
         connections: connectionCount.get(note.id) || 0,
@@ -82,9 +79,14 @@ export function GraphView({ notes, onOpenNote }: GraphViewProps) {
     if (!ctx) return
 
     const dpr = window.devicePixelRatio || 1
-    const w = canvas.offsetWidth
-    const h = canvas.offsetHeight
-    sizeRef.current = { w, h }
+    const rect = canvas.getBoundingClientRect()
+    const w = rect.width
+    const h = rect.height
+    if (w === 0 || h === 0) {
+      animRef.current = requestAnimationFrame(draw)
+      return
+    }
+
     canvas.width = w * dpr
     canvas.height = h * dpr
     ctx.scale(dpr, dpr)
@@ -93,20 +95,34 @@ export function GraphView({ notes, onOpenNote }: GraphViewProps) {
     const edges = edgesRef.current
     const hover = hoverRef.current
 
-    // Force simulation parameters — tuned for stability
-    const repulsion = 2000
-    const damping = 0.7
-    const centerForce = 0.005
-    const maxVelocity = 3
-    const padding = 50
+    // On first valid frame, convert normalized positions to actual
+    if (!initializedRef.current) {
+      for (const node of nodes) {
+        node.x = node.x * w
+        node.y = node.y * h
+      }
+      initializedRef.current = true
+    }
+
+    tickRef.current++
+
+    // Force simulation — gradually reduce energy
+    const energy = Math.max(0.1, 1 - tickRef.current / 300)
+    const repulsion = 1500 * energy
+    const damping = 0.6
+    const centerForce = 0.01
+    const maxVelocity = 2
+    const padding = 60
+
+    const cx = w / 2
+    const cy = h / 2
 
     // Repulsion between nodes
     for (let i = 0; i < nodes.length; i++) {
       for (let j = i + 1; j < nodes.length; j++) {
         const dx = nodes[j].x - nodes[i].x
         const dy = nodes[j].y - nodes[i].y
-        const distSq = dx * dx + dy * dy
-        const dist = Math.max(Math.sqrt(distSq), 20)
+        const dist = Math.max(Math.sqrt(dx * dx + dy * dy), 30)
         const f = repulsion / (dist * dist)
         const fx = (dx / dist) * f
         const fy = (dy / dist) * f
@@ -118,7 +134,6 @@ export function GraphView({ notes, onOpenNote }: GraphViewProps) {
     }
 
     // Spring force for edges
-    const idealLength = 140
     for (const edge of edges) {
       const a = nodes.find((n) => n.id === edge.source)
       const b = nodes.find((n) => n.id === edge.target)
@@ -126,7 +141,7 @@ export function GraphView({ notes, onOpenNote }: GraphViewProps) {
       const dx = b.x - a.x
       const dy = b.y - a.y
       const dist = Math.max(Math.sqrt(dx * dx + dy * dy), 1)
-      const f = 0.008 * (dist - idealLength)
+      const f = 0.005 * (dist - 120) * energy
       const fx = (dx / dist) * f
       const fy = (dy / dist) * f
       a.vx += fx
@@ -135,11 +150,11 @@ export function GraphView({ notes, onOpenNote }: GraphViewProps) {
       b.vy -= fy
     }
 
-    // Center gravity + update positions with clamping
+    // Center gravity + update + hard clamp
     for (const node of nodes) {
       if (node === dragRef.current.node) continue
-      node.vx += (w / 2 - node.x) * centerForce
-      node.vy += (h / 2 - node.y) * centerForce
+      node.vx += (cx - node.x) * centerForce
+      node.vy += (cy - node.y) * centerForce
       node.vx *= damping
       node.vy *= damping
       // Clamp velocity
@@ -150,7 +165,7 @@ export function GraphView({ notes, onOpenNote }: GraphViewProps) {
       }
       node.x += node.vx
       node.y += node.vy
-      // Hard bounds
+      // Hard bounds — keep well within canvas
       node.x = Math.max(padding, Math.min(w - padding, node.x))
       node.y = Math.max(padding, Math.min(h - padding, node.y))
     }
@@ -159,10 +174,10 @@ export function GraphView({ notes, onOpenNote }: GraphViewProps) {
     ctx.fillStyle = '#1e1e1e'
     ctx.fillRect(0, 0, w, h)
 
-    // Draw dot grid background
+    // Dot grid
     ctx.fillStyle = 'rgba(255,255,255,0.03)'
-    for (let x = 0; x < w; x += 24) {
-      for (let y = 0; y < h; y += 24) {
+    for (let x = 12; x < w; x += 24) {
+      for (let y = 12; y < h; y += 24) {
         ctx.beginPath()
         ctx.arc(x, y, 0.5, 0, 2 * Math.PI)
         ctx.fill()
@@ -189,7 +204,6 @@ export function GraphView({ notes, onOpenNote }: GraphViewProps) {
       const nodeRadius = 4 + Math.min(node.connections, 5) * 1.5
       const color = isHover ? '#e84057' : (node.connections > 0 ? '#a78bfa' : '#555')
 
-      // Glow
       if (isHover || node.connections > 0) {
         ctx.beginPath()
         ctx.arc(node.x, node.y, nodeRadius + 6, 0, 2 * Math.PI)
@@ -197,13 +211,11 @@ export function GraphView({ notes, onOpenNote }: GraphViewProps) {
         ctx.fill()
       }
 
-      // Node circle
       ctx.beginPath()
       ctx.arc(node.x, node.y, nodeRadius, 0, 2 * Math.PI)
       ctx.fillStyle = color
       ctx.fill()
 
-      // Label
       ctx.font = `${isHover ? '500' : '400'} 11px Inter, system-ui, sans-serif`
       ctx.fillStyle = isHover ? '#e0e0e0' : '#888'
       ctx.textAlign = 'center'
@@ -237,7 +249,6 @@ export function GraphView({ notes, onOpenNote }: GraphViewProps) {
         dragRef.current = { node, offsetX: e.clientX - rect.left - node.x, offsetY: e.clientY - rect.top - node.y }
       }
     }
-
     const onMove = (e: MouseEvent) => {
       const d = dragRef.current
       if (d.node) {
@@ -247,15 +258,10 @@ export function GraphView({ notes, onOpenNote }: GraphViewProps) {
         d.node.vx = 0
         d.node.vy = 0
       }
-      const node = getNode(e)
-      hoverRef.current = node || null
-      canvas.style.cursor = node ? 'grab' : 'default'
+      hoverRef.current = getNode(e) || null
+      canvas.style.cursor = getNode(e) ? 'grab' : 'default'
     }
-
-    const onUp = () => {
-      dragRef.current.node = null
-    }
-
+    const onUp = () => { dragRef.current.node = null }
     const onClick = (e: MouseEvent) => {
       const node = getNode(e)
       if (node) onOpenNote(node.id)
@@ -279,13 +285,13 @@ export function GraphView({ notes, onOpenNote }: GraphViewProps) {
         <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#a78bfa' }} />
           Graph View
-          <span style={{ color: 'var(--text-faint)', marginLeft: 4 }}>
-            {notes.length} nodes · {edgesRef.current.length} links
+          <span style={{ color: 'var(--muted-foreground)', marginLeft: 4 }}>
+            {notes.length} nodes
           </span>
         </span>
       </div>
       <div className="graph-view">
-        <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />
+        <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />
       </div>
     </div>
   )
