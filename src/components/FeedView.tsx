@@ -156,13 +156,14 @@ export function FeedView({ publishedNotes, agents, systemEvents, onOpenNote, onO
                 <h3 className="feed-card__title">Trending</h3>
                 {trending.map((t, i) => (
                   <div key={t.topic} className="feed-trending">
-                    <div className="feed-trending__rank">{i + 1}</div>
+                    <span className="feed-trending__rank">{i + 1}</span>
                     <div className="feed-trending__info">
                       <span className="feed-trending__topic">#{t.topic}</span>
                       <span className="feed-trending__count">{t.count} interested</span>
                     </div>
                   </div>
                 ))}
+                <button className="feed-card__more">Show more</button>
               </div>
             )}
 
@@ -182,6 +183,7 @@ export function FeedView({ publishedNotes, agents, systemEvents, onOpenNote, onO
                     </div>
                   </div>
                 ))}
+                <button className="feed-card__more">Show more</button>
               </div>
             )}
           </aside>

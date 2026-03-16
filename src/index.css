@@ -1260,61 +1260,64 @@ html, body {
 @media (max-width: 900px) { .feed-sidebar { display: none; } }
 
 .feed-card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 6px; padding: 12px; overflow: hidden;
+  background: #191919; border: none;
+  border-radius: 10px; overflow: hidden;
+  box-shadow: inset 0 1px 0 0 #2a2a2a;
 }
 .feed-card__title {
-  font-size: 15px; font-weight: 700; color: var(--foreground);
-  margin-bottom: 10px; letter-spacing: -0.2px;
+  padding: 12px 14px 8px; margin: 0;
+  font-size: 13px; font-weight: 500; color: #b4b4b4;
+  letter-spacing: 0; font-family: var(--font-sans);
 }
-.feed-card--footer {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 11px; color: var(--muted-foreground); opacity: 0.5;
-  background: transparent; border: none; padding: 4px 0;
+.feed-card__more {
+  display: block; padding: 8px 14px 10px;
+  font-size: 12px; color: #6e6e6e; text-decoration: none;
+  font-family: var(--font-sans); cursor: pointer;
+  border: none; background: none; text-align: left; width: 100%;
+  transition: color 0.12s;
 }
+.feed-card__more:hover { color: #b4b4b4; }
 
 /* Trending */
 .feed-trending {
   display: flex; align-items: center; gap: 10px;
-  padding: 6px 0; cursor: pointer; transition: opacity 0.1s;
+  padding: 7px 14px; cursor: pointer;
+  transition: background 0.08s;
 }
-.feed-trending:hover { opacity: 0.8; }
+.feed-trending:hover { background: #222; }
 .feed-trending__rank {
-  width: 20px; font-size: 12px; font-weight: 600;
-  color: var(--muted-foreground); text-align: center; flex-shrink: 0;
+  width: 16px; font-size: 11px; font-weight: 500;
+  color: #484848; text-align: right; flex-shrink: 0;
+  font-variant-numeric: tabular-nums; font-family: var(--font-sans);
 }
-.feed-trending__info { flex: 1; min-width: 0; }
+.feed-trending__info { display: flex; flex-direction: column; gap: 1px; }
 .feed-trending__topic {
-  font-size: 13px; font-weight: 600; color: var(--foreground); display: block;
+  font-size: 13px; font-weight: 500; color: #eee; display: block;
+  font-family: var(--font-sans);
 }
 .feed-trending__count {
-  font-size: 11px; color: var(--muted-foreground);
+  font-size: 11px; color: #606060; font-family: var(--font-sans);
 }
 
 /* Suggestions */
 .feed-suggestion {
   display: flex; align-items: center; gap: 10px;
-  padding: 8px 0; cursor: pointer; transition: opacity 0.1s;
+  padding: 7px 14px; cursor: pointer;
+  transition: background 0.08s;
 }
-.feed-suggestion:hover { opacity: 0.85; }
+.feed-suggestion:hover { background: #222; }
 .feed-suggestion__avatar {
-  width: 32px; height: 32px; border-radius: 50%;
-  background: var(--accent); display: flex; align-items: center; justify-content: center;
-  font-size: 16px; flex-shrink: 0;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #2a2a2a; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
 }
-.feed-suggestion__info { flex: 1; min-width: 0; }
+.feed-suggestion__info { display: flex; flex-direction: column; gap: 1px; }
 .feed-suggestion__name {
-  font-size: 13px; font-weight: 600; color: var(--foreground); display: block;
+  font-size: 13px; font-weight: 500; color: #eee; display: block;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-family: var(--font-sans);
 }
-.feed-suggestion__handle { font-size: 11px; color: var(--muted-foreground); }
-.feed-suggestion__follow {
-  padding: 4px 14px; border-radius: 50px; border: none;
-  background: var(--foreground); color: var(--background);
-  font-size: 12px; font-weight: 700; cursor: pointer;
-  transition: opacity 0.12s; font-family: var(--font-sans); flex-shrink: 0;
-}
-.feed-suggestion__follow:hover { opacity: 0.85; }
+.feed-suggestion__handle { font-size: 11px; color: #606060; font-family: var(--font-sans); }
 
 /* ═══════════════════════════════════════════════════
    WORKSPACE / PROJECT SWITCHER
