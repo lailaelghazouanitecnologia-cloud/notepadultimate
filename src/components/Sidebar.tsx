@@ -8,6 +8,8 @@ interface SidebarProps {
   onSelect: (id: string) => void
   onAdd: (folderId?: string) => void
   onDelete: (id: string) => void
+  onRename: (id: string, newTitle: string) => void
+  onDuplicate?: (id: string) => void
   projects: Project[]
   activeProjectId: string
   onSwitchProject: (id: string) => void
@@ -17,16 +19,17 @@ interface SidebarProps {
   folders: Folder[]
   onCreateFolder: (name: string, parentId?: string) => void
   onDeleteFolder: (id: string) => void
+  onRenameFolder?: (id: string, newName: string) => void
   onMoveNote: (noteId: string, folderId?: string) => void
   theme?: 'light' | 'dark'
   onToggleTheme?: () => void
 }
 
 export function Sidebar({
-  notes, activeId, onSelect, onAdd, onDelete,
+  notes, activeId, onSelect, onAdd, onDelete, onRename, onDuplicate,
   projects, activeProjectId, onSwitchProject, onCreateProject,
   collapsed, onToggleCollapse,
-  folders, onCreateFolder, onDeleteFolder, onMoveNote: _onMoveNote,
+  folders, onCreateFolder, onDeleteFolder, onRenameFolder, onMoveNote: _onMoveNote,
   theme, onToggleTheme,
 }: SidebarProps) {
   void _onMoveNote
@@ -41,6 +44,61 @@ export function Sidebar({
   const [newFolderName, setNewFolderName] = useState('')
   const avatarRef = useRef<HTMLDivElement>(null)
   const folderInputRef = useRef<HTMLInputElement>(null)
+
+  // Inline rename state
+  const [renamingId, setRenamingId] = useState<string | null>(null)
+  const [renameValue, setRenameValue] = useState('')
+  const renameInputRef = useRef<HTMLInputElement>(null)
+
+  // Context menu state
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; id: string; type: 'note' | 'folder' } | null>(null)
+
+  const startRename = (id: string, currentName: string) => {
+    setRenamingId(id)
+    setRenameValue(currentName)
+    setCtxMenu(null)
+    setTimeout(() => renameInputRef.current?.focus(), 0)
+  }
+
+  const commitRename = () => {
+    if (!renamingId) return
+    const trimmed = renameValue.trim()
+    if (trimmed) {
+      // Check if it's a note or folder
+      const isFolder = folders.some((f) => f.id === renamingId)
+      if (isFolder) {
+        onRenameFolder?.(renamingId, trimmed)
+      } else {
+        onRename(renamingId, trimmed)
+      }
+    }
+    setRenamingId(null)
+    setRenameValue('')
+  }
+
+  const cancelRename = () => {
+    setRenamingId(null)
+    setRenameValue('')
+  }
+
+  const handleContextMenu = (e: React.MouseEvent, id: string, type: 'note' | 'folder') => {
+    e.preventDefault()
+    e.stopPropagation()
+    setCtxMenu({ x: e.clientX, y: e.clientY, id, type })
+  }
+
+  // Close context menu on outside click
+  useEffect(() => {
+    if (!ctxMenu) return
+    const handler = () => setCtxMenu(null)
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [ctxMenu])
+
+  // Focus rename input when renamingId changes
+  useEffect(() => {
+    if (renamingId) renameInputRef.current?.focus()
+  }, [renamingId])
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => {
@@ -131,9 +189,26 @@ export function Sidebar({
       key={note.id}
       className={`zw-sb-item ${activeId === note.id ? 'active' : ''}`}
       onClick={() => onSelect(note.id)}
+      onDoubleClick={(e) => { e.preventDefault(); startRename(note.id, note.title || 'Untitled') }}
+      onContextMenu={(e) => handleContextMenu(e, note.id, 'note')}
     >
       {/\.\w+$/.test(note.title) ? <FileTypeIcon filename={note.title} /> : Icons.file()}
-      <span className="zw-sb-item__label">{note.title || 'Untitled'}</span>
+      {renamingId === note.id ? (
+        <input
+          ref={renameInputRef}
+          className="zw-sb-rename-input"
+          value={renameValue}
+          onChange={(e) => setRenameValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') commitRename()
+            if (e.key === 'Escape') cancelRename()
+          }}
+          onBlur={commitRename}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ) : (
+        <span className="zw-sb-item__label">{note.title || 'Untitled'}</span>
+      )}
       <span className="zw-sb-item-trailing">
         <button
           className="zw-sb-item-menu"
@@ -153,12 +228,32 @@ export function Sidebar({
 
     return (
       <div key={folder.id} className="zw-sb-folder">
-        <button className="zw-sb-item zw-sb-item--folder" onClick={() => toggleFolder(folder.id)}>
+        <button
+          className="zw-sb-item zw-sb-item--folder"
+          onClick={() => toggleFolder(folder.id)}
+          onDoubleClick={(e) => { e.preventDefault(); startRename(folder.id, folder.name) }}
+          onContextMenu={(e) => handleContextMenu(e, folder.id, 'folder')}
+        >
           <svg viewBox="0 0 24 24" style={{ width: 12, height: 12, transition: 'transform 0.12s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', flexShrink: 0 }} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 18l6-6-6-6" />
           </svg>
           {Icons.folder()}
-          <span className="zw-sb-item__label">{folder.name}</span>
+          {renamingId === folder.id ? (
+            <input
+              ref={renameInputRef}
+              className="zw-sb-rename-input"
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commitRename()
+                if (e.key === 'Escape') cancelRename()
+              }}
+              onBlur={commitRename}
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <span className="zw-sb-item__label">{folder.name}</span>
+          )}
           <span className="zw-sb-item-trailing">
             <button
               className="zw-sb-item-menu"
@@ -420,6 +515,67 @@ export function Sidebar({
           </div>
         )}
       </div>
+
+      {/* Context menu */}
+      {ctxMenu && (
+        <div
+          className="zw-sb-ctx-menu"
+          style={{ position: 'fixed', left: ctxMenu.x, top: ctxMenu.y, zIndex: 9999 }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <button
+            className="zw-sb-ctx-item"
+            onClick={() => {
+              const item = ctxMenu.type === 'note'
+                ? notes.find((n) => n.id === ctxMenu.id)
+                : folders.find((f) => f.id === ctxMenu.id)
+              if (item) startRename(ctxMenu.id, ctxMenu.type === 'note' ? (item as Note).title || 'Untitled' : (item as Folder).name)
+            }}
+          >
+            {Icons.edit()}
+            <span>Rename</span>
+          </button>
+          {ctxMenu.type === 'note' && onDuplicate && (
+            <button
+              className="zw-sb-ctx-item"
+              onClick={() => { onDuplicate(ctxMenu.id); setCtxMenu(null) }}
+            >
+              {Icons.copy()}
+              <span>Duplicate</span>
+            </button>
+          )}
+          {ctxMenu.type === 'note' && (
+            <button
+              className="zw-sb-ctx-item"
+              onClick={() => { onAdd(undefined); setCtxMenu(null) }}
+            >
+              {Icons.plus()}
+              <span>New file</span>
+            </button>
+          )}
+          {ctxMenu.type === 'folder' && (
+            <button
+              className="zw-sb-ctx-item"
+              onClick={() => { onAdd(ctxMenu.id); setCtxMenu(null) }}
+            >
+              {Icons.plus()}
+              <span>New file in folder</span>
+            </button>
+          )}
+          <div className="zw-sb-ctx-divider" />
+          <button
+            className="zw-sb-ctx-item zw-sb-ctx-item--danger"
+            onClick={() => {
+              if (ctxMenu.type === 'note') onDelete(ctxMenu.id)
+              else onDeleteFolder(ctxMenu.id)
+              setCtxMenu(null)
+            }}
+          >
+            {Icons.x()}
+            <span>Delete</span>
+          </button>
+        </div>
+      )}
     </aside>
   )
 }

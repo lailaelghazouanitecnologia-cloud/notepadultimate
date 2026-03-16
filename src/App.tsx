@@ -52,7 +52,10 @@ export default function App() {
   const [showPublishModal, setShowPublishModal] = useLocalState(false)
   const [publishMessage, setPublishMessage] = useLocalState('')
   const [publishState, setPublishState] = useLocalState<'idle' | 'loading' | 'done'>('idle')
+  const [renamingTabId, setRenamingTabId] = useLocalState<string | null>(null)
+  const [tabRenameValue, setTabRenameValue] = useLocalState('')
   const pluginsRef = useRef<HTMLDivElement>(null)
+  const tabRenameRef = useRef<HTMLInputElement>(null)
 
   const editingNote = editingNoteId ? notes.find((n) => n.id === editingNoteId) : null
 
@@ -93,6 +96,17 @@ export default function App() {
   const handleMoveNote = useCallback((noteId: string, folderId?: string) => {
     updateNote(noteId, { folderId })
   }, [updateNote])
+
+  const handleRenameNote = useCallback((id: string, newTitle: string) => {
+    updateNote(id, { title: newTitle })
+  }, [updateNote])
+
+  const handleDuplicateNote = useCallback((id: string) => {
+    const source = notes.find((n) => n.id === id)
+    if (!source) return
+    const note = addNote()
+    updateNote(note.id, { title: `${source.title} (copy)`, content: source.content, folderId: source.folderId })
+  }, [notes, addNote, updateNote])
 
   const handlePublish = useCallback(() => {
     if (!editingNote || editingNote.published) return
@@ -150,6 +164,8 @@ export default function App() {
         onSelect={handleSidebarSelect}
         onAdd={handleAddNote}
         onDelete={deleteNote}
+        onRename={handleRenameNote}
+        onDuplicate={handleDuplicateNote}
         projects={projects}
         activeProjectId={activeProjectId}
         onSwitchProject={switchProject}
@@ -270,13 +286,40 @@ export default function App() {
                   key={note.id}
                   className={`tab ${editingNoteId === note.id ? 'active' : ''}`}
                   onClick={() => { setEditingNoteId(note.id); setActiveId(note.id) }}
+                  onDoubleClick={(e) => {
+                    e.preventDefault()
+                    setRenamingTabId(note.id)
+                    setTabRenameValue(note.title || 'Untitled')
+                    setTimeout(() => tabRenameRef.current?.focus(), 0)
+                  }}
                 >
                   {/\.\w+$/.test(note.title) ? (
                     <FileTypeIcon filename={note.title} />
                   ) : (
                     <span className="tab__circle" />
                   )}
-                  <span className="tab__label">{note.title || 'Untitled'}</span>
+                  {renamingTabId === note.id ? (
+                    <input
+                      ref={tabRenameRef}
+                      className="tab__rename-input"
+                      value={tabRenameValue}
+                      onChange={(e) => setTabRenameValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          if (tabRenameValue.trim()) updateNote(note.id, { title: tabRenameValue.trim() })
+                          setRenamingTabId(null)
+                        }
+                        if (e.key === 'Escape') setRenamingTabId(null)
+                      }}
+                      onBlur={() => {
+                        if (tabRenameValue.trim()) updateNote(note.id, { title: tabRenameValue.trim() })
+                        setRenamingTabId(null)
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    <span className="tab__label">{note.title || 'Untitled'}</span>
+                  )}
                   <span className="tab__close" onClick={(e) => { e.stopPropagation(); handleCloseTab(note.id) }}>
                     {Icons.x()}
                   </span>
