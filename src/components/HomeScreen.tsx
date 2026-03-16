@@ -315,23 +315,22 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
   const greeting = getGreeting()
   const isStreaming = streaming.status === 'streaming' || streaming.status === 'connecting'
 
-  // ── Chat mode view ──
+  // ── Chat mode view (faithful to chatagent) ──
   if (viewMode === 'chat') {
     return (
       <div className="content-area">
         <div className="home-research">
-          {/* Chat thread header */}
-          <div className="chat-thread-header">
-            <button className="chat-thread-back" onClick={handleBackToHome} title="Back to search">
-              {Icons.arrowLeft()}
-            </button>
-            <div className="chat-thread-header__info">
-              <span className="chat-thread-header__title">Chat</span>
-              <span className="chat-thread-header__model">{model}</span>
+          {/* Header — compact 28px bar */}
+          <div className="zw-chat-header">
+            <div className="zw-chat-header__left">
+              <button className="zw-chat-header__btn" onClick={handleBackToHome} title="Back">
+                {Icons.arrowLeft()}
+              </button>
+              <span className="zw-chat-header__title">Chat</span>
             </div>
-            <div className="chat-thread-header__actions">
+            <div className="zw-chat-header__right">
               <button
-                className="chat-thread-header__btn"
+                className="zw-chat-header__btn"
                 onClick={() => { setMessages([]); setViewMode('home'); setStreaming({ status: 'idle', text: '' }) }}
                 title="New chat"
               >
@@ -340,86 +339,84 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
             </div>
           </div>
 
-          {/* Messages */}
-          <div className="chat-thread">
-            <div className="chat-thread__inner">
+          {/* Messages — scrollable, max-width 720px centered */}
+          <div className="zw-chat-messages">
+            <div className="zw-chat-messages__inner">
               {messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`chat-msg ${msg.role === 'user' ? 'chat-msg--user' : 'chat-msg--ai'}`}
+                  className={`zw-chat-msg ${msg.role === 'user' ? 'zw-chat-msg-user' : 'zw-chat-msg-ai'}`}
                 >
-                  <div className={msg.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}>
-                    {msg.role === 'assistant'
-                      ? <div
-                          className="chat-ai-content zn-preview"
-                          dangerouslySetInnerHTML={{
-                            __html: renderMarkdown(msg.content)
-                          }}
+                  {msg.role === 'user' ? (
+                    <div className="zw-chat-bubble-user">{msg.content}</div>
+                  ) : (
+                    <>
+                      <div className="zw-chat-bubble-ai">
+                        <div
+                          className="zw-chat-ai-content zn-preview"
+                          dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
                         />
-                      : msg.content
-                    }
-                  </div>
-                  {msg.role === 'assistant' && (
-                    <div className="chat-msg__actions">
-                      <button
-                        className="chat-msg__action-btn"
-                        onClick={() => navigator.clipboard.writeText(msg.content)}
-                        title="Copy"
-                      >
-                        {Icons.copy()}
-                      </button>
-                    </div>
+                      </div>
+                      <div className="zw-msg-actions">
+                        <button
+                          className="zw-msg-action-btn"
+                          onClick={() => navigator.clipboard.writeText(msg.content)}
+                          title="Copy"
+                        >
+                          {Icons.copy()}
+                        </button>
+                      </div>
+                    </>
                   )}
                 </div>
               ))}
 
-              {/* Streaming indicator */}
+              {/* Connecting — red bouncing dots */}
               {streaming.status === 'connecting' && (
-                <div className="chat-msg chat-msg--ai">
-                  <div className="chat-thinking">
-                    <div className="chat-thinking__dots">
-                      <div className="chat-thinking__dot" />
-                      <div className="chat-thinking__dot" />
-                      <div className="chat-thinking__dot" />
+                <div className="zw-chat-msg zw-chat-msg-ai">
+                  <div className="zw-thinking">
+                    <div className="zw-thinking__dots">
+                      <span className="zw-thinking__dot" />
+                      <span className="zw-thinking__dot" />
+                      <span className="zw-thinking__dot" />
                     </div>
-                    <span className="chat-thinking__label">Thinking...</span>
+                    <span className="zw-thinking__label">Thinking...</span>
                   </div>
                 </div>
               )}
 
+              {/* Streaming — text with inline cursor */}
               {streaming.status === 'streaming' && (
-                <div className="chat-msg chat-msg--ai">
-                  <div className="chat-bubble-ai">
+                <div className="zw-chat-msg zw-chat-msg-ai">
+                  <div className="zw-chat-bubble-ai">
                     <div
-                      className="chat-ai-content zn-preview"
-                      dangerouslySetInnerHTML={{
-                        __html: renderMarkdown(streaming.text)
-                      }}
+                      className="zw-chat-ai-content zn-preview"
+                      dangerouslySetInnerHTML={{ __html: renderMarkdown(streaming.text) }}
                     />
-                    <span className="chat-cursor" />
+                    <span className="zw-cursor" />
                   </div>
                 </div>
               )}
 
-              <div ref={messagesEndRef} />
+              <div className="zw-chat-messages__end" ref={messagesEndRef} />
             </div>
           </div>
 
-          {/* Chat input at bottom */}
-          <div className="chat-input-bottom">
-            <div className="chat-input-bottom__box">
+          {/* Input — NO card border, just border-top separator */}
+          <div className="zw-chat-input-area">
+            <div className="zw-chat-input-area__inner">
               <textarea
                 ref={chatInputRef}
-                className="chat-input-bottom__textarea"
+                className="zw-chat-textarea"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleChatKeyDown}
-                placeholder="Message..."
+                placeholder="Message Zarnet..."
                 rows={1}
                 disabled={isStreaming}
               />
-              <div className="chat-input-bottom__toolbar">
-                <div className="chat-input-bottom__toolbar-left">
+              <div className="zw-chat-input-toolbar">
+                <div className="zw-chat-input-toolbar__left">
                   <div style={{ position: 'relative' }} ref={modelRef}>
                     <button className="zw-chat-model-btn" onClick={() => setShowModels(!showModels)}>
                       {Icons.sparkles()}
@@ -446,16 +443,16 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
                       </div>
                     )}
                   </div>
-                  <button className="zw-chat-tool-btn" title="Attach file">{Icons.paperclip()}</button>
+                  <button className="zw-toolbar-btn" title="Attach file">{Icons.paperclip()}</button>
                 </div>
-                <div className="chat-input-bottom__toolbar-right">
+                <div className="zw-chat-input-toolbar__right">
                   {isStreaming ? (
-                    <button className="zw-send-btn active" onClick={handleStop} title="Stop">
+                    <button className="zw-chat-send-btn active" onClick={handleStop} title="Stop">
                       {Icons.square()}
                     </button>
                   ) : (
                     <button
-                      className={`zw-send-btn ${input.trim() ? 'active' : ''}`}
+                      className={`zw-chat-send-btn ${input.trim() ? 'active' : ''}`}
                       onClick={handleChatSend}
                     >
                       {Icons.arrowUp()}
@@ -463,10 +460,11 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
                   )}
                 </div>
               </div>
+              <div className="zw-chat-disclaimer">zarnet can make mistakes. Double-check responses.</div>
             </div>
           </div>
 
-          {/* Footer */}
+          {/* Footer — 24px status bar */}
           <div className="zw-chat-footer">
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
               <span className="zw-chat-footer-name">Zarnet</span>
