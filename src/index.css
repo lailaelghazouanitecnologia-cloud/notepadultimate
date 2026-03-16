@@ -88,26 +88,25 @@ html, body {
 }
 .header__search-input::placeholder { color: var(--muted-foreground); opacity: .5; }
 
-/* Mode switcher pill */
+/* Mode switcher pill (Feed | Chat | Graph) */
 .zw-mode-switcher {
-  display: flex; align-items: center; gap: 1px;
-  background: #191919; border-radius: 8px;
-  padding: 3px;
-  box-shadow: inset 0 1px 0 0 #2a2a2a;
+  display: flex; align-items: center;
+  background: rgba(255,255,255,0.05); border-radius: 6px;
+  padding: 2px; gap: 1px;
 }
 .zw-mode-tab {
-  height: 28px; padding: 0 10px;
+  height: 24px; padding: 0 10px;
   display: flex; align-items: center; gap: 5px;
-  background: transparent; border: none; border-radius: 5px;
-  font-size: 12px; font-weight: 500; color: #606060;
-  cursor: pointer; transition: color 0.12s, background 0.12s; white-space: nowrap;
-  user-select: none; outline: none;
+  background: transparent; border: none; border-radius: 4px;
+  font-size: 11px; font-weight: 500; color: var(--muted-foreground);
+  cursor: pointer; transition: all 0.12s ease; white-space: nowrap;
   font-family: var(--font-sans);
 }
-.zw-mode-tab svg { width: 14px; height: 14px; flex-shrink: 0; }
-.zw-mode-tab:hover { color: #b4b4b4; }
+.zw-mode-tab svg { width: 13px; height: 13px; }
+.zw-mode-tab:hover { color: var(--foreground); }
 .zw-mode-tab.active {
-  color: #eee; background: #2a2a2a;
+  color: var(--foreground); background: var(--background);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
 }
 
 /* Header right */
@@ -167,23 +166,22 @@ html, body {
 
 /* Top row: workspace trigger + close button */
 .zw-sb-topbar {
-  flex-shrink: 0; padding: 8px 8px 0 12px;
-  display: flex; align-items: center; justify-content: space-between; gap: 4px;
+  flex-shrink: 0; padding: 0 12px; height: 40px;
+  display: flex; align-items: center; justify-content: space-between;
 }
 .zw-sb-topbar__team {
-  flex: 1; min-width: 0; display: flex; align-items: center; gap: 5px;
-  height: 24px; padding: 0 6px; border: none; border-radius: 5px;
-  background: transparent; cursor: pointer; color: var(--foreground);
-  font-family: var(--font-sans); font-size: 13px; font-weight: 500;
-  transition: background 0.12s ease;
+  display: flex; align-items: center; gap: 8px;
+  min-width: 0; border: none; background: transparent;
+  cursor: pointer; color: var(--foreground);
+  font-family: var(--font-sans); font-size: 13px; font-weight: 600;
 }
-.zw-sb-topbar__team:hover { background: rgba(255,255,255,0.06); }
-.zw-sb-topbar__logo { width: 14px; height: 14px; flex-shrink: 0; color: var(--foreground); }
+.zw-sb-topbar__logo { width: 18px; height: 18px; flex-shrink: 0; }
 .zw-sb-topbar__name {
   flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  background: linear-gradient(135deg, #ff2a1a, #660d06);
+  font-size: 13px; font-weight: 600; letter-spacing: -0.02em;
+  background: linear-gradient(180deg, #b4787a 0%, #8a6263 40%, #6b5455 70%, #4a3a3b 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text; font-weight: 700;
+  background-clip: text;
 }
 .zw-sb-topbar__chevron {
   width: 12px; height: 12px; flex-shrink: 0; color: var(--muted-foreground);
@@ -191,13 +189,14 @@ html, body {
 }
 .zw-sb-topbar__team:hover .zw-sb-topbar__chevron { opacity: 1; }
 .zw-sb-topbar__close {
-  width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
-  border: none; border-radius: 5px; background: transparent; color: var(--foreground);
-  cursor: pointer; flex-shrink: 0; opacity: 0; transition: all 0.15s ease;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border: none; border-radius: 6px;
+  background: transparent; color: #484848;
+  cursor: pointer; flex-shrink: 0; outline: none;
+  transition: background 0.12s, color 0.12s;
 }
-.zw-sb-topbar:hover .zw-sb-topbar__close { opacity: 1; }
-.zw-sb-topbar__close:hover { background: rgba(255,255,255,0.06); }
-.zw-sb-topbar__close svg { width: 16px; height: 16px; }
+.zw-sb-topbar__close:hover { background: #222; color: #b4b4b4; }
+.zw-sb-topbar__close svg { width: 15px; height: 15px; }
 
 /* Search bar */
 .zw-sb-search { padding: 8px 8px 10px; }
