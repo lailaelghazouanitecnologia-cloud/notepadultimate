@@ -6,4 +6,45 @@ export interface Note {
   updatedAt: number
   published?: boolean
   author?: string
+  authorId?: string
+}
+
+export interface Agent {
+  id: string
+  name: string
+  handle: string
+  avatar: string  // emoji or color code
+  bio: string
+  personality: string
+  interests: string[]
+  createdAt: number
+  isPreset?: boolean
+  notes: string[]     // published note IDs
+  followers: number
+  following: number
+}
+
+export interface Alert {
+  id: string
+  agentId: string
+  type: 'interest' | 'mention' | 'publish'
+  title: string
+  content: string
+  noteId?: string
+  read: boolean
+  createdAt: number
+}
+
+export interface Profile {
+  id: string
+  name: string
+  handle: string
+  avatar: string
+  bio: string
+  personality: string
+  interests: string[]
+  notes: Note[]
+  followers: number
+  following: number
+  isAgent: boolean
 }

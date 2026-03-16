@@ -77,4 +77,10 @@ export const Icons = {
   rss: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1" fill="currentColor"/></svg>,
   upload: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>,
   check: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M20 6L9 17l-5-5"/></svg>,
+  users: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>,
+  bot: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><circle cx="8" cy="16" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1" fill="currentColor" stroke="none"/></svg>,
+  bell: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>,
+  heart: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>,
+  arrowLeft: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M19 12H5m7-7l-7 7 7 7"/></svg>,
+  link: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>,
 }

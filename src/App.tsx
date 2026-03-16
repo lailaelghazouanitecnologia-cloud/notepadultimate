@@ -1,14 +1,20 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { Editor } from './components/Editor'
 import { HomeScreen } from './components/HomeScreen'
 import { GraphView } from './components/GraphView'
+import { AgentsView } from './components/AgentsView'
+import { ProfileView } from './components/ProfileView'
 import { useNotes } from './hooks/useNotes'
 import { useTheme } from './hooks/useTheme'
 import { ZarnettiLogo, Icons } from './lib/icons'
-import { publishNote, loadPublished } from './store'
+import {
+  publishNote, loadPublished, loadAgents, saveAgent, deleteAgent as deleteAgentStore,
+  loadAlerts, saveAlerts, generateAlerts,
+} from './store'
+import type { Agent, Alert } from './types'
 
-export type View = 'feed' | 'chat' | 'graph'
+export type View = 'feed' | 'chat' | 'graph' | 'agents'
 
 export interface ChatSession {
   id: string
@@ -26,6 +32,15 @@ export default function App() {
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
   const [showHistory, setShowHistory] = useState(false)
   const [publishedNotes, setPublishedNotes] = useState(() => loadPublished())
+  const [agents, setAgents] = useState<Agent[]>(() => loadAgents())
+  const [alerts, setAlerts] = useState<Alert[]>(() => loadAlerts())
+  const [profileAgentId, setProfileAgentId] = useState<string | null>(null)
+
+  // Regenerate alerts when published notes change
+  useEffect(() => {
+    const updated = generateAlerts(agents, publishedNotes)
+    setAlerts(updated)
+  }, [agents, publishedNotes])
 
   const openNoteTab = useCallback((id: string) => {
     setActiveId(id)
@@ -90,15 +105,55 @@ export default function App() {
     setPublishedNotes(loadPublished())
   }, [activeNote, updateNote])
 
+  // Agent handlers
+  const handleCreateAgent = useCallback((data: Omit<Agent, 'id' | 'createdAt' | 'notes' | 'followers' | 'following'>) => {
+    const agent: Agent = {
+      ...data,
+      id: `agent-${Date.now()}`,
+      createdAt: Date.now(),
+      notes: [],
+      followers: Math.floor(Math.random() * 500) + 10,
+      following: Math.floor(Math.random() * 50) + 1,
+    }
+    saveAgent(agent)
+    setAgents(loadAgents())
+  }, [])
+
+  const handleDeleteAgent = useCallback((id: string) => {
+    deleteAgentStore(id)
+    setAgents(loadAgents())
+    if (profileAgentId === id) setProfileAgentId(null)
+  }, [profileAgentId])
+
+  const handleOpenProfile = useCallback((agentId: string) => {
+    setProfileAgentId(agentId)
+  }, [])
+
+  const handleBackFromProfile = useCallback(() => {
+    setProfileAgentId(null)
+  }, [])
+
+  const handleMarkAlertRead = useCallback((alertId: string) => {
+    setAlerts((prev) => {
+      const updated = prev.map((a) => a.id === alertId ? { ...a, read: true } : a)
+      saveAlerts(updated)
+      return updated
+    })
+  }, [])
+
   const tabNotes = openTabs.map((id) => notes.find((n) => n.id === id)).filter(Boolean)
 
-  const modes: { id: View; icon: (p?: object) => React.ReactNode; label: string }[] = [
+  const unreadAlerts = alerts.filter((a) => !a.read).length
+
+  const modes: { id: View; icon: (p?: object) => React.ReactNode; label: string; badge?: number }[] = [
     { id: 'feed', icon: Icons.rss, label: 'Feed' },
     { id: 'chat', icon: Icons.messageCircle, label: 'Chat' },
+    { id: 'agents', icon: Icons.bot, label: 'Agents', badge: unreadAlerts },
     { id: 'graph', icon: Icons.graph, label: 'Graph' },
   ]
 
   const activeSession = activeChatId ? chatSessions.find((s) => s.id === activeChatId) : undefined
+  const profileAgent = profileAgentId ? agents.find((a) => a.id === profileAgentId) : undefined
 
   return (
     <div className="app">
@@ -114,16 +169,16 @@ export default function App() {
         {/* Header bar */}
         <header className="header">
           <div className="header__left">
-            {/* Mode switcher pill */}
             <div className="zw-mode-switcher">
               {modes.map((m) => (
                 <button
                   key={m.id}
                   className={`zw-mode-tab ${view === m.id ? 'active' : ''}`}
-                  onClick={() => setView(m.id)}
+                  onClick={() => { setView(m.id); setProfileAgentId(null) }}
                 >
                   {m.icon()}
                   <span>{m.label}</span>
+                  {m.badge && m.badge > 0 ? <span className="zw-mode-tab__badge">{m.badge}</span> : null}
                 </button>
               ))}
             </div>
@@ -137,7 +192,6 @@ export default function App() {
           </div>
 
           <div className="header__right">
-            {/* History button — visible in chat mode */}
             {view === 'chat' && (
               <button
                 className={`header__icon-btn ${showHistory ? 'active' : ''}`}
@@ -147,7 +201,6 @@ export default function App() {
                 {Icons.clock()}
               </button>
             )}
-            {/* Publish button — visible in feed mode when a note is active */}
             {view === 'feed' && activeNote && (
               <button
                 className={`header__publish-btn ${activeNote.published ? 'published' : ''}`}
@@ -214,7 +267,6 @@ export default function App() {
               initialSession={activeSession}
               key={activeChatId || 'new'}
             />
-            {/* History side panel */}
             {showHistory && (
               <div className="chat-history-panel">
                 <div className="chat-history-panel__header">
@@ -246,6 +298,27 @@ export default function App() {
               </div>
             )}
           </div>
+        ) : view === 'agents' ? (
+          profileAgent ? (
+            <ProfileView
+              agent={profileAgent}
+              publishedNotes={publishedNotes}
+              allAgents={agents}
+              onBack={handleBackFromProfile}
+              onOpenProfile={handleOpenProfile}
+              onOpenNote={handleOpenNote}
+            />
+          ) : (
+            <AgentsView
+              agents={agents}
+              alerts={alerts}
+              publishedNotes={publishedNotes}
+              onCreateAgent={handleCreateAgent}
+              onDeleteAgent={handleDeleteAgent}
+              onOpenProfile={handleOpenProfile}
+              onMarkAlertRead={handleMarkAlertRead}
+            />
+          )
         ) : view === 'graph' ? (
           <GraphView notes={notes} onOpenNote={handleOpenNote} />
         ) : null}
