@@ -138,9 +138,6 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
     return { own, community }
   }, [input, notes, publishedNotes])
 
-  const recentNotes = useMemo(() => {
-    return [...notes].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 6)
-  }, [notes])
 
   const processCommand = useCallback((text: string): string | null => {
     const lower = text.toLowerCase().trim()
@@ -630,35 +627,6 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
             </div>
           )}
 
-          {/* Recent notes (when idle) */}
-          {!showingResults && !hasMessages && recentNotes.length > 0 && (
-            <>
-              <div className="home-research__divider">
-                <div className="home-research__divider-line" />
-                <span className="home-research__divider-text">Recent notes</span>
-                <div className="home-research__divider-line" />
-              </div>
-
-              <div className="home-research__results">
-                {recentNotes.map((note, i) => (
-                  <article
-                    key={note.id}
-                    className={`home-research__result ${i < recentNotes.length - 1 ? 'has-border' : ''}`}
-                    onClick={() => onOpenNote(note.id)}
-                  >
-                    <p className="home-research__result-meta">note</p>
-                    <h3 className="home-research__result-title">{note.title || 'Untitled'}</h3>
-                    <p className="home-research__result-snippet">
-                      {note.content.slice(0, 120) || 'Empty note'}
-                    </p>
-                    <div className="home-research__result-footer">
-                      <span>{formatRelativeDate(note.updatedAt)}</span>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </>
-          )}
         </div>
 
         {/* Footer */}
