@@ -45,27 +45,37 @@ export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
   const allIds = useMemo(() => new Set(notes.map(n => n.id)), [notes])
 
   const [positions, setPositions] = useState<NodePos[]>(() => {
-    const cols = Math.ceil(Math.sqrt(notes.length))
-    return notes.map((n, i) => ({
-      id: n.id,
-      title: n.title || 'Untitled',
-      x: 200 + (i % cols) * 180,
-      y: 200 + Math.floor(i / cols) * 120,
-      links: extractLinks(n.content, allIds),
-    }))
+    const cx = 500, cy = 400
+    return notes.map((n, i) => {
+      const links = extractLinks(n.content, allIds)
+      // First node at center, rest in a radial layout
+      if (i === 0) return { id: n.id, title: n.title || 'Untitled', x: cx, y: cy, links }
+      const angle = ((i - 1) / (notes.length - 1)) * Math.PI * 2 - Math.PI / 2
+      const radius = 200 + (i % 2) * 60
+      return {
+        id: n.id,
+        title: n.title || 'Untitled',
+        x: cx + Math.cos(angle) * radius,
+        y: cy + Math.sin(angle) * radius,
+        links,
+      }
+    })
   })
 
   useEffect(() => {
     setPositions(prev => {
       const existing = new Map(prev.map(p => [p.id, p]))
-      const cols = Math.ceil(Math.sqrt(notes.length))
+      const cx = 500, cy = 400
       return notes.map((n, i) => {
         const ex = existing.get(n.id)
+        if (ex) return { ...ex, title: n.title || 'Untitled', links: extractLinks(n.content, allIds) }
+        const angle = (i / Math.max(notes.length, 1)) * Math.PI * 2 - Math.PI / 2
+        const radius = 200 + (i % 2) * 60
         return {
           id: n.id,
           title: n.title || 'Untitled',
-          x: ex?.x ?? 200 + (i % cols) * 180,
-          y: ex?.y ?? 200 + Math.floor(i / cols) * 120,
+          x: cx + Math.cos(angle) * radius,
+          y: cy + Math.sin(angle) * radius,
           links: extractLinks(n.content, allIds),
         }
       })

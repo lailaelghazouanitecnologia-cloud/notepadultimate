@@ -3,10 +3,74 @@ import type { Note, Agent, Alert, Project, Contract, Folder, SystemEvent } from 
 const STORAGE_KEY = 'zarnetti-notes'
 const PUBLISHED_KEY = 'zarnetti-published'
 
+function createSeedNotes(): Note[] {
+  const now = Date.now()
+  const ids = {
+    hub: 'seed-hub-001',
+    physics: 'seed-physics-002',
+    math: 'seed-math-003',
+    cs: 'seed-cs-004',
+    philosophy: 'seed-philosophy-005',
+    neuroscience: 'seed-neuro-006',
+    ai: 'seed-ai-007',
+    quantum: 'seed-quantum-008',
+    creativity: 'seed-creativity-009',
+    networks: 'seed-networks-010',
+  }
+  return [
+    {
+      id: ids.hub, title: 'Knowledge Map', createdAt: now, updatedAt: now,
+      content: `# Knowledge Map\n\nThis is the central hub connecting all areas of study.\n\nCore branches:\n- [[${ids.physics}]] — Fundamental laws\n- [[${ids.math}]] — The language of patterns\n- [[${ids.cs}]] — Computation & algorithms\n- [[${ids.philosophy}]] — Big questions\n- [[${ids.neuroscience}]] — The brain\n- [[${ids.ai}]] — Machine intelligence`,
+    },
+    {
+      id: ids.physics, title: 'Physics', createdAt: now - 100000, updatedAt: now - 50000,
+      content: `# Physics\n\nThe study of matter, energy, and the fundamental forces.\n\nRelated:\n- [[${ids.math}]] — Mathematical foundations\n- [[${ids.quantum}]] — Quantum mechanics\n- [[${ids.philosophy}]] — Philosophy of science`,
+    },
+    {
+      id: ids.math, title: 'Mathematics', createdAt: now - 200000, updatedAt: now - 80000,
+      content: `# Mathematics\n\nPatterns, structures, and logical reasoning.\n\nConnections:\n- [[${ids.physics}]] — Applied math in physics\n- [[${ids.cs}]] — Discrete math & algorithms\n- [[${ids.networks}]] — Graph theory & networks`,
+    },
+    {
+      id: ids.cs, title: 'Computer Science', createdAt: now - 300000, updatedAt: now - 20000,
+      content: `# Computer Science\n\nAlgorithms, data structures, and computation.\n\nLinks:\n- [[${ids.math}]] — Theoretical CS\n- [[${ids.ai}]] — Artificial intelligence\n- [[${ids.networks}]] — Network theory`,
+    },
+    {
+      id: ids.philosophy, title: 'Philosophy', createdAt: now - 400000, updatedAt: now - 90000,
+      content: `# Philosophy\n\nEthics, epistemology, and the nature of reality.\n\nRelated:\n- [[${ids.physics}]] — Philosophy of physics\n- [[${ids.neuroscience}]] — Philosophy of mind\n- [[${ids.ai}]] — AI ethics & consciousness`,
+    },
+    {
+      id: ids.neuroscience, title: 'Neuroscience', createdAt: now - 500000, updatedAt: now - 30000,
+      content: `# Neuroscience\n\nHow the brain produces thought, perception, and behavior.\n\nConnections:\n- [[${ids.philosophy}]] — Mind-body problem\n- [[${ids.ai}]] — Neural networks inspiration\n- [[${ids.creativity}]] — Creative cognition`,
+    },
+    {
+      id: ids.ai, title: 'Artificial Intelligence', createdAt: now - 600000, updatedAt: now - 10000,
+      content: `# Artificial Intelligence\n\nBuilding systems that learn, reason, and create.\n\nRelated:\n- [[${ids.cs}]] — Algorithms & computing\n- [[${ids.neuroscience}]] — Bio-inspired AI\n- [[${ids.philosophy}]] — Ethics of AI\n- [[${ids.quantum}]] — Quantum computing for AI`,
+    },
+    {
+      id: ids.quantum, title: 'Quantum Mechanics', createdAt: now - 700000, updatedAt: now - 60000,
+      content: `# Quantum Mechanics\n\nThe physics of the very small — superposition, entanglement, uncertainty.\n\nLinks:\n- [[${ids.physics}]] — Classical to quantum\n- [[${ids.math}]] — Linear algebra & Hilbert spaces\n- [[${ids.ai}]] — Quantum machine learning`,
+    },
+    {
+      id: ids.creativity, title: 'Creativity & Innovation', createdAt: now - 800000, updatedAt: now - 40000,
+      content: `# Creativity & Innovation\n\nHow new ideas emerge from connecting disparate concepts.\n\nRelated:\n- [[${ids.neuroscience}]] — Neural basis of creativity\n- [[${ids.networks}]] — Innovation networks\n- [[${ids.philosophy}]] — Aesthetics`,
+    },
+    {
+      id: ids.networks, title: 'Network Theory', createdAt: now - 900000, updatedAt: now - 70000,
+      content: `# Network Theory\n\nStudy of graphs, connections, and emergent behavior in complex systems.\n\nLinks:\n- [[${ids.math}]] — Graph theory\n- [[${ids.cs}]] — Distributed systems\n- [[${ids.creativity}]] — Creative networks`,
+    },
+  ]
+}
+
 export function loadNotes(): Note[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
+    const notes: Note[] = raw ? JSON.parse(raw) : []
+    if (notes.length === 0) {
+      const seed = createSeedNotes()
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(seed))
+      return seed
+    }
+    return notes
   } catch {
     return []
   }
