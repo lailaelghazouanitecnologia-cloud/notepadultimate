@@ -7,17 +7,17 @@ import { useNotes } from './hooks/useNotes'
 import { useTheme } from './hooks/useTheme'
 import { ZarnettiLogo, Icons } from './lib/icons'
 
-export type View = 'home' | 'files' | 'graph'
+export type View = 'search' | 'edit' | 'graph'
 
 export default function App() {
   const { notes, activeNote, activeId, setActiveId, addNote, updateNote, deleteNote } = useNotes()
   useTheme()
-  const [view, setView] = useState<View>('home')
+  const [view, setView] = useState<View>('search')
   const [openTabs, setOpenTabs] = useState<string[]>([])
 
   const openNoteTab = useCallback((id: string) => {
     setActiveId(id)
-    setView('files')
+    setView('edit')
     setOpenTabs((prev) => prev.includes(id) ? prev : [...prev, id])
   }, [setActiveId])
 
@@ -51,29 +51,39 @@ export default function App() {
 
   const tabNotes = openTabs.map((id) => notes.find((n) => n.id === id)).filter(Boolean)
 
+  const modes: { id: View; icon: (p?: object) => React.ReactNode; label: string }[] = [
+    { id: 'search', icon: Icons.sparkles, label: 'Search' },
+    { id: 'edit', icon: Icons.edit, label: 'Edit' },
+    { id: 'graph', icon: Icons.graph, label: 'Graph' },
+  ]
+
   return (
     <div className="app">
-      {/* Sidebar spans full height */}
       <Sidebar
         notes={notes}
         activeId={activeId}
         onSelect={handleSidebarSelect}
         onAdd={handleAddNote}
         onDelete={deleteNote}
-        activeView={view}
-        onViewChange={setView}
       />
 
-      {/* Right: header + content */}
       <div className="app-main">
-        {/* Header */}
+        {/* Header bar */}
         <header className="header">
           <div className="header__left">
-            <button className="header__project-btn">
-              <ZarnettiLogo className="header__logo" />
-              <span className="header__title">Zarnetti</span>
-              {Icons.chevronDown()}
-            </button>
+            {/* Mode switcher pill */}
+            <div className="zw-mode-switcher">
+              {modes.map((m) => (
+                <button
+                  key={m.id}
+                  className={`zw-mode-tab ${view === m.id ? 'active' : ''}`}
+                  onClick={() => setView(m.id)}
+                >
+                  {m.icon()}
+                  <span>{m.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="header__center">
@@ -91,31 +101,33 @@ export default function App() {
           </div>
         </header>
 
+        {/* File tabs bar (edit mode only) */}
+        {view === 'edit' && tabNotes.length > 0 && (
+          <div className="tabs-bar">
+            <div className="tabs-bar__tabs">
+              {tabNotes.map((note) => note && (
+                <button
+                  key={note.id}
+                  className={`tab ${activeId === note.id ? 'active' : ''}`}
+                  onClick={() => setActiveId(note.id)}
+                >
+                  <span className="tab__circle" />
+                  <span className="tab__label">{note.title || 'Untitled'}</span>
+                  <span className="tab__close" onClick={(e) => { e.stopPropagation(); closeTab(note.id) }}>
+                    {Icons.x()}
+                  </span>
+                </button>
+              ))}
+              <button className="tab-add" onClick={handleAddNote} aria-label="New tab">
+                {Icons.plus()}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Content */}
-        {view === 'files' ? (
+        {view === 'edit' ? (
           <div className="content-area">
-            {tabNotes.length > 0 && (
-              <div className="tabs-bar">
-                <div className="tabs-bar__tabs">
-                  {tabNotes.map((note) => note && (
-                    <button
-                      key={note.id}
-                      className={`tab ${activeId === note.id ? 'active' : ''}`}
-                      onClick={() => setActiveId(note.id)}
-                    >
-                      <span className="tab__circle" />
-                      <span className="tab__label">{note.title || 'Untitled'}</span>
-                      <span className="tab__close" onClick={(e) => { e.stopPropagation(); closeTab(note.id) }}>
-                        {Icons.x()}
-                      </span>
-                    </button>
-                  ))}
-                  <button className="tab-add" onClick={handleAddNote} aria-label="New tab">
-                    {Icons.plus()}
-                  </button>
-                </div>
-              </div>
-            )}
             {activeNote ? (
               <Editor note={activeNote} onUpdate={updateNote} onNavigate={handleNavigate} />
             ) : (
@@ -127,7 +139,7 @@ export default function App() {
               </div>
             )}
           </div>
-        ) : view === 'home' ? (
+        ) : view === 'search' ? (
           <HomeScreen notes={notes} onCreateNote={handleCreateFromChat} onOpenNote={handleOpenNote} />
         ) : view === 'graph' ? (
           <GraphView notes={notes} onOpenNote={handleOpenNote} />

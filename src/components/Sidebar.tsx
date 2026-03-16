@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import type { Note } from '../types'
-import type { View } from '../App'
 import { ZarnettiLogo, Identicon, Icons } from '../lib/icons'
 
 interface SidebarProps {
@@ -9,11 +8,9 @@ interface SidebarProps {
   onSelect: (id: string) => void
   onAdd: () => void
   onDelete: (id: string) => void
-  activeView: View
-  onViewChange: (view: View) => void
 }
 
-export function Sidebar({ notes, activeId, onSelect, onAdd, onDelete, activeView, onViewChange }: SidebarProps) {
+export function Sidebar({ notes, activeId, onSelect, onAdd, onDelete }: SidebarProps) {
   const [search, setSearch] = useState('')
 
   const filtered = notes.filter(
@@ -25,30 +22,20 @@ export function Sidebar({ notes, activeId, onSelect, onAdd, onDelete, activeView
   const formatDate = (ts: number) =>
     new Date(ts).toLocaleDateString('es', { day: 'numeric', month: 'short' })
 
-  const navItems: { id: View; icon: (p?: object) => React.ReactNode; label: string }[] = [
-    { id: 'home', icon: Icons.sparkles, label: 'Chat' },
-    { id: 'files', icon: Icons.files, label: 'Files' },
-    { id: 'graph', icon: Icons.graph, label: 'Graph' },
-  ]
-
   return (
     <aside className="zw-sb">
-      {/* Left: icon rail */}
+      {/* Icon rail */}
       <div className="zw-sb-rail">
         <div className="zw-sb-rail-top">
           <div className="zw-sb-rail-logo">
             <ZarnettiLogo className="zw-sb-rail-logo-svg" />
           </div>
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              className={`zw-sb-rail-btn ${activeView === item.id ? 'active' : ''}`}
-              onClick={() => onViewChange(item.id)}
-              title={item.label}
-            >
-              {item.icon()}
-            </button>
-          ))}
+          <button className="zw-sb-rail-btn active" title="Files">
+            {Icons.files()}
+          </button>
+          <button className="zw-sb-rail-btn" title="Search">
+            {Icons.search()}
+          </button>
         </div>
         <div style={{ flex: 1 }} />
         <div className="zw-sb-rail-bottom">
@@ -60,12 +47,13 @@ export function Sidebar({ notes, activeId, onSelect, onAdd, onDelete, activeView
         </div>
       </div>
 
-      {/* Right: content panel */}
+      {/* Content panel */}
       <div className="zw-sb-content">
         <div className="zw-ws-dropdown">
           <button className="zw-ws-trigger">
             {Icons.files()}
             <span>Zarnetti</span>
+            {Icons.chevronDown()}
           </button>
         </div>
 

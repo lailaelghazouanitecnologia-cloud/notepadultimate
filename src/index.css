@@ -71,19 +71,28 @@ html, body {
   padding: 0 12px; gap: 12px; flex-shrink: 0;
   background: var(--surface); border-bottom: 1px solid var(--border);
 }
-.header__left { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-.header__logo { width: 14px; height: 14px; color: var(--zw-red); flex-shrink: 0; }
+.header__left { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
-/* Project dropdown */
-.header__project-btn {
-  display: flex; align-items: center; gap: 6px;
-  background: transparent; border: none; cursor: pointer;
-  color: var(--foreground); font-family: var(--font-sans);
-  padding: 4px 8px; border-radius: 5px; transition: background 0.1s ease;
+/* Mode switcher pill (Search | Edit | Graph) */
+.zw-mode-switcher {
+  display: flex; align-items: center;
+  background: rgba(255,255,255,0.05); border-radius: 6px;
+  padding: 2px; gap: 1px;
 }
-.header__project-btn:hover { background: rgba(255,255,255,0.05); }
-.header__title { font-size: 13px; font-weight: 600; user-select: none; }
-.header__project-btn svg { width: 12px; height: 12px; color: var(--muted-foreground); }
+.zw-mode-tab {
+  height: 24px; padding: 0 10px;
+  display: flex; align-items: center; gap: 5px;
+  background: transparent; border: none; border-radius: 4px;
+  font-size: 11px; font-weight: 500; color: var(--muted-foreground);
+  cursor: pointer; transition: all 0.12s ease; white-space: nowrap;
+  font-family: var(--font-sans);
+}
+.zw-mode-tab svg { width: 13px; height: 13px; }
+.zw-mode-tab:hover { color: var(--foreground); }
+.zw-mode-tab.active {
+  color: var(--foreground); background: var(--background);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
 
 /* Center search bar */
 .header__center { flex: 1; display: flex; justify-content: center; }
@@ -403,6 +412,40 @@ html, body {
 .zw-chat-send-btn.active { background: var(--zw-red); color: #fff; opacity: 1; }
 .zw-chat-send-btn.active:hover { opacity: .9; }
 .zw-chat-send-btn svg { width: 14px; height: 14px; }
+
+/* Model selector */
+.zw-chat-model-btn {
+  display: flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border: none; border-radius: 5px;
+  background: transparent; color: var(--muted-foreground);
+  font-size: 11px; font-weight: 500; cursor: pointer;
+  transition: all 0.12s ease; font-family: var(--font-sans);
+}
+.zw-chat-model-btn:hover { background: rgba(255,255,255,0.05); color: var(--foreground); }
+.zw-chat-model-btn svg { width: 12px; height: 12px; }
+.zw-chat-model-menu {
+  position: absolute; bottom: 100%; left: 0; margin-bottom: 6px;
+  background: var(--popover); border: 1px solid var(--border); border-radius: 10px;
+  padding: 4px; min-width: 180px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); z-index: 200;
+  animation: scale-in 0.12s ease;
+}
+.zw-chat-model-option {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px;
+  border: none; border-radius: 7px; background: transparent; color: var(--foreground);
+  cursor: pointer; text-align: left; transition: background 0.08s; font-family: var(--font-sans);
+}
+.zw-chat-model-option:hover { background: rgba(255,255,255,0.05); }
+.zw-chat-model-option.active { background: rgba(255,255,255,0.05); }
+
+/* Chat tool buttons (attach, mention, globe) */
+.zw-chat-tool-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border: none; border-radius: 5px;
+  background: transparent; color: var(--muted-foreground); cursor: pointer;
+  transition: all 0.12s ease;
+}
+.zw-chat-tool-btn:hover { background: rgba(255,255,255,0.05); color: var(--foreground); }
+.zw-chat-tool-btn svg { width: 14px; height: 14px; }
 
 /* / Commands button */
 .zw-cmd-btn {
