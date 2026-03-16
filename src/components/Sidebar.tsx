@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Note, Project } from '../types'
-import { ZarnettiLogo, Identicon, Icons } from '../lib/icons'
+import { ZarnettiLogo, Identicon, Icons, FileTypeIcon } from '../lib/icons'
 
 interface SidebarProps {
   notes: Note[]
@@ -181,7 +181,7 @@ export function Sidebar({
                 className={`zw-sb-item ${activeId === note.id ? 'active' : ''}`}
                 onClick={() => onSelect(note.id)}
               >
-                {Icons.file()}
+                {/\.\w+$/.test(note.title) ? <FileTypeIcon filename={note.title} /> : Icons.file()}
                 <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
                   <div style={{ fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {note.title || 'Untitled'}

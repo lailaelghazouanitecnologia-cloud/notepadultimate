@@ -111,18 +111,18 @@ html, body {
 }
 .header__search-input::placeholder { color: var(--muted-foreground); opacity: .5; }
 
-/* Invite button */
+/* Header right */
 .header__right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-.header__invite-btn {
-  display: flex; align-items: center; gap: 5px;
-  height: 26px; padding: 0 10px;
-  background: transparent; border: 1px solid var(--border);
-  border-radius: 6px; color: var(--muted-foreground);
-  font-size: 12px; font-weight: 500; font-family: var(--font-sans);
+
+/* Ghost button — icon only, no border */
+.header__ghost-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border: none; border-radius: 6px;
+  background: transparent; color: var(--muted-foreground);
   cursor: pointer; transition: all 0.12s ease;
 }
-.header__invite-btn:hover { background: rgba(255,255,255,0.05); color: var(--foreground); border-color: var(--ring); }
-.header__invite-btn svg { width: 14px; height: 14px; }
+.header__ghost-btn:hover { color: var(--foreground); background: rgba(255,255,255,0.05); }
+.header__ghost-btn svg { width: 16px; height: 16px; }
 
 /* Header icon button (history, etc.) */
 .header__icon-btn {

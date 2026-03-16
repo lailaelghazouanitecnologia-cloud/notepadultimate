@@ -48,6 +48,115 @@ export function Identicon({ className }: { className?: string }) {
   )
 }
 
+/* ── File type icons (vscode-material-icon-theme style) ── */
+const fs = { width: 16, height: 16, flexShrink: 0 } as const
+
+export function IconHtml() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" style={fs}>
+      <path fill="#e65100" d="m4 4 2 22 10 2 10-2 2-22Zm19.72 7H11.28l.29 3h11.86l-.802 9.335L15.99 25l-6.635-1.646L8.93 19h3.02l.19 2 3.86.77 3.84-.77.29-4H8.84L8 8h16Z" />
+    </svg>
+  )
+}
+
+export function IconCss() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" style={fs}>
+      <path fill="#42a5f5" d="M2 2v12h12V2Zm4 6h1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h1v1h1Zm3 0h2v1h-2v1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1h-2v-1h2v-1h-1a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1" />
+    </svg>
+  )
+}
+
+export function IconJs() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" style={fs}>
+      <path fill="#ffca28" d="M2 2v12h12V2zm6 6h1v4a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-1h1v1h1zm3 0h2v1h-2v1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1h-2v-1h2v-1h-1a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1" />
+    </svg>
+  )
+}
+
+export function IconTs() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" style={fs}>
+      <path fill="#0288d1" d="M2 2v12h12V2zm4 6h3v1H8v4H7V9H6zm5 0h2v1h-2v1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1h-2v-1h2v-1h-1a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1" />
+    </svg>
+  )
+}
+
+export function IconJson() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" style={fs}>
+      <path fill="#f9a825" d="M560-160v-80h120q17 0 28.5-11.5T720-280v-80q0-38 22-69t58-44v-14q-36-13-58-44t-22-69v-80q0-17-11.5-28.5T680-720H560v-80h120q50 0 85 35t35 85v80q0 17 11.5 28.5T840-560h40v160h-40q-17 0-28.5 11.5T800-360v80q0 50-35 85t-85 35zm-280 0q-50 0-85-35t-35-85v-80q0-17-11.5-28.5T120-400H80v-160h40q17 0 28.5-11.5T160-600v-80q0-50 35-85t85-35h120v80H280q-17 0-28.5 11.5T240-680v80q0 38-22 69t-58 44v14q36 13 58 44t22 69v80q0 17 11.5 28.5T280-240h120v80z" />
+    </svg>
+  )
+}
+
+export function IconMarkdown() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" style={fs}>
+      <path fill="#42a5f5" d="m14 10-4 3.5L6 10H4v12h4v-6l2 2 2-2v6h4V10zm12 6v-6h-4v6h-4l6 8 6-8z" />
+    </svg>
+  )
+}
+
+export function IconPdf() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style={fs}>
+      <path fill="#ef5350" d="M13 9h5.5L13 3.5zM6 2h8l6 6v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2m4.93 10.44c.41.9.93 1.64 1.53 2.15l.41.32c-.87.16-2.07.44-3.34.93l-.11.04.5-1.04c.45-.87.78-1.66 1.01-2.4m6.48 3.81c.18-.18.27-.41.28-.66.03-.2-.02-.39-.12-.55-.29-.47-1.04-.69-2.28-.69l-1.29.07-.87-.58c-.63-.52-1.2-1.43-1.6-2.56l.04-.14c.33-1.33.64-2.94-.02-3.6a.85.85 0 0 0-.61-.24h-.24c-.37 0-.7.39-.79.77-.37 1.33-.15 2.06.22 3.27v.01c-.25.88-.57 1.9-1.08 2.93l-.96 1.8-.89.49c-1.2.75-1.77 1.59-1.88 2.12-.04.19-.02.36.05.54l.03.05.48.31.44.11c.81 0 1.73-.95 2.97-3.07l.18-.07c1.03-.33 2.31-.56 4.03-.75 1.03.51 2.24.74 3 .74.44 0 .74-.11.91-.3" />
+    </svg>
+  )
+}
+
+export function IconImage() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" style={fs}>
+      <path fill="#26a69a" d="M8.5 6h4l-4-4zM3.875 1H9.5l4 4v8.6c0 .773-.616 1.4-1.375 1.4h-8.25c-.76 0-1.375-.627-1.375-1.4V2.4c0-.777.612-1.4 1.375-1.4M4 13.6h8V8l-2.625 2.8L8 9.4zm1.25-7.7c-.76 0-1.375.627-1.375 1.4s.616 1.4 1.375 1.4c.76 0 1.375-.627 1.375-1.4S6.009 5.9 5.25 5.9" />
+    </svg>
+  )
+}
+
+export function IconDoc() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" style={fs}>
+      <path fill="#42a5f5" d="M8 16h8v2H8zm0-4h8v2H8zm6-10H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8zm4 18H6V4h7v5h5z" />
+    </svg>
+  )
+}
+
+export function IconFileGeneric() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style={fs}>
+      <path fill="currentColor" opacity="0.5" d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8zm4 18H6V4h7v5h5z" />
+    </svg>
+  )
+}
+
+type FileType = 'html' | 'css' | 'js' | 'ts' | 'json' | 'md' | 'pdf' | 'img' | 'doc' | 'unknown'
+
+const iconMap: Record<FileType, React.FC> = {
+  html: IconHtml, css: IconCss, js: IconJs, ts: IconTs,
+  json: IconJson, md: IconMarkdown, pdf: IconPdf,
+  img: IconImage, doc: IconDoc, unknown: IconFileGeneric,
+}
+
+export function getFileType(filename: string): FileType {
+  const ext = filename.split('.').pop()?.toLowerCase() || ''
+  const map: Record<string, FileType> = {
+    html: 'html', htm: 'html', css: 'css', scss: 'css', less: 'css',
+    js: 'js', jsx: 'js', mjs: 'js', ts: 'ts', tsx: 'ts',
+    json: 'json', md: 'md', mdx: 'md', markdown: 'md',
+    pdf: 'pdf', png: 'img', jpg: 'img', jpeg: 'img', gif: 'img', svg: 'img', webp: 'img',
+    doc: 'doc', docx: 'doc', txt: 'doc',
+  }
+  return map[ext] || 'unknown'
+}
+
+export function FileTypeIcon({ filename }: { filename: string }) {
+  const ft = getFileType(filename)
+  const Icon = iconMap[ft] || IconFileGeneric
+  return <Icon />
+}
+
 export const Icons = {
   files: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"/></svg>,
   search: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>,

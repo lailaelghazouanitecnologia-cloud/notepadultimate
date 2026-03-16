@@ -9,7 +9,7 @@ import { AgentsView } from './components/AgentsView'
 import { ProfileView } from './components/ProfileView'
 import { useNotes } from './hooks/useNotes'
 import { useTheme } from './hooks/useTheme'
-import { Icons } from './lib/icons'
+import { Icons, FileTypeIcon } from './lib/icons'
 import {
   publishNote, loadPublished, loadAgents, saveAgent, deleteAgent as deleteAgentStore,
   loadAlerts, saveAlerts, generateAlerts,
@@ -230,16 +230,6 @@ export default function App() {
                 {Icons.clock()}
               </button>
             )}
-            {showEditor && editingNote && (
-              <button
-                className={`header__publish-btn ${editingNote.published ? 'published' : ''}`}
-                onClick={handlePublish}
-                title={editingNote.published ? 'Published' : 'Publish note'}
-              >
-                {editingNote.published ? Icons.check() : Icons.upload()}
-                <span>{editingNote.published ? 'Published' : 'Publish'}</span>
-              </button>
-            )}
 
             {/* Plugins button */}
             <div style={{ position: 'relative' }} ref={pluginsRef}>
@@ -273,10 +263,22 @@ export default function App() {
               )}
             </div>
 
-            <button className="header__invite-btn">
+            {/* Invite — icon only, ghost button */}
+            <button className="header__ghost-btn" title="Invite">
               {Icons.userPlus()}
-              <span>Invite</span>
             </button>
+
+            {/* Publish — far right */}
+            {showEditor && editingNote && (
+              <button
+                className={`header__publish-btn ${editingNote.published ? 'published' : ''}`}
+                onClick={handlePublish}
+                title={editingNote.published ? 'Published' : 'Publish note'}
+              >
+                {editingNote.published ? Icons.check() : Icons.upload()}
+                <span>{editingNote.published ? 'Published' : 'Publish'}</span>
+              </button>
+            )}
           </div>
         </header>
 
@@ -290,7 +292,11 @@ export default function App() {
                   className={`tab ${editingNoteId === note.id ? 'active' : ''}`}
                   onClick={() => { setEditingNoteId(note.id); setActiveId(note.id) }}
                 >
-                  <span className="tab__circle" />
+                  {/\.\w+$/.test(note.title) ? (
+                    <FileTypeIcon filename={note.title} />
+                  ) : (
+                    <span className="tab__circle" />
+                  )}
                   <span className="tab__label">{note.title || 'Untitled'}</span>
                   <span className="tab__close" onClick={(e) => { e.stopPropagation(); closeTab(note.id) }}>
                     {Icons.x()}
