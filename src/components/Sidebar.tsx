@@ -29,6 +29,8 @@ export function Sidebar({
   const [search, setSearch] = useState('')
   const [showProjects, setShowProjects] = useState(false)
   const [showAvatarMenu, setShowAvatarMenu] = useState(false)
+  const [showCreateMenu, setShowCreateMenu] = useState(false)
+  const createMenuRef = useRef<HTMLDivElement>(null)
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
   const [creatingFolder, setCreatingFolder] = useState<string | null>(null) // null = root, or parentId
   const [newFolderName, setNewFolderName] = useState('')
@@ -82,6 +84,16 @@ export function Sidebar({
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [showAvatarMenu, showProjects])
+
+  // Close create menu on outside click
+  useEffect(() => {
+    if (!showCreateMenu) return
+    const handler = (e: MouseEvent) => {
+      if (createMenuRef.current && !createMenuRef.current.contains(e.target as Node)) setShowCreateMenu(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showCreateMenu])
 
   // Group notes by folder
   const rootNotes = filtered.filter((n) => !n.folderId)
@@ -196,13 +208,23 @@ export function Sidebar({
       {/* Files header */}
       <div className="zw-sb-content-top">
         <span className="zw-sb-label">Files</span>
-        <div style={{ display: 'flex', gap: 2 }}>
-          <button className="zw-sb-icon-btn" onClick={() => setCreatingFolder('__root__')} title="New folder">
-            {Icons.folder()}
-          </button>
-          <button className="zw-sb-icon-btn" onClick={() => onAdd()} title="New file">
+        <div ref={createMenuRef} style={{ position: 'relative' }}>
+          <button className="zw-sb-icon-btn" onClick={() => setShowCreateMenu(!showCreateMenu)} title="New...">
             {Icons.plus()}
           </button>
+          {showCreateMenu && (
+            <div className="zw-create-menu">
+              <button className="zw-create-menu__item" onClick={() => { onAdd(); setShowCreateMenu(false) }}>
+                {Icons.file()}
+                <span>New file</span>
+                <span className="zw-create-menu__shortcut">&#8984;N</span>
+              </button>
+              <button className="zw-create-menu__item" onClick={() => { setCreatingFolder('__root__'); setShowCreateMenu(false) }}>
+                {Icons.folder()}
+                <span>New folder</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

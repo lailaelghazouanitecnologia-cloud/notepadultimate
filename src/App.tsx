@@ -3,6 +3,7 @@ import { Sidebar } from './components/Sidebar'
 import { Editor } from './components/Editor'
 import { HomeScreen } from './components/HomeScreen'
 import { FeedView } from './components/FeedView'
+import { GraphView } from './components/GraphView'
 import { AgentsView } from './components/AgentsView'
 import { ProfileView } from './components/ProfileView'
 import { useNotes } from './hooks/useNotes'
@@ -18,7 +19,7 @@ import {
 } from './store'
 import type { Agent, Alert, Project, Contract, Folder, SystemEvent } from './types'
 
-export type View = 'feed' | 'chat'
+export type View = 'feed' | 'chat' | 'graph'
 type PluginPanel = 'agents' | null
 
 export interface ChatSession {
@@ -37,6 +38,9 @@ export default function App() {
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
   const [showHistory, setShowHistory] = useState(false)
   const [publishedNotes, setPublishedNotes] = useState(() => loadPublished())
+  const [showPublishModal, setShowPublishModal] = useState(false)
+  const [publishMessage, setPublishMessage] = useState('')
+  const [publishState, setPublishState] = useState<'idle' | 'loading' | 'done'>('idle')
   const [agents, setAgents] = useState<Agent[]>(() => loadAgents())
   const [alerts, setAlerts] = useState<Alert[]>(() => loadAlerts())
   const [profileAgentId, setProfileAgentId] = useState<string | null>(null)
@@ -144,10 +148,28 @@ export default function App() {
 
   const handlePublish = useCallback(() => {
     if (!editingNote) return
-    publishNote(editingNote, 'You')
-    updateNote(editingNote.id, { published: true })
-    setPublishedNotes(loadPublished())
-  }, [editingNote, updateNote])
+    if (editingNote.published) return
+    setPublishMessage('')
+    setPublishState('idle')
+    setShowPublishModal(true)
+  }, [editingNote])
+
+  const handleConfirmPublish = useCallback(() => {
+    if (!editingNote || publishState !== 'idle') return
+    setPublishState('loading')
+    setTimeout(() => {
+      publishNote(editingNote, 'You')
+      updateNote(editingNote.id, { published: true })
+      setPublishedNotes(loadPublished())
+      const evt = addSystemEvent('update', `"${editingNote.title || 'Untitled'}" published`, publishMessage || undefined)
+      setSystemEvents(prev => [...prev, evt])
+      setPublishState('done')
+      setTimeout(() => {
+        setShowPublishModal(false)
+        setPublishState('idle')
+      }, 1200)
+    }, 600)
+  }, [editingNote, updateNote, publishMessage, publishState])
 
   // Agent handlers
   const handleCreateAgent = useCallback((data: Omit<Agent, 'id' | 'createdAt' | 'notes' | 'followers' | 'following'>) => {
@@ -224,6 +246,7 @@ export default function App() {
   const modes: { id: View; icon: (p?: object) => React.ReactNode; label: string }[] = [
     { id: 'feed', icon: Icons.rss, label: 'Feed' },
     { id: 'chat', icon: Icons.messageCircle, label: 'Chat' },
+    { id: 'graph', icon: Icons.network, label: 'Graph' },
   ]
 
   const activeSession = activeChatId ? chatSessions.find((s) => s.id === activeChatId) : undefined
@@ -444,8 +467,58 @@ export default function App() {
               </div>
             )}
           </div>
+        ) : view === 'graph' ? (
+          <GraphView notes={notes} onOpenNote={handleOpenNote} />
         ) : null}
       </div>
+
+      {/* Publish modal */}
+      {showPublishModal && editingNote && (
+        <div className="publish-overlay" onClick={() => publishState === 'idle' && setShowPublishModal(false)}>
+          <div className="publish-card" onClick={(e) => e.stopPropagation()}>
+            <div className="publish-card__header">
+              <h3>Publish with thread</h3>
+              <button className="publish-card__close" onClick={() => publishState === 'idle' && setShowPublishModal(false)}>
+                {Icons.x()}
+              </button>
+            </div>
+            <div className="publish-card__tweet">
+              <div className="publish-card__avatar">Y</div>
+              <textarea
+                className="publish-card__input"
+                placeholder="What's happening?"
+                value={publishMessage}
+                onChange={(e) => setPublishMessage(e.target.value)}
+                maxLength={280}
+              />
+            </div>
+            <div className="publish-card__attached">
+              <div className="publish-card__doc-icon">{Icons.file()}</div>
+              <div className="publish-card__doc-meta">
+                <span className="publish-card__doc-name">{editingNote.title || 'Untitled'}</span>
+                <span className="publish-card__doc-size">{editingNote.content.length} chars</span>
+              </div>
+            </div>
+            <div className="publish-card__footer">
+              <span className="publish-card__count">{publishMessage.length} / 280</span>
+              <button
+                className={`publish-card__btn ${publishState}`}
+                onClick={handleConfirmPublish}
+                disabled={publishState !== 'idle'}
+              >
+                {publishState === 'loading' ? (
+                  <span className="publish-card__spinner" />
+                ) : publishState === 'done' ? (
+                  Icons.check()
+                ) : (
+                  Icons.upload()
+                )}
+                <span>{publishState === 'done' ? 'Published' : 'Publish'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
