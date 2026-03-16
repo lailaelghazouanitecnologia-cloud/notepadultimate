@@ -479,3 +479,17 @@ export function detectFiles(content: string): { name: string; type: string }[] {
 
   return files
 }
+
+/**
+ * Extract image URLs from markdown content.
+ * Returns array of { alt, url } for each ![alt](url) found.
+ */
+export function extractImages(content: string): { alt: string; url: string }[] {
+  const images: { alt: string; url: string }[] = []
+  const re = /!\[([^\]]*)\]\(([^)]+)\)/g
+  let m
+  while ((m = re.exec(content)) !== null) {
+    images.push({ alt: m[1], url: m[2] })
+  }
+  return images
+}

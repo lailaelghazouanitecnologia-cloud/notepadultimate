@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { Note, Agent, SystemEvent } from '../types'
 import { Icons } from '../lib/icons'
-import { detectFiles } from '../lib/markdown'
+import { detectFiles, extractImages } from '../lib/markdown'
 
 interface FeedViewProps {
   publishedNotes: Note[]
@@ -44,8 +44,12 @@ function getFileIcon(type: string): string {
   return FILE_TYPE_ICONS[type.toLowerCase()] || '📎'
 }
 
+// Strip markdown images from text preview
+function stripImages(text: string): string {
+  return text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '').trim()
+}
+
 export function FeedView({ publishedNotes, agents, systemEvents, onOpenNote, onOpenProfile }: FeedViewProps) {
-  // Merge posts and system events into a single timeline
   type TimelineItem =
     | { kind: 'post'; note: Note; ts: number }
     | { kind: 'system'; event: SystemEvent; ts: number }
@@ -64,7 +68,6 @@ export function FeedView({ publishedNotes, agents, systemEvents, onOpenNote, onO
     return map
   }, [agents])
 
-  // Trending topics from agent interests
   const trending = useMemo(() => {
     const counts = new Map<string, number>()
     agents.forEach((a) => {
@@ -78,7 +81,6 @@ export function FeedView({ publishedNotes, agents, systemEvents, onOpenNote, onO
       .map(([topic, count]) => ({ topic, count }))
   }, [agents])
 
-  // Suggested agents
   const suggestions = useMemo(() => {
     return agents.filter((a) => a.isPreset).slice(0, 3)
   }, [agents])
@@ -122,6 +124,8 @@ export function FeedView({ publishedNotes, agents, systemEvents, onOpenNote, onO
                 const authorHandle = agent?.handle || `@${(note.author || 'you').toLowerCase().replace(/\s+/g, '')}`
 
                 const files = detectFiles(note.content)
+                const images = extractImages(note.content)
+                const textContent = stripImages(note.content)
 
                 return (
                   <article key={note.id} className="feed-post" onClick={() => onOpenNote(note.id)}>
@@ -151,7 +155,28 @@ export function FeedView({ publishedNotes, agents, systemEvents, onOpenNote, onO
                         <span className="feed-post__time">{formatRelative(note.updatedAt)}</span>
                       </div>
                       {note.title && <div className="feed-post__title">{note.title}</div>}
-                      <p className="feed-post__text">{note.content.slice(0, 400)}</p>
+                      {textContent && <p className="feed-post__text">{textContent.slice(0, 400)}</p>}
+
+                      {/* Image grid (Twitter-style) */}
+                      {images.length > 0 && (
+                        <div className={`feed-post__images feed-post__images--${Math.min(images.length, 4)}`}>
+                          {images.slice(0, 4).map((img, i) => (
+                            <div key={i} className="feed-post__image-wrap">
+                              <img
+                                src={img.url}
+                                alt={img.alt}
+                                className="feed-post__image"
+                                loading="lazy"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            </div>
+                          ))}
+                          {images.length > 4 && (
+                            <div className="feed-post__image-more">+{images.length - 4}</div>
+                          )}
+                        </div>
+                      )}
+
                       {files.length > 0 && (
                         <div className="feed-post__files">
                           {files.slice(0, 4).map((f) => (
@@ -175,6 +200,25 @@ export function FeedView({ publishedNotes, agents, systemEvents, onOpenNote, onO
                           ))}
                         </div>
                       )}
+
+                      {/* Action buttons (Twitter-style) */}
+                      <div className="feed-post__actions">
+                        <button className="feed-post__action" onClick={(e) => e.stopPropagation()} title="Reply">
+                          {Icons.messageCircle()}
+                          <span>0</span>
+                        </button>
+                        <button className="feed-post__action" onClick={(e) => e.stopPropagation()} title="Repost">
+                          {Icons.repeat()}
+                          <span>0</span>
+                        </button>
+                        <button className="feed-post__action" onClick={(e) => e.stopPropagation()} title="Like">
+                          {Icons.heart()}
+                          <span>0</span>
+                        </button>
+                        <button className="feed-post__action" onClick={(e) => e.stopPropagation()} title="Share">
+                          {Icons.share()}
+                        </button>
+                      </div>
                     </div>
                   </article>
                 )

@@ -203,4 +203,6 @@ export const Icons = {
   crown: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M2 20h20"/><path d="M4 17l2-12 4 5 2-5 2 5 4-5 2 12z"/></svg>,
   refresh: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>,
   sun: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>,
+  repeat: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>,
+  share: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>,
 }
