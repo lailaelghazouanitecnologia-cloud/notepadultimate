@@ -246,6 +246,51 @@ html, body {
 .zw-sb-avatar-btn:hover .zw-sb-avatar { border-color: var(--zw-red); }
 .zw-sb-avatar-img { width: 100%; height: 100%; display: block; }
 
+/* Bottom action buttons (download, users, upgrade) */
+.zw-sb-bottom-actions {
+  display: flex; align-items: center; gap: 2px; margin-left: auto;
+}
+.zw-sb-action-btn {
+  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  border: 0.5px solid rgba(255,255,255,0.08); border-radius: 6px;
+  background: transparent; cursor: pointer; color: var(--muted-foreground);
+  transition: all 0.1s ease;
+}
+.zw-sb-action-btn:hover { background: rgba(255,255,255,0.08); color: var(--foreground); border-color: transparent; }
+.zw-sb-action-btn:active { transform: scale(0.95); }
+.zw-sb-action-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+.zw-sb-action-btn--upgrade { color: #d4a843; }
+.zw-sb-action-btn--upgrade:hover { color: #f0c050; background: rgba(212,168,67,0.1); }
+
+/* Sidebar sections (Notes/Chat/Graph) */
+.zw-sb-section { margin-bottom: 2px; }
+.zw-sb-section__header {
+  display: flex; align-items: center; gap: 6px; width: 100%;
+  padding: 5px 10px; border: none; background: transparent;
+  cursor: pointer; color: var(--muted-foreground);
+  font-family: var(--font-sans); font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  transition: color 0.12s ease;
+}
+.zw-sb-section__header:hover { color: var(--foreground); }
+.zw-sb-section__header svg:first-child { color: var(--muted-foreground); }
+.zw-sb-section__header > svg:nth-child(2) { width: 13px; height: 13px; flex-shrink: 0; }
+.zw-sb-section__count {
+  margin-left: auto; font-size: 9px; font-weight: 600;
+  color: var(--muted-foreground); opacity: 0.6;
+  background: rgba(255,255,255,0.05); padding: 1px 5px; border-radius: 8px;
+}
+.zw-sb-section__content { padding-left: 4px; }
+
+/* Chat item labels - aqua/link color */
+.zw-sb-item--chat .zw-sb-item__label--chat,
+.zw-sb-item__label--chat {
+  color: #5cc8d4;
+}
+.zw-sb-item--chat:hover .zw-sb-item__label--chat {
+  color: #7ddde7;
+}
+
 /* Project switcher button (bottom bar) */
 .zw-sb-project-btn {
   flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px;
