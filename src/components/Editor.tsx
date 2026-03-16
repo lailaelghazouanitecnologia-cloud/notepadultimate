@@ -15,8 +15,10 @@ interface EditorProps {
 
 export function Editor({ note, allNotes, onUpdate, onNavigate }: EditorProps) {
   const [mode, setMode] = useState<ViewMode>('edit')
+  const [splitPct, setSplitPct] = useState(50) // editor % in split mode
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const previewRef = useRef<HTMLDivElement>(null)
+  const splitContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if ((mode === 'edit' || mode === 'split') && textareaRef.current) {
@@ -93,6 +95,32 @@ export function Editor({ note, allNotes, onUpdate, onNavigate }: EditorProps) {
     })
   }, [allNotes, note.id, note.title])
 
+  const handleSplitDrag = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    const container = splitContainerRef.current
+    if (!container) return
+    const startX = e.clientX
+    const containerRect = container.getBoundingClientRect()
+    const startPct = splitPct
+
+    const onMove = (ev: MouseEvent) => {
+      const delta = ev.clientX - startX
+      const deltaPct = (delta / containerRect.width) * 100
+      const newPct = Math.max(20, Math.min(80, startPct + deltaPct))
+      setSplitPct(newPct)
+    }
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }, [splitPct])
+
   const renderedHtml = useMemo(() => renderMarkdown(note.content), [note.content])
   const wordCount = useMemo(() => note.content.trim().split(/\s+/).filter(Boolean).length, [note.content])
 
@@ -123,11 +151,11 @@ export function Editor({ note, allNotes, onUpdate, onNavigate }: EditorProps) {
       </div>
 
       {/* Content */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      <div ref={splitContainerRef} className="editor-split-container">
         {(mode === 'edit' || mode === 'split') && (
           <div
             className="editor-area"
-            style={mode === 'split' ? { borderRight: '1px solid var(--border-subtle)', flex: 1 } : { flex: 1 }}
+            style={mode === 'split' ? { width: `${splitPct}%`, flex: 'none' } : { flex: 1 }}
           >
             <div className="editor-area__inner">
               <textarea
@@ -140,6 +168,12 @@ export function Editor({ note, allNotes, onUpdate, onNavigate }: EditorProps) {
                 spellCheck={false}
               />
             </div>
+          </div>
+        )}
+
+        {mode === 'split' && (
+          <div className="editor-split-handle" onMouseDown={handleSplitDrag}>
+            <div className="editor-split-handle__line" />
           </div>
         )}
 
