@@ -1,4 +1,4 @@
-import type { Note, Agent, Alert, Project, Contract, Folder } from './types'
+import type { Note, Agent, Alert, Project, Contract, Folder, SystemEvent } from './types'
 
 const STORAGE_KEY = 'zarnetti-notes'
 const PUBLISHED_KEY = 'zarnetti-published'
@@ -257,4 +257,26 @@ export function generateAlerts(agents: Agent[], publishedNotes: Note[]): Alert[]
     return all
   }
   return existing
+}
+
+// System events
+const EVENTS_KEY = 'zarnetti-events'
+
+export function loadSystemEvents(): SystemEvent[] {
+  try {
+    const raw = localStorage.getItem(EVENTS_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+export function saveSystemEvents(events: SystemEvent[]): void {
+  localStorage.setItem(EVENTS_KEY, JSON.stringify(events))
+}
+
+export function addSystemEvent(type: SystemEvent['type'], message: string, detail?: string): SystemEvent {
+  const event: SystemEvent = { id: `evt-${Date.now()}`, type, message, detail, createdAt: Date.now() }
+  const events = loadSystemEvents()
+  events.push(event)
+  saveSystemEvents(events)
+  return event
 }

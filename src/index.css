@@ -23,8 +23,8 @@
 :root {
   --background: #141414;
   --foreground: #e0e0e0;
-  --card: #252525;
-  --popover: #282828;
+  --card: #1a1a1a;
+  --popover: #1c1c1c;
   --muted: #2a2a2a;
   --muted-foreground: #888;
   --accent: #2e2e2e;
@@ -178,7 +178,12 @@ html, body {
 }
 .zw-sb-topbar__team:hover { background: rgba(255,255,255,0.06); }
 .zw-sb-topbar__logo { width: 14px; height: 14px; flex-shrink: 0; color: var(--foreground); }
-.zw-sb-topbar__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.zw-sb-topbar__name {
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  background: linear-gradient(135deg, #ff2a1a, #660d06);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; font-weight: 700;
+}
 .zw-sb-topbar__chevron {
   width: 12px; height: 12px; flex-shrink: 0; color: var(--muted-foreground);
   opacity: 0; transition: opacity 0.15s ease;
@@ -258,8 +263,8 @@ html, body {
   position: absolute; bottom: 100%; left: 0; margin-bottom: 6px;
   min-width: 200px; z-index: 100;
   background: var(--popover); border: 1px solid var(--border);
-  border-radius: 8px; padding: 4px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  border-radius: 6px; padding: 4px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
   animation: scale-in 0.12s ease;
 }
 .zw-avatar-menu__header {
@@ -635,13 +640,13 @@ html, body {
 .zw-chat-model-btn svg { width: 12px; height: 12px; }
 .zw-chat-model-menu {
   position: absolute; bottom: 100%; left: 0; margin-bottom: 6px;
-  background: var(--popover); border: 1px solid var(--border); border-radius: 10px;
-  padding: 4px; min-width: 180px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); z-index: 200;
+  background: var(--popover); border: 1px solid var(--border); border-radius: 6px;
+  padding: 4px; min-width: 180px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 200;
   animation: scale-in 0.12s ease;
 }
 .zw-chat-model-option {
   display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px;
-  border: none; border-radius: 7px; background: transparent; color: var(--foreground);
+  border: none; border-radius: 4px; background: transparent; color: var(--foreground);
   cursor: pointer; text-align: left; transition: background 0.08s; font-family: var(--font-sans);
 }
 .zw-chat-model-option:hover { background: rgba(255,255,255,0.05); }
@@ -669,8 +674,8 @@ html, body {
 /* Commands dropdown */
 .zw-cmd-menu {
   position: absolute; bottom: 100%; left: 0; margin-bottom: 6px;
-  background: var(--popover); border: 1px solid var(--border); border-radius: 10px;
-  padding: 4px; min-width: 260px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); z-index: 200;
+  background: var(--popover); border: 1px solid var(--border); border-radius: 6px;
+  padding: 4px; min-width: 260px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 200;
   animation: scale-in 0.12s ease;
 }
 .zw-cmd-menu__title {
@@ -679,7 +684,7 @@ html, body {
 }
 .zw-cmd-menu__item {
   display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 10px;
-  border: none; border-radius: 7px; background: transparent; color: var(--foreground);
+  border: none; border-radius: 4px; background: transparent; color: var(--foreground);
   cursor: pointer; text-align: left; transition: background 0.08s; font-family: var(--font-sans); font-size: 12px;
 }
 .zw-cmd-menu__item:hover { background: var(--accent); }
@@ -768,14 +773,14 @@ html, body {
 
 /* Agent card */
 .agent-card {
-  position: relative; padding: 16px; border-radius: 10px;
+  position: relative; padding: 16px; border-radius: 6px;
   border: 1px solid var(--border); background: var(--card);
   cursor: pointer; transition: all 0.12s ease;
 }
 .agent-card:hover { border-color: var(--ring); background: var(--popover); }
 .agent-card__header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .agent-card__avatar {
-  width: 40px; height: 40px; border-radius: 10px;
+  width: 40px; height: 40px; border-radius: 6px;
   background: var(--accent); display: flex; align-items: center; justify-content: center;
   font-size: 20px; flex-shrink: 0;
 }
@@ -1120,6 +1125,34 @@ html, body {
 }
 
 /* Post */
+/* System event in feed */
+.feed-system {
+  display: flex; gap: 12px; padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(102, 13, 6, 0.06);
+}
+.feed-system__icon {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(102, 13, 6, 0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.feed-system__body { flex: 1; min-width: 0; }
+.feed-system__label {
+  font-size: 12px; font-weight: 600; color: #cc3a2a;
+  font-family: var(--font-sans);
+}
+.feed-system__dot { color: var(--muted-foreground); margin: 0 4px; font-size: 11px; }
+.feed-system__time { font-size: 11px; color: var(--muted-foreground); font-family: var(--font-sans); }
+.feed-system__message {
+  font-size: 13px; color: var(--foreground); margin-top: 2px;
+  font-weight: 500; font-family: var(--font-sans);
+}
+.feed-system__detail {
+  font-size: 12px; color: var(--muted-foreground); margin-top: 2px;
+  font-family: var(--font-sans);
+}
+
 .feed-post {
   display: flex; gap: 12px; padding: 14px 16px;
   border-bottom: 1px solid var(--border);
@@ -1228,7 +1261,7 @@ html, body {
 
 .feed-card {
   background: var(--card); border: 1px solid var(--border);
-  border-radius: 12px; padding: 12px; overflow: hidden;
+  border-radius: 6px; padding: 12px; overflow: hidden;
 }
 .feed-card__title {
   font-size: 15px; font-weight: 700; color: var(--foreground);
@@ -1324,8 +1357,8 @@ html, body {
 /* Plugins dropdown menu */
 .header__plugins-menu {
   position: absolute; top: 100%; right: 0; margin-top: 6px;
-  background: var(--popover); border: 1px solid var(--border); border-radius: 10px;
-  padding: 4px; min-width: 220px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  background: var(--popover); border: 1px solid var(--border); border-radius: 6px;
+  padding: 4px; min-width: 220px; box-shadow: 0 4px 20px rgba(0,0,0,0.35);
   z-index: 200; animation: scale-in 0.12s ease;
 }
 .header__plugins-menu-title {
@@ -1334,7 +1367,7 @@ html, body {
 }
 .header__plugins-item {
   display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px;
-  border: none; border-radius: 7px; background: transparent; color: var(--foreground);
+  border: none; border-radius: 4px; background: transparent; color: var(--foreground);
   cursor: pointer; text-align: left; transition: background 0.08s;
   font-family: var(--font-sans); font-size: 12px;
 }

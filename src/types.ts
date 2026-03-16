@@ -43,6 +43,14 @@ export interface Alert {
   createdAt: number
 }
 
+export interface SystemEvent {
+  id: string
+  type: 'welcome' | 'project_created' | 'project_switched' | 'update'
+  message: string
+  detail?: string
+  createdAt: number
+}
+
 export interface Project {
   id: string
   name: string

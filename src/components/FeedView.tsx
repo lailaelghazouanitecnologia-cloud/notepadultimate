@@ -1,10 +1,11 @@
 import { useMemo } from 'react'
-import type { Note, Agent } from '../types'
+import type { Note, Agent, SystemEvent } from '../types'
 import { Icons } from '../lib/icons'
 
 interface FeedViewProps {
   publishedNotes: Note[]
   agents: Agent[]
+  systemEvents: SystemEvent[]
   onOpenNote: (noteId: string) => void
   onOpenProfile: (agentId: string) => void
 }
@@ -21,10 +22,26 @@ function formatRelative(ts: number): string {
   return new Date(ts).toLocaleDateString('en', { day: 'numeric', month: 'short' })
 }
 
-export function FeedView({ publishedNotes, agents, onOpenNote, onOpenProfile }: FeedViewProps) {
-  const feed = useMemo(() => {
-    return [...publishedNotes].sort((a, b) => b.updatedAt - a.updatedAt)
-  }, [publishedNotes])
+const EVENT_ICONS: Record<SystemEvent['type'], string> = {
+  welcome: '👋',
+  project_created: '📁',
+  project_switched: '🔄',
+  update: '✨',
+}
+
+export function FeedView({ publishedNotes, agents, systemEvents, onOpenNote, onOpenProfile }: FeedViewProps) {
+  // Merge posts and system events into a single timeline
+  type TimelineItem =
+    | { kind: 'post'; note: Note; ts: number }
+    | { kind: 'system'; event: SystemEvent; ts: number }
+
+  const timeline = useMemo(() => {
+    const items: TimelineItem[] = [
+      ...publishedNotes.map((note) => ({ kind: 'post' as const, note, ts: note.updatedAt })),
+      ...systemEvents.map((event) => ({ kind: 'system' as const, event, ts: event.createdAt })),
+    ]
+    return items.sort((a, b) => b.ts - a.ts)
+  }, [publishedNotes, systemEvents])
 
   const agentMap = useMemo(() => {
     const map = new Map<string, Agent>()
@@ -57,7 +74,7 @@ export function FeedView({ publishedNotes, agents, onOpenNote, onOpenProfile }: 
         <div className="feed-layout">
           {/* Timeline */}
           <div className="feed-timeline">
-            {feed.length === 0 ? (
+            {timeline.length === 0 ? (
               <div className="feed-empty">
                 <div className="feed-empty__icon">{Icons.rss()}</div>
                 <h3 className="feed-empty__title">Welcome to your feed</h3>
@@ -66,7 +83,24 @@ export function FeedView({ publishedNotes, agents, onOpenNote, onOpenProfile }: 
                 </p>
               </div>
             ) : (
-              feed.map((note) => {
+              timeline.map((item) => {
+                if (item.kind === 'system') {
+                  const { event } = item
+                  return (
+                    <div key={event.id} className="feed-system">
+                      <div className="feed-system__icon">{EVENT_ICONS[event.type]}</div>
+                      <div className="feed-system__body">
+                        <span className="feed-system__label">System</span>
+                        <span className="feed-system__dot">&middot;</span>
+                        <span className="feed-system__time">{formatRelative(event.createdAt)}</span>
+                        <div className="feed-system__message">{event.message}</div>
+                        {event.detail && <div className="feed-system__detail">{event.detail}</div>}
+                      </div>
+                    </div>
+                  )
+                }
+
+                const { note } = item
                 const agent = note.authorId ? agentMap.get(note.authorId) : undefined
                 const authorAvatar = agent?.avatar || '📝'
                 const authorName = note.author || 'You'

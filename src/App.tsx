@@ -14,8 +14,9 @@ import {
   loadProjects, saveProjects, getActiveProjectId, setActiveProjectId,
   loadContracts, saveContract, deleteContract as deleteContractStore, getContractsForProject,
   loadFolders, createFolder as createFolderStore, deleteFolder as deleteFolderStore,
+  loadSystemEvents, addSystemEvent,
 } from './store'
-import type { Agent, Alert, Project, Contract, Folder } from './types'
+import type { Agent, Alert, Project, Contract, Folder, SystemEvent } from './types'
 
 export type View = 'feed' | 'chat'
 type PluginPanel = 'agents' | null
@@ -48,6 +49,14 @@ export default function App() {
   // Projects
   const [projects, setProjects] = useState<Project[]>(() => loadProjects())
   const [activeProjectId, setActiveProjectIdState] = useState(() => getActiveProjectId())
+  const [systemEvents, setSystemEvents] = useState<SystemEvent[]>(() => {
+    const existing = loadSystemEvents()
+    if (existing.length === 0) {
+      const evt = addSystemEvent('welcome', 'Welcome to Zarnetti', 'Your workspace is ready. Create notes, publish to the feed, and explore agents.')
+      return [evt]
+    }
+    return existing
+  })
 
   // Editing mode
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
@@ -173,13 +182,20 @@ export default function App() {
   const handleSwitchProject = useCallback((id: string) => {
     setActiveProjectIdState(id)
     setActiveProjectId(id)
-  }, [])
+    const proj = projects.find(p => p.id === id)
+    if (proj) {
+      const evt = addSystemEvent('project_switched', `Switched to ${proj.name}`, `You are now working in "${proj.name}"`)
+      setSystemEvents(prev => [...prev, evt])
+    }
+  }, [projects])
 
   const handleCreateProject = useCallback((name: string, emoji: string) => {
     const project: Project = { id: `proj-${Date.now()}`, name, emoji, createdAt: Date.now() }
     const updated = [...projects, project]
     setProjects(updated)
     saveProjects(updated)
+    const evt = addSystemEvent('project_created', `Project "${name}" created`, 'A new project has been added to your workspace.')
+    setSystemEvents(prev => [...prev, evt])
     handleSwitchProject(project.id)
   }, [projects, handleSwitchProject])
 
@@ -237,6 +253,15 @@ export default function App() {
       <div className="app-main">
         <header className="header">
           <div className="header__left">
+            {sidebarCollapsed && (
+              <button
+                className="zw-sb-toggle"
+                onClick={() => setSidebarCollapsed(false)}
+                title="Open sidebar"
+              >
+                {Icons.menu()}
+              </button>
+            )}
             <div className="zw-mode-switcher">
               {modes.map((m) => (
                 <button
@@ -377,6 +402,7 @@ export default function App() {
           <FeedView
             publishedNotes={publishedNotes}
             agents={agents}
+            systemEvents={systemEvents}
             onOpenNote={handleOpenNote}
             onOpenProfile={handleOpenProfile}
           />
