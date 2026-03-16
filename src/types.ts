@@ -4,4 +4,6 @@ export interface Note {
   content: string
   createdAt: number
   updatedAt: number
+  published?: boolean
+  author?: string
 }

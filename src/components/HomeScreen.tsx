@@ -5,6 +5,7 @@ import { ZarnettiLogo, Icons } from '../lib/icons'
 
 interface HomeScreenProps {
   notes: Note[]
+  publishedNotes: Note[]
   onCreateNote: (title: string, content: string) => void
   onOpenNote: (id: string) => void
   onSaveChat: (session: ChatSession) => void
@@ -46,7 +47,7 @@ function formatRelativeDate(ts: number): string {
   return new Date(ts).toLocaleDateString('es', { day: 'numeric', month: 'short' })
 }
 
-export function HomeScreen({ notes, onCreateNote, onOpenNote, onSaveChat, initialSession }: HomeScreenProps) {
+export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, onSaveChat, initialSession }: HomeScreenProps) {
   const [sessionId] = useState(() => initialSession?.id || `chat-${Date.now()}`)
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>(initialSession?.messages || [])
@@ -93,11 +94,16 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote, onSaveChat, initia
 
   const liveResults = useMemo(() => {
     const q = input.trim().toLowerCase()
-    if (!q || q.startsWith('/')) return []
-    return notes.filter(
+    if (!q || q.startsWith('/')) return { own: [] as Note[], community: [] as Note[] }
+    const own = notes.filter(
       (n) => n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q)
     )
-  }, [input, notes])
+    const ownIds = new Set(notes.map((n) => n.id))
+    const community = publishedNotes.filter(
+      (n) => !ownIds.has(n.id) && (n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q))
+    )
+    return { own, community }
+  }, [input, notes, publishedNotes])
 
   const recentNotes = useMemo(() => {
     return [...notes].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 6)
@@ -185,7 +191,8 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote, onSaveChat, initia
 
   const hasMessages = messages.length > 0
   const totalTokens = messages.length * 280
-  const showingResults = liveResults.length > 0
+  const allResults = [...liveResults.own, ...liveResults.community]
+  const showingResults = allResults.length > 0
   const greeting = getGreeting()
 
   return (
@@ -283,26 +290,55 @@ export function HomeScreen({ notes, onCreateNote, onOpenNote, onSaveChat, initia
             <div className="home-research__results">
               <div className="home-research__results-header">
                 <span className="home-research__results-count">
-                  {liveResults.length} result{liveResults.length !== 1 ? 's' : ''}
+                  {allResults.length} result{allResults.length !== 1 ? 's' : ''}
                 </span>
               </div>
-              {liveResults.map((note, i) => (
-                <article
-                  key={note.id}
-                  className={`home-research__result ${i < liveResults.length - 1 ? 'has-border' : ''}`}
-                  onClick={() => onOpenNote(note.id)}
-                >
-                  <p className="home-research__result-meta">note</p>
-                  <h3 className="home-research__result-title">{note.title || 'Untitled'}</h3>
-                  <p className="home-research__result-snippet">
-                    {note.content.slice(0, 120) || 'Empty note'}
-                  </p>
-                  <div className="home-research__result-footer">
-                    <span>{formatRelativeDate(note.updatedAt)}</span>
-                    <span>{note.content.trim().split(/\s+/).filter(Boolean).length} words</span>
-                  </div>
-                </article>
-              ))}
+              {liveResults.own.length > 0 && (
+                <>
+                  <div className="home-research__section-label">Your notes</div>
+                  {liveResults.own.map((note, i) => (
+                    <article
+                      key={note.id}
+                      className={`home-research__result ${i < liveResults.own.length - 1 ? 'has-border' : ''}`}
+                      onClick={() => onOpenNote(note.id)}
+                    >
+                      <p className="home-research__result-meta">note</p>
+                      <h3 className="home-research__result-title">{note.title || 'Untitled'}</h3>
+                      <p className="home-research__result-snippet">
+                        {note.content.slice(0, 120) || 'Empty note'}
+                      </p>
+                      <div className="home-research__result-footer">
+                        <span>{formatRelativeDate(note.updatedAt)}</span>
+                        <span>{note.content.trim().split(/\s+/).filter(Boolean).length} words</span>
+                      </div>
+                    </article>
+                  ))}
+                </>
+              )}
+              {liveResults.community.length > 0 && (
+                <>
+                  <div className="home-research__section-label" style={{ marginTop: liveResults.own.length > 0 ? 12 : 0 }}>Community</div>
+                  {liveResults.community.map((note, i) => (
+                    <article
+                      key={note.id}
+                      className={`home-research__result ${i < liveResults.community.length - 1 ? 'has-border' : ''}`}
+                      onClick={() => onOpenNote(note.id)}
+                    >
+                      <p className="home-research__result-meta">
+                        {note.author || 'Unknown'} &middot; published
+                      </p>
+                      <h3 className="home-research__result-title">{note.title || 'Untitled'}</h3>
+                      <p className="home-research__result-snippet">
+                        {note.content.slice(0, 120) || 'Empty note'}
+                      </p>
+                      <div className="home-research__result-footer">
+                        <span>{formatRelativeDate(note.updatedAt)}</span>
+                        <span>{note.content.trim().split(/\s+/).filter(Boolean).length} words</span>
+                      </div>
+                    </article>
+                  ))}
+                </>
+              )}
             </div>
           )}
 

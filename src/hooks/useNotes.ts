@@ -22,7 +22,7 @@ export function useNotes() {
     return note
   }, [])
 
-  const updateNote = useCallback((id: string, updates: Partial<Pick<Note, 'title' | 'content'>>) => {
+  const updateNote = useCallback((id: string, updates: Partial<Pick<Note, 'title' | 'content' | 'published'>>) => {
     setNotes((prev) =>
       prev.map((n) =>
         n.id === id ? { ...n, ...updates, updatedAt: Date.now() } : n

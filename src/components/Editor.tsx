@@ -8,7 +8,7 @@ type ViewMode = 'edit' | 'preview' | 'split'
 
 interface EditorProps {
   note: Note
-  onUpdate: (id: string, updates: Partial<Pick<Note, 'title' | 'content'>>) => void
+  onUpdate: (id: string, updates: Partial<Pick<Note, 'title' | 'content' | 'published'>>) => void
   onNavigate: (title: string) => void
 }
 

@@ -6,6 +6,7 @@ import { GraphView } from './components/GraphView'
 import { useNotes } from './hooks/useNotes'
 import { useTheme } from './hooks/useTheme'
 import { ZarnettiLogo, Icons } from './lib/icons'
+import { publishNote, loadPublished } from './store'
 
 export type View = 'feed' | 'chat' | 'graph'
 
@@ -24,6 +25,7 @@ export default function App() {
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([])
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
   const [showHistory, setShowHistory] = useState(false)
+  const [publishedNotes, setPublishedNotes] = useState(() => loadPublished())
 
   const openNoteTab = useCallback((id: string) => {
     setActiveId(id)
@@ -80,6 +82,13 @@ export default function App() {
     setActiveChatId(id)
     setShowHistory(false)
   }, [])
+
+  const handlePublish = useCallback(() => {
+    if (!activeNote) return
+    publishNote(activeNote, 'You')
+    updateNote(activeNote.id, { published: true })
+    setPublishedNotes(loadPublished())
+  }, [activeNote, updateNote])
 
   const tabNotes = openTabs.map((id) => notes.find((n) => n.id === id)).filter(Boolean)
 
@@ -138,6 +147,17 @@ export default function App() {
                 {Icons.clock()}
               </button>
             )}
+            {/* Publish button — visible in feed mode when a note is active */}
+            {view === 'feed' && activeNote && (
+              <button
+                className={`header__publish-btn ${activeNote.published ? 'published' : ''}`}
+                onClick={handlePublish}
+                title={activeNote.published ? 'Published' : 'Publish note'}
+              >
+                {activeNote.published ? Icons.check() : Icons.upload()}
+                <span>{activeNote.published ? 'Published' : 'Publish'}</span>
+              </button>
+            )}
             <button className="header__invite-btn">
               {Icons.userPlus()}
               <span>Invite</span>
@@ -187,6 +207,7 @@ export default function App() {
           <div className="content-area" style={{ position: 'relative' }}>
             <HomeScreen
               notes={notes}
+              publishedNotes={publishedNotes}
               onCreateNote={handleCreateFromChat}
               onOpenNote={handleOpenNote}
               onSaveChat={handleSaveChat}

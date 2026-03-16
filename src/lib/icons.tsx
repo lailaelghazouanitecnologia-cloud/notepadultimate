@@ -75,4 +75,6 @@ export const Icons = {
   globe: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,
   clock: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>,
   rss: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1" fill="currentColor"/></svg>,
+  upload: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>,
+  check: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M20 6L9 17l-5-5"/></svg>,
 }
