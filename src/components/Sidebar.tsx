@@ -70,15 +70,18 @@ export function Sidebar({
     if (creatingFolder !== null) folderInputRef.current?.focus()
   }, [creatingFolder])
 
-  // Close avatar menu on outside click
+  // Close avatar menu / projects on outside click
   useEffect(() => {
-    if (!showAvatarMenu) return
+    if (!showAvatarMenu && !showProjects) return
     const handler = (e: MouseEvent) => {
-      if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) setShowAvatarMenu(false)
+      if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) {
+        setShowAvatarMenu(false)
+        setShowProjects(false)
+      }
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [showAvatarMenu])
+  }, [showAvatarMenu, showProjects])
 
   // Group notes by folder
   const rootNotes = filtered.filter((n) => !n.folderId)
@@ -158,16 +161,12 @@ export function Sidebar({
 
   return (
     <aside className={`zw-sb ${collapsed ? 'collapsed' : ''}`}>
-      {/* Top bar: workspace button + close */}
+      {/* Top bar: logo + close */}
       <div className="zw-sb-topbar">
-        <button
-          className="zw-sb-topbar__team"
-          onClick={() => setShowProjects(!showProjects)}
-        >
+        <div className="zw-sb-topbar__team">
           <ZarnettiLogo className="zw-sb-topbar__logo" />
-          <span className="zw-sb-topbar__name">{activeProject?.name || 'Zarnetti'}</span>
-          {Icons.chevronDown({ className: 'zw-sb-topbar__chevron' })}
-        </button>
+          <span className="zw-sb-topbar__name">Zarnetti</span>
+        </div>
         <button
           className="zw-sb-topbar__close"
           onClick={onToggleCollapse}
@@ -176,35 +175,6 @@ export function Sidebar({
           {Icons.panelLeftClose()}
         </button>
       </div>
-
-      {/* Project switcher dropdown */}
-      {showProjects && (
-        <div className="zw-ws-menu" style={{ margin: '0 8px' }}>
-          {projects.map((p) => (
-            <button
-              key={p.id}
-              className={`zw-ws-menu-item ${p.id === activeProjectId ? 'active' : ''}`}
-              onClick={() => { onSwitchProject(p.id); setShowProjects(false) }}
-            >
-              <span className="truncate">{p.name}</span>
-              {p.id === activeProjectId && (
-                <span className="zw-ws-menu-check">{Icons.check()}</span>
-              )}
-            </button>
-          ))}
-          <div className="zw-ws-menu-divider" />
-          <button
-            className="zw-ws-menu-item"
-            onClick={() => {
-              onCreateProject(`Project ${projects.length + 1}`, '📁')
-              setShowProjects(false)
-            }}
-          >
-            {Icons.plus()}
-            <span>New project</span>
-          </button>
-        </div>
-      )}
 
       {/* Search */}
       <div className="zw-sb-search">
@@ -270,7 +240,7 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* Bottom: avatar */}
+      {/* Bottom: avatar + project switcher */}
       <div className="zw-sb-bottom" ref={avatarRef} style={{ position: 'relative' }}>
         <button
           className="zw-sb-avatar-btn"
@@ -281,6 +251,15 @@ export function Sidebar({
             <Identicon className="zw-sb-avatar-img" />
           </div>
         </button>
+
+        <button
+          className="zw-sb-project-btn"
+          onClick={() => setShowProjects(!showProjects)}
+        >
+          <span className="truncate">{activeProject?.name || 'Zarnetti'}</span>
+          {Icons.chevronDown()}
+        </button>
+
         {showAvatarMenu && (
           <div className="zw-avatar-menu">
             <div className="zw-avatar-menu__header">
@@ -299,6 +278,34 @@ export function Sidebar({
             <button className="zw-avatar-menu__item" onClick={() => setShowAvatarMenu(false)}>
               {Icons.logOut()}
               <span>Log out</span>
+            </button>
+          </div>
+        )}
+
+        {showProjects && (
+          <div className="zw-ws-menu zw-ws-menu--bottom">
+            {projects.map((p) => (
+              <button
+                key={p.id}
+                className={`zw-ws-menu-item ${p.id === activeProjectId ? 'active' : ''}`}
+                onClick={() => { onSwitchProject(p.id); setShowProjects(false) }}
+              >
+                <span className="truncate">{p.name}</span>
+                {p.id === activeProjectId && (
+                  <span className="zw-ws-menu-check">{Icons.check()}</span>
+                )}
+              </button>
+            ))}
+            <div className="zw-ws-menu-divider" />
+            <button
+              className="zw-ws-menu-item"
+              onClick={() => {
+                onCreateProject(`Project ${projects.length + 1}`, '📁')
+                setShowProjects(false)
+              }}
+            >
+              {Icons.plus()}
+              <span>New project</span>
             </button>
           </div>
         )}
