@@ -50,9 +50,12 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>(initialSession?.messages || [])
   const [showCommands, setShowCommands] = useState(false)
+  const [model, setModel] = useState('Sonnet 4.5')
+  const [showModels, setShowModels] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const cmdRef = useRef<HTMLDivElement>(null)
+  const modelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -76,6 +79,15 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [showCommands])
+
+  useEffect(() => {
+    if (!showModels) return
+    const handler = (e: MouseEvent) => {
+      if (modelRef.current && !modelRef.current.contains(e.target as Node)) setShowModels(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showModels])
 
   const liveResults = useMemo(() => {
     const q = input.trim().toLowerCase()
@@ -168,7 +180,14 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
     inputRef.current?.focus()
   }
 
+  const models = [
+    { id: 'sonnet', label: 'Sonnet 4.5', desc: 'Fast & capable' },
+    { id: 'opus', label: 'Opus 4.6', desc: 'Most intelligent' },
+    { id: 'haiku', label: 'Haiku 4.5', desc: 'Fastest' },
+  ]
+
   const hasMessages = messages.length > 0
+  const totalTokens = messages.length * 280
   const allResults = [...liveResults.own, ...liveResults.community]
   const showingResults = allResults.length > 0
   const greeting = getGreeting()
@@ -207,9 +226,40 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
               </button>
             </div>
 
-            {/* Commands */}
+            {/* Toolbar under search */}
             <div className="home-research__toolbar">
               <div className="home-research__toolbar-left">
+                {/* Model selector */}
+                <div style={{ position: 'relative' }} ref={modelRef}>
+                  <button className="zw-chat-model-btn" onClick={() => setShowModels(!showModels)}>
+                    {Icons.sparkles()}
+                    <span>{model}</span>
+                    {Icons.chevronDown()}
+                  </button>
+                  {showModels && (
+                    <div className="zw-chat-model-menu">
+                      {models.map((m) => (
+                        <button
+                          key={m.id}
+                          className={`zw-chat-model-option ${model === m.label ? 'active' : ''}`}
+                          onClick={() => { setModel(m.label); setShowModels(false) }}
+                        >
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12, fontWeight: 500 }}>{m.label}</div>
+                            <div style={{ fontSize: 10, color: 'var(--muted-foreground)' }}>{m.desc}</div>
+                          </div>
+                          {model === m.label && (
+                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--zw-red)' }} />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button className="zw-chat-tool-btn" title="Attach file">{Icons.paperclip()}</button>
+                <button className="zw-chat-tool-btn" title="Mention">{Icons.atSign()}</button>
+                <button className="zw-chat-tool-btn" title="Search web">{Icons.globe()}</button>
+                {/* / commands */}
                 <div style={{ position: 'relative' }} ref={cmdRef}>
                   <button className="zw-cmd-btn" onClick={() => setShowCommands(!showCommands)} title="Commands">
                     <span className="zw-cmd-btn__slash">/</span>
@@ -356,8 +406,19 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
 
         {/* Footer */}
         <div className="zw-chat-footer">
-          <span className="zw-chat-footer-name">Zarnet</span>
-          <span className="zw-chat-footer-stat">{notes.length} notes · {publishedNotes.length} published</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+            <span className="zw-chat-footer-name">Zarnet</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span className="zw-chat-op-indicator" data-op="read" />
+              <span className="zw-chat-op-indicator" data-op="idle" />
+            </div>
+            <span className="zw-stat-sep" />
+            <span className="zw-chat-footer-stat">~{totalTokens} tokens</span>
+            <span className="zw-stat-sep" />
+            <span className="zw-chat-footer-stat">{notes.length} notes · {publishedNotes.length} published</span>
+          </div>
         </div>
       </div>
     </div>

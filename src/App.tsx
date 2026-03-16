@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { Editor } from './components/Editor'
 import { HomeScreen } from './components/HomeScreen'
@@ -17,6 +17,7 @@ import {
 import type { Agent, Alert, Project, Contract } from './types'
 
 export type View = 'feed' | 'chat'
+type PluginPanel = 'agents' | null
 
 export interface ChatSession {
   id: string
@@ -37,7 +38,9 @@ export default function App() {
   const [agents, setAgents] = useState<Agent[]>(() => loadAgents())
   const [alerts, setAlerts] = useState<Alert[]>(() => loadAlerts())
   const [profileAgentId, setProfileAgentId] = useState<string | null>(null)
-  const [showAgents, setShowAgents] = useState(false)
+  const [pluginPanel, setPluginPanel] = useState<PluginPanel>(null)
+  const [showPlugins, setShowPlugins] = useState(false)
+  const pluginsRef = useRef<HTMLDivElement>(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   // Projects
@@ -47,6 +50,16 @@ export default function App() {
   // Editing mode
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const editingNote = editingNoteId ? notes.find((n) => n.id === editingNoteId) : null
+
+  // Close plugins dropdown on outside click
+  useEffect(() => {
+    if (!showPlugins) return
+    const handler = (e: MouseEvent) => {
+      if (pluginsRef.current && !pluginsRef.current.contains(e.target as Node)) setShowPlugins(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showPlugins])
 
   // Regenerate alerts when published notes change
   useEffect(() => {
@@ -128,7 +141,7 @@ export default function App() {
 
   const handleOpenProfile = useCallback((agentId: string) => {
     setProfileAgentId(agentId)
-    setShowAgents(true)
+    setPluginPanel('agents')
   }, [])
 
   const handleMarkAlertRead = useCallback((alertId: string) => {
@@ -207,8 +220,8 @@ export default function App() {
               {modes.map((m) => (
                 <button
                   key={m.id}
-                  className={`zw-mode-tab ${view === m.id && !showEditor && !showAgents ? 'active' : ''}`}
-                  onClick={() => { setView(m.id); setEditingNoteId(null); setShowAgents(false); setProfileAgentId(null) }}
+                  className={`zw-mode-tab ${view === m.id && !showEditor && !pluginPanel ? 'active' : ''}`}
+                  onClick={() => { setView(m.id); setEditingNoteId(null); setPluginPanel(null); setProfileAgentId(null) }}
                 >
                   {m.icon()}
                   <span>{m.label}</span>
@@ -216,9 +229,16 @@ export default function App() {
               ))}
             </div>
           </div>
-          <div style={{ flex: 1 }} />
+
+          <div className="header__center">
+            <div className="header__search">
+              {Icons.search()}
+              <input type="text" className="header__search-input" placeholder="Search Zarnet..." />
+            </div>
+          </div>
+
           <div className="header__right">
-            {view === 'chat' && !showEditor && !showAgents && (
+            {view === 'chat' && !showEditor && !pluginPanel && (
               <button
                 className={`header__icon-btn ${showHistory ? 'active' : ''}`}
                 onClick={() => setShowHistory(!showHistory)}
@@ -228,17 +248,40 @@ export default function App() {
               </button>
             )}
 
-            {/* Agents toggle */}
-            <button
-              className={`header__icon-btn ${showAgents ? 'active' : ''}`}
-              onClick={() => { setShowAgents(!showAgents); setProfileAgentId(null); setEditingNoteId(null) }}
-              title="Agents"
-            >
-              {Icons.bot()}
-              {unreadAlerts > 0 && <span className="header__icon-badge">{unreadAlerts}</span>}
-            </button>
+            {/* Plugins dropdown */}
+            <div style={{ position: 'relative' }} ref={pluginsRef}>
+              <button
+                className={`header__icon-btn ${pluginPanel ? 'active' : ''}`}
+                onClick={() => setShowPlugins(!showPlugins)}
+                title="Plugins"
+              >
+                {Icons.puzzle()}
+                {unreadAlerts > 0 && <span className="header__icon-badge">{unreadAlerts}</span>}
+              </button>
+              {showPlugins && (
+                <div className="header__plugins-menu">
+                  <div className="header__plugins-menu-title">Plugins</div>
+                  <button
+                    className={`header__plugins-item ${pluginPanel === 'agents' ? 'active' : ''}`}
+                    onClick={() => {
+                      setPluginPanel(pluginPanel === 'agents' ? null : 'agents')
+                      setShowPlugins(false)
+                      setProfileAgentId(null)
+                      setEditingNoteId(null)
+                    }}
+                  >
+                    {Icons.bot()}
+                    <div className="header__plugins-item-info">
+                      <span>Agents</span>
+                      <span className="header__plugins-item-desc">Characters & contracts</span>
+                    </div>
+                    {unreadAlerts > 0 && <span className="header__plugins-badge">{unreadAlerts}</span>}
+                  </button>
+                </div>
+              )}
+            </div>
 
-            {/* Publish — only when editing */}
+            {/* Publish — far right */}
             {showEditor && editingNote && (
               <button
                 className={`header__publish-btn ${editingNote.published ? 'published' : ''}`}
@@ -285,7 +328,7 @@ export default function App() {
           <div className="content-area">
             <Editor note={editingNote!} onUpdate={updateNote} onNavigate={handleNavigate} />
           </div>
-        ) : showAgents ? (
+        ) : pluginPanel === 'agents' ? (
           profileAgent ? (
             <ProfileView
               agent={profileAgent}

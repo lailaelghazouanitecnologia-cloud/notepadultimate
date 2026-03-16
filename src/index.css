@@ -21,7 +21,7 @@
 }
 
 :root {
-  --background: #1e1e1e;
+  --background: #141414;
   --foreground: #e0e0e0;
   --card: #252525;
   --popover: #282828;
@@ -65,14 +65,28 @@ html, body {
 .app { display: flex; flex-direction: row; height: 100vh; }
 .app-main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
 
-/* ── Header ── transparent with subtle gradient */
+/* ── Header ── transparent with gradient */
 .header {
   height: var(--zw-header-h); display: flex; align-items: center;
   padding: 0 12px; gap: 12px; flex-shrink: 0;
-  background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.04) 100%);
-  border-bottom: 1px solid var(--border);
+  background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.10) 100%);
 }
 .header__left { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.header__center { flex: 1; display: flex; justify-content: center; }
+.header__search {
+  display: flex; align-items: center; gap: 6px;
+  width: 25%; min-width: 160px; max-width: 320px;
+  height: 26px; padding: 0 10px;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  border-radius: 6px; transition: border-color 0.12s ease;
+}
+.header__search:focus-within { border-color: var(--ring); }
+.header__search svg { width: 13px; height: 13px; color: var(--muted-foreground); flex-shrink: 0; opacity: 0.5; }
+.header__search-input {
+  flex: 1; border: none; outline: none; background: transparent;
+  font-size: 12px; color: var(--foreground); font-family: var(--font-sans);
+}
+.header__search-input::placeholder { color: var(--muted-foreground); opacity: .5; }
 
 /* Mode switcher pill (Search | Edit | Graph) */
 .zw-mode-switcher {
@@ -547,6 +561,40 @@ html, body {
 .zw-chat-send-btn.active { background: var(--zw-red); color: #fff; opacity: 1; }
 .zw-chat-send-btn.active:hover { opacity: .9; }
 .zw-chat-send-btn svg { width: 14px; height: 14px; }
+
+/* Model selector */
+.zw-chat-model-btn {
+  display: flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border: none; border-radius: 5px;
+  background: transparent; color: var(--muted-foreground);
+  font-size: 11px; font-weight: 500; cursor: pointer;
+  transition: all 0.12s ease; font-family: var(--font-sans);
+}
+.zw-chat-model-btn:hover { background: rgba(255,255,255,0.05); color: var(--foreground); }
+.zw-chat-model-btn svg { width: 12px; height: 12px; }
+.zw-chat-model-menu {
+  position: absolute; bottom: 100%; left: 0; margin-bottom: 6px;
+  background: var(--popover); border: 1px solid var(--border); border-radius: 10px;
+  padding: 4px; min-width: 180px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); z-index: 200;
+  animation: scale-in 0.12s ease;
+}
+.zw-chat-model-option {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px;
+  border: none; border-radius: 7px; background: transparent; color: var(--foreground);
+  cursor: pointer; text-align: left; transition: background 0.08s; font-family: var(--font-sans);
+}
+.zw-chat-model-option:hover { background: rgba(255,255,255,0.05); }
+.zw-chat-model-option.active { background: rgba(255,255,255,0.05); }
+
+/* Chat tool buttons (attach, mention, globe) */
+.zw-chat-tool-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border: none; border-radius: 5px;
+  background: transparent; color: var(--muted-foreground); cursor: pointer;
+  transition: all 0.12s ease;
+}
+.zw-chat-tool-btn:hover { background: rgba(255,255,255,0.05); color: var(--foreground); }
+.zw-chat-tool-btn svg { width: 14px; height: 14px; }
 
 /* / Commands button */
 .zw-cmd-btn {
@@ -1212,9 +1260,35 @@ html, body {
 }
 .header__icon-btn { position: relative; }
 
-/* ═══════════════════════════════════════════════════
-   ANIMATIONS
-   ═══════════════════════════════════════════════════ */
+/* Plugins dropdown menu */
+.header__plugins-menu {
+  position: absolute; top: 100%; right: 0; margin-top: 6px;
+  background: var(--popover); border: 1px solid var(--border); border-radius: 10px;
+  padding: 4px; min-width: 220px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  z-index: 200; animation: scale-in 0.12s ease;
+}
+.header__plugins-menu-title {
+  padding: 6px 10px 4px; font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-foreground);
+}
+.header__plugins-item {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px;
+  border: none; border-radius: 7px; background: transparent; color: var(--foreground);
+  cursor: pointer; text-align: left; transition: background 0.08s;
+  font-family: var(--font-sans); font-size: 12px;
+}
+.header__plugins-item:hover { background: rgba(255,255,255,0.05); }
+.header__plugins-item.active { background: rgba(255,255,255,0.07); }
+.header__plugins-item svg { width: 16px; height: 16px; color: var(--muted-foreground); flex-shrink: 0; }
+.header__plugins-item-info { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+.header__plugins-item-info span:first-child { font-weight: 600; }
+.header__plugins-item-desc { font-size: 10px; color: var(--muted-foreground); opacity: 0.7; }
+.header__plugins-badge {
+  background: var(--zw-red); color: #fff; font-size: 9px; font-weight: 700;
+  padding: 1px 5px; border-radius: 8px; min-width: 16px; text-align: center;
+  margin-left: auto;
+}
+
 /* ═══════════════════════════════════════════════════
    AGENT CONTRACTS
    ═══════════════════════════════════════════════════ */
