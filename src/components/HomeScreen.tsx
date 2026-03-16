@@ -284,39 +284,65 @@ export function HomeScreen({ notes, publishedNotes, onCreateNote, onOpenNote, on
           {/* Search engine results */}
           {showingResults && (
             <div className="zarnet-results">
-              <div className="zarnet-results__count">
-                About {allResults.length} result{allResults.length !== 1 ? 's' : ''} ({(Math.random() * 0.5 + 0.1).toFixed(2)} seconds)
+              <p className="zarnet-results__count">
+                {allResults.length} resultado{allResults.length !== 1 ? 's' : ''} — {(Math.random() * 0.4 + 0.08).toFixed(2)}s
+              </p>
+
+              <div className="zarnet-results__filters">
+                {['Todo', 'Notas', 'Comunidad'].map((f, i) => (
+                  <button key={f} className={`zarnet-results__filter ${i === 0 ? 'active' : ''}`}>{f}</button>
+                ))}
               </div>
-              {liveResults.own.length > 0 && (
-                <>
-                  {liveResults.own.map((note) => (
-                    <article key={note.id} className="zarnet-result" onClick={() => onOpenNote(note.id)}>
-                      <div className="zarnet-result__url">
-                        zarnet://notes/{note.id.slice(0, 8)} › {formatRelativeDate(note.updatedAt)}
-                      </div>
-                      <h3 className="zarnet-result__title">{note.title || 'Untitled'}</h3>
-                      <p className="zarnet-result__snippet">
-                        {note.content.slice(0, 180) || 'Empty note'}
-                      </p>
-                    </article>
-                  ))}
-                </>
+
+              {allResults.length > 0 && (
+                <article className="zarnet-results__summary">
+                  <p className="zarnet-results__summary-label">Resumen</p>
+                  <p className="zarnet-results__summary-text">
+                    {allResults.length} nota{allResults.length !== 1 ? 's' : ''} encontrada{allResults.length !== 1 ? 's' : ''} para "{input.trim()}". Incluye {liveResults.own.length} propia{liveResults.own.length !== 1 ? 's' : ''} y {liveResults.community.length} de la comunidad.
+                  </p>
+                </article>
               )}
-              {liveResults.community.length > 0 && (
-                <>
-                  {liveResults.community.map((note) => (
-                    <article key={note.id} className="zarnet-result" onClick={() => onOpenNote(note.id)}>
-                      <div className="zarnet-result__url">
-                        zarnet://community/{(note.author || 'unknown').toLowerCase().replace(/\s/g, '-')} › published
-                      </div>
-                      <h3 className="zarnet-result__title">{note.title || 'Untitled'}</h3>
-                      <p className="zarnet-result__snippet">
-                        {note.content.slice(0, 180) || 'Empty note'}
-                      </p>
-                    </article>
-                  ))}
-                </>
-              )}
+
+              <div className="zarnet-results__list">
+                {liveResults.own.map((note, i) => (
+                  <article
+                    key={note.id}
+                    className={`zarnet-result ${i < allResults.length - 1 ? 'has-border' : ''}`}
+                    onClick={() => onOpenNote(note.id)}
+                  >
+                    <p className="zarnet-result__url">
+                      zarnet.app — notes / {note.id.slice(0, 8)}
+                    </p>
+                    <h3 className="zarnet-result__title">{note.title || 'Untitled'}</h3>
+                    <p className="zarnet-result__snippet">
+                      {note.content.slice(0, 180) || 'Empty note'}
+                    </p>
+                    <div className="zarnet-result__meta">
+                      <span>{formatRelativeDate(note.updatedAt)}</span>
+                      <span>{note.content.split(/\s+/).length} palabras</span>
+                    </div>
+                  </article>
+                ))}
+                {liveResults.community.map((note, i) => (
+                  <article
+                    key={note.id}
+                    className={`zarnet-result ${i < liveResults.community.length - 1 ? 'has-border' : ''}`}
+                    onClick={() => onOpenNote(note.id)}
+                  >
+                    <p className="zarnet-result__url">
+                      zarnet.app — community / {(note.author || 'unknown').toLowerCase().replace(/\s/g, '-')}
+                    </p>
+                    <h3 className="zarnet-result__title">{note.title || 'Untitled'}</h3>
+                    <p className="zarnet-result__snippet">
+                      {note.content.slice(0, 180) || 'Empty note'}
+                    </p>
+                    <div className="zarnet-result__meta">
+                      <span>published</span>
+                      <span>{note.content.split(/\s+/).length} palabras</span>
+                    </div>
+                  </article>
+                ))}
+              </div>
             </div>
           )}
 

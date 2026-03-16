@@ -1,9 +1,11 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react'
 import type { Note } from '../types'
+import { Icons } from '../lib/icons'
 
 interface GraphViewProps {
   notes: Note[]
   onOpenNote: (noteId: string) => void
+  onCreateNote: (title: string, content: string) => void
 }
 
 interface NodePos {
@@ -14,9 +16,15 @@ interface NodePos {
   links: string[]
 }
 
+interface ContextMenu {
+  x: number
+  y: number
+  canvasX: number
+  canvasY: number
+}
+
 function extractLinks(content: string, allIds: Set<string>): string[] {
   const links: string[] = []
-  // Find [[note-id]] style links
   const bracketRe = /\[\[([^\]]+)\]\]/g
   let m
   while ((m = bracketRe.exec(content)) !== null) {
@@ -25,13 +33,14 @@ function extractLinks(content: string, allIds: Set<string>): string[] {
   return links
 }
 
-export function GraphView({ notes, onOpenNote }: GraphViewProps) {
+export function GraphView({ notes, onOpenNote, onCreateNote }: GraphViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [dragging, setDragging] = useState<string | null>(null)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [isPanning, setIsPanning] = useState(false)
   const panStart = useRef({ x: 0, y: 0, px: 0, py: 0 })
+  const [ctxMenu, setCtxMenu] = useState<ContextMenu | null>(null)
 
   const allIds = useMemo(() => new Set(notes.map(n => n.id)), [notes])
 
@@ -46,7 +55,6 @@ export function GraphView({ notes, onOpenNote }: GraphViewProps) {
     }))
   })
 
-  // Update positions when notes change
   useEffect(() => {
     setPositions(prev => {
       const existing = new Map(prev.map(p => [p.id, p]))
@@ -93,13 +101,50 @@ export function GraphView({ notes, onOpenNote }: GraphViewProps) {
   }, [])
 
   const handleBgMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.button === 2) return // don't pan on right click
+    if (ctxMenu) { setCtxMenu(null); return }
     if (e.target === e.currentTarget || (e.target as HTMLElement).tagName === 'svg') {
       setIsPanning(true)
       panStart.current = { x: pan.x, y: pan.y, px: e.clientX, py: e.clientY }
     }
+  }, [pan, ctxMenu])
+
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (!rect) return
+    setCtxMenu({
+      x: e.clientX,
+      y: e.clientY,
+      canvasX: e.clientX - rect.left - pan.x,
+      canvasY: e.clientY - rect.top - pan.y,
+    })
   }, [pan])
 
-  // Edges
+  // Close context menu on click outside
+  useEffect(() => {
+    if (!ctxMenu) return
+    const handler = () => setCtxMenu(null)
+    window.addEventListener('click', handler)
+    return () => window.removeEventListener('click', handler)
+  }, [ctxMenu])
+
+  const handleCtxAction = useCallback((action: string) => {
+    if (!ctxMenu) return
+    switch (action) {
+      case 'new-note':
+        onCreateNote('Untitled', '')
+        break
+      case 'new-reference':
+        onCreateNote('Reference', '> Add your reference here\n\nSource: ')
+        break
+      case 'new-image':
+        onCreateNote('Image Note', '![Image description](url)\n\nCaption: ')
+        break
+    }
+    setCtxMenu(null)
+  }, [ctxMenu, onCreateNote])
+
   const edges = useMemo(() => {
     const result: { from: NodePos; to: NodePos }[] = []
     positions.forEach(node => {
@@ -120,6 +165,7 @@ export function GraphView({ notes, onOpenNote }: GraphViewProps) {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onContextMenu={handleContextMenu}
       >
         <svg className="graph-edges" style={{ transform: `translate(${pan.x}px, ${pan.y}px)` }}>
           {edges.map((edge, i) => (
@@ -153,7 +199,28 @@ export function GraphView({ notes, onOpenNote }: GraphViewProps) {
 
         {notes.length === 0 && (
           <div className="graph-empty">
-            <span>No notes to visualize</span>
+            <span>Right-click to create a note</span>
+          </div>
+        )}
+
+        {/* Context menu */}
+        {ctxMenu && (
+          <div
+            className="graph-ctx-menu"
+            style={{ left: ctxMenu.x, top: ctxMenu.y }}
+          >
+            <button className="graph-ctx-menu__item" onClick={() => handleCtxAction('new-note')}>
+              {Icons.filePlus()}
+              <span>New Note</span>
+            </button>
+            <button className="graph-ctx-menu__item" onClick={() => handleCtxAction('new-reference')}>
+              {Icons.link()}
+              <span>New Reference</span>
+            </button>
+            <button className="graph-ctx-menu__item" onClick={() => handleCtxAction('new-image')}>
+              {Icons.image()}
+              <span>New Image</span>
+            </button>
           </div>
         )}
       </div>

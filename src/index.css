@@ -532,26 +532,65 @@ html, body {
 }
 
 /* ── Zarnet search engine results ── */
-.zarnet-results { max-width: 640px; margin: 16px auto 0; padding: 0 4px; }
+.zarnet-results { max-width: 720px; margin: 16px auto 0; padding: 0 4px; }
 .zarnet-results__count {
-  font-size: 11px; color: var(--muted-foreground); margin-bottom: 16px; opacity: 0.7;
+  font-size: 10px; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--muted-foreground); margin: 0;
 }
+
+/* Filters */
+.zarnet-results__filters {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+}
+.zarnet-results__filter {
+  padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--card); color: var(--muted-foreground);
+  font-size: 11px; font-family: var(--font-sans); cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+.zarnet-results__filter:hover { background: var(--accent); }
+.zarnet-results__filter.active {
+  background: var(--foreground); color: var(--background);
+  border-color: transparent;
+}
+
+/* Summary card */
+.zarnet-results__summary {
+  margin-top: 8px; padding: 10px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--card);
+}
+.zarnet-results__summary-label {
+  font-size: 10px; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--muted-foreground); margin: 0 0 4px;
+}
+.zarnet-results__summary-text {
+  font-size: 12px; line-height: 1.6; color: var(--muted-foreground); margin: 0;
+}
+
+/* Results list */
+.zarnet-results__list { margin-top: 10px; }
+
 .zarnet-result {
-  margin-bottom: 20px; cursor: pointer; transition: opacity 0.1s;
+  padding: 10px 0; cursor: pointer; transition: opacity 0.1s;
 }
+.zarnet-result.has-border { border-bottom: 1px solid var(--border); }
 .zarnet-result:hover { opacity: 0.85; }
 .zarnet-result__url {
-  font-size: 11px; color: var(--muted-foreground); margin-bottom: 2px;
+  font-size: 11px; color: var(--muted-foreground); margin: 0 0 2px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .zarnet-result__title {
-  font-size: 16px; font-weight: 400; line-height: 1.3;
-  color: var(--zw-accent); margin: 0 0 4px;
+  font-size: 15px; font-weight: 400; line-height: 1.35;
+  color: #4f8cff; margin: 2px 0 2px;
 }
 .zarnet-result__title:hover { text-decoration: underline; }
 .zarnet-result__snippet {
   font-size: 12px; line-height: 1.55; color: var(--muted-foreground); margin: 0;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.zarnet-result__meta {
+  display: flex; align-items: center; gap: 12px; margin-top: 4px;
+  font-size: 10px; color: var(--muted-foreground); opacity: 0.7;
 }
 
 /* Chat messages inside research view */
@@ -1576,8 +1615,8 @@ html, body {
 /* Graph view */
 .graph-view {
   position: relative; width: 100%; height: 100%; overflow: hidden; cursor: grab;
-  background-color: #0e0e0e;
-  background-image: radial-gradient(circle, #222 1px, transparent 1px);
+  background-color: var(--background);
+  background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 .graph-view:active { cursor: grabbing; }
@@ -1614,6 +1653,24 @@ html, body {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   color: var(--muted-foreground); font-size: 13px; font-family: var(--font-sans);
 }
+
+/* Graph context menu */
+.graph-ctx-menu {
+  position: fixed; z-index: 100; min-width: 180px;
+  background: #191919; border: 1px solid #2a2a2a; border-radius: 8px;
+  padding: 4px; box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+  animation: scale-in 0.1s ease;
+}
+.graph-ctx-menu__item {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 8px 10px; border: none; border-radius: 5px;
+  background: transparent; color: #b4b4b4;
+  font-size: 12px; font-weight: 500; font-family: var(--font-sans);
+  cursor: pointer; transition: background 0.08s, color 0.08s;
+  text-align: left;
+}
+.graph-ctx-menu__item:hover { background: #222; color: #eee; }
+.graph-ctx-menu__item svg { width: 14px; height: 14px; flex-shrink: 0; }
 
 @keyframes scale-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }

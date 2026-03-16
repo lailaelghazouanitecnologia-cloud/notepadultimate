@@ -468,7 +468,7 @@ export default function App() {
             )}
           </div>
         ) : view === 'graph' ? (
-          <GraphView notes={notes} onOpenNote={handleOpenNote} />
+          <GraphView notes={notes} onOpenNote={handleOpenNote} onCreateNote={handleCreateFromChat} />
         ) : null}
       </div>
 
