@@ -40,6 +40,34 @@ export interface Agent {
   notes: string[]     // published note IDs
   followers: number
   following: number
+  services?: AgentService[]
+}
+
+// ── Agent Services ──
+// A service connects to external backends (API, LLM, server, etc.)
+
+export type ServiceType = 'api' | 'llm' | 'websocket' | 'custom'
+
+export interface AgentService {
+  id: string
+  name: string
+  type: ServiceType
+  enabled: boolean
+  config: ServiceConfig
+  lastResponse?: string
+  lastRunAt?: number
+  status: 'idle' | 'running' | 'error' | 'success'
+}
+
+export interface ServiceConfig {
+  url: string
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
+  headers?: Record<string, string>
+  body?: string           // template string, can use {{variables}}
+  interval?: number       // auto-poll interval in seconds (0 = manual)
+  responseField?: string  // JSON path to extract from response (e.g. "data.result")
+  authType?: 'none' | 'bearer' | 'apikey'
+  authValue?: string
 }
 
 export interface Alert {

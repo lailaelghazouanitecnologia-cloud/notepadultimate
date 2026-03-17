@@ -35,7 +35,7 @@ export default function App() {
   const {
     notes, activeId, setActiveId, addNote, updateNote, deleteNote,
     moveNoteToFolder,
-    publishedNotes, publishNote, folders, createFolder, moveFolderToParent,
+    publishedNotes, publishNote, folders, createFolder, deleteFolder, moveFolderToParent,
     workspaces, activeWorkspaceId, setActiveWorkspaceId, createWorkspace,
     workspaceNotes, workspaceFolders,
   } = useNotesContext()
@@ -302,7 +302,11 @@ export default function App() {
             folders={folders}
             onOpenNote={handleOpenNote}
             onAddNote={handleAddNote}
+            onDeleteNote={deleteNote}
+            onRenameNote={handleRenameNote}
             onCreateFolder={createFolder}
+            onDeleteFolder={deleteFolder}
+            onMoveNoteToFolder={moveNoteToFolder}
           />
         ) : view === 'chat' ? (
           <div className="content-area" style={{ flexDirection: 'row' }}>

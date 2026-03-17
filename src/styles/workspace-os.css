@@ -273,10 +273,23 @@
 .os-app-files { display: flex; flex-direction: column; height: 100%; }
 .os-app-files__header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 6px 10px; border-bottom: 1px solid var(--border);
+  padding: 4px 8px; border-bottom: 1px solid var(--border);
   font-size: 11px; font-weight: 600; font-family: var(--font-sans);
-  color: var(--foreground);
+  color: var(--foreground); gap: 4px;
 }
+.os-app-files__breadcrumb {
+  display: flex; align-items: center; gap: 0; min-width: 0; overflow: hidden; flex: 1;
+}
+.os-app-files__sep { color: var(--muted-foreground); margin: 0 1px; opacity: 0.4; font-size: 11px; }
+.os-app-files__crumb {
+  border: none; background: transparent; cursor: pointer;
+  font-family: var(--font-sans); font-size: 11px;
+  color: var(--muted-foreground); padding: 2px 3px; border-radius: 2px;
+  white-space: nowrap; transition: color 60ms, background 60ms;
+}
+.os-app-files__crumb:hover { color: var(--foreground); background: var(--hover-light); }
+.os-app-files__crumb:last-child { color: var(--foreground); font-weight: 600; }
+.os-app-files__actions { display: flex; gap: 1px; flex-shrink: 0; }
 .os-app-files__action {
   width: 20px; height: 20px; border: none; border-radius: 2px;
   background: transparent; cursor: pointer; color: var(--muted-foreground);
@@ -284,6 +297,21 @@
 }
 .os-app-files__action svg { width: 12px; height: 12px; }
 .os-app-files__action:hover { background: var(--hover-light); color: var(--foreground); }
+.os-app-files__rename {
+  flex: 1; border: 1px solid var(--ring); outline: none;
+  background: var(--background); border-radius: 2px;
+  font-size: 11px; color: var(--foreground); font-family: var(--font-sans);
+  padding: 1px 4px; min-width: 0;
+}
+.os-app-files__item--creating { opacity: 0.7; }
+.os-app-files__status {
+  font-size: 9px; font-weight: 600; font-family: var(--font-sans);
+  padding: 0 4px; border-radius: 2px; flex-shrink: 0;
+}
+.os-app-files__status--idle { color: var(--muted-foreground); }
+.os-app-files__status--running { color: #f6ad55; }
+.os-app-files__status--success { color: #68d391; }
+.os-app-files__status--error { color: var(--zw-red, #e53e3e); }
 .os-app-files__list { flex: 1; overflow-y: auto; padding: 2px 0; }
 .os-app-files__item {
   display: flex; align-items: center; gap: 6px;

@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
-import type { WorkspaceApp, WindowState, Note, Folder, Workspace } from '../types'
+import type { WorkspaceApp, WindowState, Note, Folder, Workspace, AgentService } from '../types'
 import { Icons, ZarnettiLogo } from '../lib/icons'
 import { OSWindow } from './OSWindow'
 
@@ -12,7 +12,12 @@ interface WorkspaceOSProps {
   folders: Folder[]
   onOpenNote: (id: string) => void
   onAddNote: (folderId?: string) => void
+  onDeleteNote: (id: string) => void
+  onRenameNote: (id: string, title: string) => void
   onCreateFolder: (name: string, parentId?: string) => void
+  onDeleteFolder?: (id: string) => void
+  onRenameFolder?: (id: string, name: string) => void
+  onMoveNoteToFolder?: (noteId: string, folderId: string | null) => void
 }
 
 interface Notification {
@@ -32,6 +37,7 @@ interface ContextMenu {
 const BUILTIN_APPS: WorkspaceApp[] = [
   { id: 'app-workspace', name: 'Workspace', icon: '📁', type: 'builtin', builtinId: 'workspace', workspaceId: '', installedAt: 0, pinned: true },
   { id: 'app-notes', name: 'Notes', icon: '📝', type: 'builtin', builtinId: 'notes', workspaceId: '', installedAt: 0, pinned: true },
+  { id: 'app-services', name: 'Services', icon: '🔌', type: 'builtin', builtinId: 'services', workspaceId: '', installedAt: 0 },
   { id: 'app-terminal', name: 'Terminal', icon: '⬛', type: 'builtin', builtinId: 'terminal', workspaceId: '', installedAt: 0 },
   { id: 'app-settings', name: 'Settings', icon: '⚙️', type: 'builtin', builtinId: 'settings', workspaceId: '', installedAt: 0 },
 ]
@@ -67,7 +73,8 @@ function processCommand(cmd: string, wsName: string): string {
 
 export function WorkspaceOS({
   workspaces, activeWorkspaceId, onSwitchWorkspace,
-  notes, folders, onOpenNote, onAddNote,
+  notes, folders, onOpenNote, onAddNote, onDeleteNote, onRenameNote,
+  onCreateFolder, onDeleteFolder, onRenameFolder, onMoveNoteToFolder,
 }: WorkspaceOSProps) {
   const [installedApps, setInstalledApps] = useState<WorkspaceApp[]>([])
   const [windows, setWindows] = useState<WindowState[]>([])
@@ -80,6 +87,15 @@ export function WorkspaceOS({
   const [switcherIdx, setSwitcherIdx] = useState(0)
   const [termHistory, setTermHistory] = useState<{ prompt: string; output: string }[]>([])
   const termInputRef = useRef<HTMLInputElement>(null)
+  // Workspace app: folder navigation
+  const [wsBrowseFolderId, setWsBrowseFolderId] = useState<string | null>(null)
+  const [wsCreating, setWsCreating] = useState<'file' | 'folder' | null>(null)
+  const [wsNewName, setWsNewName] = useState('')
+  const [wsRenaming, setWsRenaming] = useState<string | null>(null)
+  const [wsRenameName, setWsRenameName] = useState('')
+  // Services
+  const [services, setServices] = useState<AgentService[]>([])
+  const [editingService, setEditingService] = useState<AgentService | null>(null)
 
   const allApps = useMemo(() => [...BUILTIN_APPS, ...installedApps], [installedApps])
   const activeWs = workspaces.find(w => w.id === activeWorkspaceId)
@@ -243,35 +259,121 @@ export function WorkspaceOS({
     }
 
     if (app.builtinId === 'workspace') {
+      const currentFolders = wsFolders.filter(f => wsBrowseFolderId ? f.parentId === wsBrowseFolderId : !f.parentId)
+      const currentNotes = wsNotes.filter(n => wsBrowseFolderId ? n.folderId === wsBrowseFolderId : !n.folderId)
+      const currentFolder = wsBrowseFolderId ? wsFolders.find(f => f.id === wsBrowseFolderId) : null
+
+      // Build breadcrumb path
+      const breadcrumb: { id: string | null; name: string }[] = [{ id: null, name: activeWs?.name || 'Workspace' }]
+      if (currentFolder) {
+        const chain: typeof breadcrumb = []
+        let f: Folder | undefined = currentFolder
+        while (f) {
+          chain.unshift({ id: f.id, name: f.name })
+          f = f.parentId ? wsFolders.find(ff => ff.id === f!.parentId) : undefined
+        }
+        breadcrumb.push(...chain)
+      }
+
       return (
         <div className="os-app-files">
           <div className="os-app-files__header">
-            <span>{activeWs?.name || 'Workspace'}</span>
-            <button className="os-app-files__action" onClick={() => onAddNote()}>{Icons.plus()}</button>
+            <div className="os-app-files__breadcrumb">
+              {breadcrumb.map((seg, i) => (
+                <span key={i}>
+                  {i > 0 && <span className="os-app-files__sep">/</span>}
+                  <button className="os-app-files__crumb" onClick={() => setWsBrowseFolderId(seg.id)}>{seg.name}</button>
+                </span>
+              ))}
+            </div>
+            <div className="os-app-files__actions">
+              <button className="os-app-files__action" onClick={() => setWsCreating('folder')} title="New folder">{Icons.folder()}</button>
+              <button className="os-app-files__action" onClick={() => onAddNote(wsBrowseFolderId || undefined)} title="New file">{Icons.plus()}</button>
+            </div>
           </div>
           <div className="os-app-files__list">
-            {wsFolders.filter(f => !f.parentId).map(f => (
+            {currentFolders.map(f => (
               <div key={f.id} className="os-app-files__item os-app-files__item--folder"
-                onContextMenu={e => { e.preventDefault(); e.stopPropagation() }}>
+                onClick={() => setWsBrowseFolderId(f.id)}
+                draggable onDragStart={e => e.dataTransfer.setData('folderId', f.id)}
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => {
+                  const noteId = e.dataTransfer.getData('noteId')
+                  if (noteId && onMoveNoteToFolder) onMoveNoteToFolder(noteId, f.id)
+                }}
+                onContextMenu={e => {
+                  e.preventDefault(); e.stopPropagation()
+                  setContextMenu({ x: e.clientX, y: e.clientY, items: [
+                    { label: 'Open', action: () => { setWsBrowseFolderId(f.id); setContextMenu(null) } },
+                    { label: 'Rename', action: () => { setWsRenaming(f.id); setWsRenameName(f.name); setContextMenu(null) } },
+                    ...(onDeleteFolder ? [{ label: 'Delete', danger: true, action: () => { onDeleteFolder(f.id); setContextMenu(null) } }] : []),
+                  ]})
+                }}>
                 <span className="os-app-files__icon">📁</span>
-                <span className="os-app-files__name">{f.name}</span>
+                {wsRenaming === f.id ? (
+                  <input className="os-app-files__rename" value={wsRenameName}
+                    onChange={e => setWsRenameName(e.target.value)} autoFocus
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && wsRenameName.trim()) { onRenameFolder?.(f.id, wsRenameName.trim()); setWsRenaming(null) }
+                      if (e.key === 'Escape') setWsRenaming(null)
+                    }}
+                    onBlur={() => { if (wsRenameName.trim()) onRenameFolder?.(f.id, wsRenameName.trim()); setWsRenaming(null) }}
+                    onClick={e => e.stopPropagation()} />
+                ) : (
+                  <span className="os-app-files__name">{f.name}</span>
+                )}
               </div>
             ))}
-            {wsNotes.filter(n => !n.folderId).map(n => (
-              <div key={n.id} className="os-app-files__item" onClick={() => onOpenNote(n.id)}
+            {currentNotes.map(n => (
+              <div key={n.id} className="os-app-files__item"
+                onClick={() => onOpenNote(n.id)}
+                draggable onDragStart={e => e.dataTransfer.setData('noteId', n.id)}
                 onContextMenu={e => {
                   e.preventDefault(); e.stopPropagation()
                   setContextMenu({ x: e.clientX, y: e.clientY, items: [
                     { label: 'Open', action: () => { onOpenNote(n.id); setContextMenu(null) } },
-                    { label: 'Delete', danger: true, action: () => { setContextMenu(null) } },
+                    { label: 'Rename', action: () => { setWsRenaming(n.id); setWsRenameName(n.title); setContextMenu(null) } },
+                    ...(wsBrowseFolderId && onMoveNoteToFolder ? [{ label: 'Move to root', action: () => { onMoveNoteToFolder(n.id, null as unknown as string); setContextMenu(null) } }] : []),
+                    { label: 'Delete', danger: true, action: () => { onDeleteNote(n.id); setContextMenu(null) } },
                   ]})
                 }}>
                 <span className="os-app-files__icon">📄</span>
-                <span className="os-app-files__name">{n.title || 'Untitled'}</span>
+                {wsRenaming === n.id ? (
+                  <input className="os-app-files__rename" value={wsRenameName}
+                    onChange={e => setWsRenameName(e.target.value)} autoFocus
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && wsRenameName.trim()) { onRenameNote(n.id, wsRenameName.trim()); setWsRenaming(null) }
+                      if (e.key === 'Escape') setWsRenaming(null)
+                    }}
+                    onBlur={() => { if (wsRenameName.trim()) onRenameNote(n.id, wsRenameName.trim()); setWsRenaming(null) }}
+                    onClick={e => e.stopPropagation()} />
+                ) : (
+                  <span className="os-app-files__name">{n.title || 'Untitled'}</span>
+                )}
               </div>
             ))}
-            {wsNotes.length === 0 && wsFolders.length === 0 && (
-              <div className="os-app-files__empty">No files yet</div>
+            {/* Inline create */}
+            {wsCreating && (
+              <div className="os-app-files__item os-app-files__item--creating">
+                <span className="os-app-files__icon">{wsCreating === 'folder' ? '📁' : '📄'}</span>
+                <input className="os-app-files__rename" placeholder={`${wsCreating} name...`}
+                  value={wsNewName} onChange={e => setWsNewName(e.target.value)} autoFocus
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && wsNewName.trim()) {
+                      if (wsCreating === 'folder') onCreateFolder(wsNewName.trim(), wsBrowseFolderId || undefined)
+                      else onAddNote(wsBrowseFolderId || undefined)
+                      setWsNewName(''); setWsCreating(null)
+                    }
+                    if (e.key === 'Escape') { setWsNewName(''); setWsCreating(null) }
+                  }}
+                  onBlur={() => {
+                    if (wsNewName.trim() && wsCreating === 'folder') onCreateFolder(wsNewName.trim(), wsBrowseFolderId || undefined)
+                    setWsNewName(''); setWsCreating(null)
+                  }} />
+              </div>
+            )}
+            {currentFolders.length === 0 && currentNotes.length === 0 && !wsCreating && (
+              <div className="os-app-files__empty">Empty</div>
             )}
           </div>
         </div>
@@ -293,6 +395,120 @@ export function WorkspaceOS({
                 <span className="os-app-files__meta">{n.content.slice(0, 40)}</span>
               </div>
             ))}
+          </div>
+        </div>
+      )
+    }
+
+    if (app.builtinId === 'services') {
+      if (editingService) {
+        return (
+          <div className="os-app-settings">
+            <div className="os-app-files__header">
+              <button className="os-app-files__crumb" onClick={() => setEditingService(null)}>← Services</button>
+              <span style={{ flex: 1, fontSize: 11, fontWeight: 600, fontFamily: 'var(--font-sans)' }}>{editingService.name || 'New Service'}</span>
+            </div>
+            <div className="os-app-settings__section">
+              <label className="os-app-settings__label">Name</label>
+              <input className="os-dialog__input" value={editingService.name}
+                onChange={e => setEditingService({ ...editingService, name: e.target.value })} />
+            </div>
+            <div className="os-app-settings__section">
+              <label className="os-app-settings__label">Type</label>
+              <div className="os-app-settings__ws-list">
+                {(['api', 'llm', 'websocket', 'custom'] as const).map(t => (
+                  <button key={t} className={`os-app-settings__ws ${editingService.type === t ? 'active' : ''}`}
+                    onClick={() => setEditingService({ ...editingService, type: t })}>{t.toUpperCase()}</button>
+                ))}
+              </div>
+            </div>
+            <div className="os-app-settings__section">
+              <label className="os-app-settings__label">URL</label>
+              <input className="os-dialog__input" placeholder="https://api.example.com/..."
+                value={editingService.config.url}
+                onChange={e => setEditingService({ ...editingService, config: { ...editingService.config, url: e.target.value } })} />
+            </div>
+            <div className="os-app-settings__section">
+              <label className="os-app-settings__label">Method</label>
+              <div className="os-app-settings__ws-list">
+                {(['GET', 'POST', 'PUT', 'DELETE'] as const).map(m => (
+                  <button key={m} className={`os-app-settings__ws ${editingService.config.method === m ? 'active' : ''}`}
+                    onClick={() => setEditingService({ ...editingService, config: { ...editingService.config, method: m } })}>{m}</button>
+                ))}
+              </div>
+            </div>
+            <div className="os-app-settings__section">
+              <label className="os-app-settings__label">Auth</label>
+              <div className="os-app-settings__ws-list">
+                {(['none', 'bearer', 'apikey'] as const).map(a => (
+                  <button key={a} className={`os-app-settings__ws ${editingService.config.authType === a ? 'active' : ''}`}
+                    onClick={() => setEditingService({ ...editingService, config: { ...editingService.config, authType: a } })}>{a}</button>
+                ))}
+              </div>
+              {editingService.config.authType !== 'none' && (
+                <input className="os-dialog__input" placeholder="Token / API key" style={{ marginTop: 4 }}
+                  value={editingService.config.authValue || ''}
+                  onChange={e => setEditingService({ ...editingService, config: { ...editingService.config, authValue: e.target.value } })} />
+              )}
+            </div>
+            <div className="os-app-settings__section">
+              <label className="os-app-settings__label">Body (template)</label>
+              <textarea className="os-dialog__input" style={{ height: 60, resize: 'vertical', padding: 6 }}
+                placeholder='{"prompt": "{{input}}"}'
+                value={editingService.config.body || ''}
+                onChange={e => setEditingService({ ...editingService, config: { ...editingService.config, body: e.target.value } })} />
+            </div>
+            <div className="os-app-settings__section">
+              <label className="os-app-settings__label">Response field (JSON path)</label>
+              <input className="os-dialog__input" placeholder="data.result"
+                value={editingService.config.responseField || ''}
+                onChange={e => setEditingService({ ...editingService, config: { ...editingService.config, responseField: e.target.value } })} />
+            </div>
+            <button className="os-dialog__btn" style={{ margin: '8px 12px', width: 'calc(100% - 24px)' }}
+              onClick={() => {
+                if (!editingService.name.trim() || !editingService.config.url.trim()) return
+                setServices(prev => {
+                  const exists = prev.find(s => s.id === editingService.id)
+                  if (exists) return prev.map(s => s.id === editingService.id ? editingService : s)
+                  return [...prev, editingService]
+                })
+                setEditingService(null)
+                addNotification('Service saved', editingService.name)
+              }}>Save</button>
+          </div>
+        )
+      }
+
+      return (
+        <div className="os-app-files">
+          <div className="os-app-files__header">
+            <span>Services</span>
+            <button className="os-app-files__action" onClick={() => {
+              setEditingService({
+                id: `svc-${Date.now()}`, name: '', type: 'api', enabled: true, status: 'idle',
+                config: { url: '', method: 'GET', authType: 'none' },
+              })
+            }}>{Icons.plus()}</button>
+          </div>
+          <div className="os-app-files__list">
+            {services.map(svc => (
+              <div key={svc.id} className="os-app-files__item" onClick={() => setEditingService(svc)}
+                onContextMenu={e => {
+                  e.preventDefault(); e.stopPropagation()
+                  setContextMenu({ x: e.clientX, y: e.clientY, items: [
+                    { label: 'Edit', action: () => { setEditingService(svc); setContextMenu(null) } },
+                    { label: 'Run', action: () => { addNotification('Running', svc.name); setContextMenu(null) } },
+                    { label: 'Delete', danger: true, action: () => { setServices(prev => prev.filter(s => s.id !== svc.id)); setContextMenu(null) } },
+                  ]})
+                }}>
+                <span className="os-app-files__icon">🔌</span>
+                <span className="os-app-files__name">{svc.name}</span>
+                <span className={`os-app-files__status os-app-files__status--${svc.status}`}>{svc.status}</span>
+              </div>
+            ))}
+            {services.length === 0 && (
+              <div className="os-app-files__empty">No services configured</div>
+            )}
           </div>
         </div>
       )
@@ -360,7 +576,10 @@ export function WorkspaceOS({
 
     return <div className="os-app-empty">Unknown app</div>
   }, [allApps, activeWs, wsNotes, wsFolders, activeWorkspaceId, workspaces, installedApps,
-      onAddNote, onOpenNote, onSwitchWorkspace, termHistory, handleTermCommand])
+      onAddNote, onOpenNote, onDeleteNote, onRenameNote, onCreateFolder, onDeleteFolder, onRenameFolder, onMoveNoteToFolder,
+      onSwitchWorkspace, termHistory, handleTermCommand,
+      wsBrowseFolderId, wsCreating, wsNewName, wsRenaming, wsRenameName,
+      services, editingService, addNotification])
 
   return (
     <div className="content-area">
