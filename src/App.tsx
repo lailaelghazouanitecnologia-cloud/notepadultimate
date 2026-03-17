@@ -48,11 +48,11 @@ export default function App() {
     profileAgentId, setProfileAgentId,
     chatSessions, activeChatId,
     showHistory, setShowHistory,
-    saveChat, newChat, openChat,
+    saveChat,
   } = useUIContext()
   const {
     isFollowing, followUser, unfollowUser,
-    getFollowedAgents, getSuggestedAgents,
+    getFollowedAgents,
   } = useSocialContext()
 
   const [showPublishModal, setShowPublishModal] = useState(false)
@@ -64,22 +64,7 @@ export default function App() {
 
   // Social data
   const followedAgents = useMemo(() => getFollowedAgents(agents), [getFollowedAgents, agents])
-  const suggestedAgents = useMemo(() => getSuggestedAgents(agents), [getSuggestedAgents, agents])
   const followedAgentIds = useMemo(() => new Set(followedAgents.map(a => a.id)), [followedAgents])
-
-  // Trending for sidebar
-  const trending = useMemo(() => {
-    const counts = new Map<string, number>()
-    agents.forEach((a) => {
-      a.interests.forEach((i) => {
-        counts.set(i, (counts.get(i) || 0) + 1)
-      })
-    })
-    return Array.from(counts.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([topic, count]) => ({ topic, count }))
-  }, [agents])
 
   // Handle file drop from sidebar into chat
   const handleFileDrop = useCallback((e: React.DragEvent) => {
@@ -197,10 +182,6 @@ export default function App() {
         onOpenAgents={() => { setView('agents'); setProfileAgentId(null) }}
         onOpenContracts={() => { setView('agents'); setProfileAgentId(null) }}
         onOpenPlugins={() => { setView('plugins'); setProfileAgentId(null) }}
-        chatSessions={chatSessions}
-        activeChatId={activeChatId}
-        onNewChat={newChat}
-        onOpenChat={openChat}
         notes={notes}
         folders={folders}
         activeNoteId={activeId}
@@ -211,14 +192,6 @@ export default function App() {
         onDuplicateNote={handleDuplicateNote}
         onCreateFolder={createFolder}
         onDeleteFolder={deleteFolder}
-        agents={agents}
-        followedAgents={followedAgents}
-        suggestedAgents={suggestedAgents}
-        isFollowing={isFollowing}
-        onFollow={followUser}
-        onUnfollow={unfollowUser}
-        onOpenProfile={handleOpenProfile}
-        trending={trending}
       />
 
       {/* Resizable divider */}

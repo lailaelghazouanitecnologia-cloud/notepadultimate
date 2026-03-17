@@ -1,10 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import type { Project, Note, Folder } from '../types'
-import type { View, ChatSession } from '../contexts/UIContext'
+import type { View } from '../contexts/UIContext'
 import { ZarnettiLogo, Identicon, Icons } from '../lib/icons'
 import { SidebarFiles } from './SidebarFiles'
-import { SidebarFeed } from './SidebarFeed'
-import type { Agent } from '../types'
 
 interface SidebarProps {
   projects: Project[]
@@ -23,11 +21,6 @@ interface SidebarProps {
   onOpenAgents?: () => void
   onOpenContracts?: () => void
   onOpenPlugins?: () => void
-  // Chat sidebar
-  chatSessions?: ChatSession[]
-  activeChatId?: string | null
-  onNewChat?: () => void
-  onOpenChat?: (id: string) => void
   // Workspace (files)
   notes?: Note[]
   folders?: Folder[]
@@ -40,15 +33,6 @@ interface SidebarProps {
   onCreateFolder?: (name: string, parentId?: string) => void
   onDeleteFolder?: (id: string) => void
   onRenameFolder?: (id: string, newName: string) => void
-  // Feed sidebar
-  agents?: Agent[]
-  followedAgents?: Agent[]
-  suggestedAgents?: Agent[]
-  isFollowing?: (id: string) => boolean
-  onFollow?: (id: string) => void
-  onUnfollow?: (id: string) => void
-  onOpenProfile?: (id: string) => void
-  trending?: { topic: string; count: number }[]
 }
 
 export function Sidebar({
@@ -60,8 +44,6 @@ export function Sidebar({
   notes = [], folders = [], activeNoteId, onOpenNote,
   onAddNote, onDeleteNote, onRenameNote, onDuplicateNote,
   onCreateFolder, onDeleteFolder, onRenameFolder,
-  agents = [], followedAgents = [], suggestedAgents = [],
-  isFollowing, onFollow, onUnfollow, onOpenProfile, trending = [],
 }: SidebarProps) {
   const [showAvatarMenu, setShowAvatarMenu] = useState(false)
   const avatarRef = useRef<HTMLDivElement>(null)
@@ -79,8 +61,8 @@ export function Sidebar({
     return () => document.removeEventListener('mousedown', handler)
   }, [showAvatarMenu])
 
-  const currentView = view
-  const isWorkspaceView = currentView === 'chat' || currentView === 'graph'
+  const showNav = view === 'feed' || view === 'agents' || view === 'plugins'
+  const showWorkspace = view === 'chat' || view === 'graph'
 
   return (
     <aside className={`zw-sb ${collapsed ? 'collapsed' : ''}`} style={!collapsed && width ? { width } : undefined}>
@@ -89,12 +71,12 @@ export function Sidebar({
         <ZarnettiLogo className="zw-sb-logo__icon" />
       </div>
 
-      {/* ── Feed view: full nav ── */}
-      {currentView === 'feed' && (
+      {/* ── Nav: feed, agents, plugins views ── */}
+      {showNav && (
         <>
           <nav className="zw-sb-nav">
             <button
-              className="zw-sb-nav-item active"
+              className={`zw-sb-nav-item ${view === 'feed' ? 'active' : ''}`}
               onClick={() => onNavigate?.('feed')}
             >
               {Icons.rss()}
@@ -119,14 +101,11 @@ export function Sidebar({
               <span>Messages</span>
             </button>
             <button
-              className="zw-sb-nav-item"
+              className={`zw-sb-nav-item ${view === 'agents' ? 'active' : ''}`}
               onClick={onOpenAgents}
             >
               {Icons.users()}
               <span>Agents</span>
-              {unreadAlerts != null && unreadAlerts > 0 && (
-                <span className="zw-sb-nav-badge">{unreadAlerts}</span>
-              )}
             </button>
             <button
               className="zw-sb-nav-item"
@@ -136,7 +115,7 @@ export function Sidebar({
               <span>Contracts</span>
             </button>
             <button
-              className="zw-sb-nav-item"
+              className={`zw-sb-nav-item ${view === 'plugins' ? 'active' : ''}`}
               onClick={onOpenPlugins}
             >
               {Icons.puzzle()}
@@ -149,23 +128,11 @@ export function Sidebar({
             {Icons.edit()}
             <span>Post</span>
           </button>
-
-          {/* Feed contextual panel: trending + who to follow */}
-          <SidebarFeed
-            agents={agents}
-            followedAgents={followedAgents}
-            suggestedAgents={suggestedAgents}
-            isFollowing={isFollowing || (() => false)}
-            onFollow={onFollow || (() => {})}
-            onUnfollow={onUnfollow || (() => {})}
-            onOpenProfile={onOpenProfile || (() => {})}
-            trending={trending}
-          />
         </>
       )}
 
-      {/* ── Chat / Graph view: Workspace (file tree) ── */}
-      {isWorkspaceView && onAddNote && onDeleteNote && onRenameNote && onCreateFolder && onDeleteFolder && (
+      {/* ── Workspace: chat, graph views ── */}
+      {showWorkspace && onAddNote && onDeleteNote && onRenameNote && onCreateFolder && onDeleteFolder && (
         <SidebarFiles
           notes={notes}
           activeId={activeNoteId || null}

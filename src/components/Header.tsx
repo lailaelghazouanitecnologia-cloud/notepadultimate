@@ -22,9 +22,6 @@ const MODE_TABS: { view: View; label: string }[] = [
   { view: 'graph', label: 'Graph' },
 ]
 
-// Pages that show search in the right zone
-const SEARCH_VIEWS: View[] = ['feed', 'agents', 'plugins']
-
 export function Header({
   sidebarCollapsed, setSidebarCollapsed,
   view, setView,
@@ -33,11 +30,9 @@ export function Header({
   onPublish,
   showHistory, onToggleHistory,
 }: HeaderProps) {
-  const showSearch = !showEditor && SEARCH_VIEWS.includes(view)
-
   return (
     <header className="header">
-      {/* LEFT: sidebar toggle + mode switcher tabs */}
+      {/* LEFT: sidebar toggle + mode switcher (always) + optional title/history */}
       <div className="header__left">
         <button
           className={`header__icon-btn ${sidebarCollapsed ? '' : 'header__icon-btn--hidden'}`}
@@ -48,26 +43,21 @@ export function Header({
           {Icons.menu()}
         </button>
 
-        {!showEditor && (
-          <div className="header__tabs">
-            {MODE_TABS.map(tab => (
-              <button
-                key={tab.view}
-                className={`header__tab ${view === tab.view ? 'header__tab--active' : ''}`}
-                onClick={() => setView(tab.view)}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {showEditor && editingNote && (
-          <h1 className="header__title">{editingNote.title || 'Untitled'}</h1>
-        )}
+        {/* Mode tabs — always visible */}
+        <div className="header__tabs">
+          {MODE_TABS.map(tab => (
+            <button
+              key={tab.view}
+              className={`header__tab ${view === tab.view ? 'header__tab--active' : ''}`}
+              onClick={() => setView(tab.view)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
         {/* History icon — only in chat view */}
-        {!showEditor && view === 'chat' && (
+        {view === 'chat' && (
           <button
             className={`header__icon-btn header__icon-btn--borderless ${showHistory ? 'active' : ''}`}
             title="Chat history"
@@ -76,17 +66,15 @@ export function Header({
             {Icons.clock()}
           </button>
         )}
+
+        {/* Note title when editing */}
+        {showEditor && editingNote && (
+          <h1 className="header__title">{editingNote.title || 'Untitled'}</h1>
+        )}
       </div>
 
-      {/* RIGHT: search (conditional) + people + publish */}
+      {/* RIGHT: people + publish (no search — FeedView has its own) */}
       <div className="header__right">
-        {showSearch && (
-          <div className="header__search">
-            {Icons.search()}
-            <input type="text" className="header__search-input" placeholder="Search Zarnet..." />
-          </div>
-        )}
-
         <button
           className={`header__icon-btn header__icon-btn--borderless ${showPeoplePanel ? 'active' : ''}`}
           title="Add people"
