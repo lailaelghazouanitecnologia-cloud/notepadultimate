@@ -180,7 +180,7 @@ export default function App() {
 
   const activeSession = activeChatId ? chatSessions.find((s) => s.id === activeChatId) : undefined
   const profileAgent = profileAgentId ? agents.find((a) => a.id === profileAgentId) : undefined
-  const showEditor = editingNoteId !== null && editingNote !== undefined
+  const showEditor = editingNoteId !== null && editingNote !== undefined && view !== 'workspace'
 
   return (
     <div className="app">
