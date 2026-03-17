@@ -10,6 +10,7 @@ import { WorkspaceOS } from './components/WorkspaceOS'
 import { ExploreView } from './components/ExploreView'
 import { MessagesView } from './components/MessagesView'
 import { HomeScreen } from './components/HomeScreen'
+import { StartMenu } from './components/StartMenu'
 import { Header } from './components/Header'
 import { TabsBar } from './components/TabsBar'
 import { PublishModal } from './components/PublishModal'
@@ -63,6 +64,7 @@ export default function App() {
 
   const [showPublishModal, setShowPublishModal] = useState(false)
   const [showPeoplePanel, setShowPeoplePanel] = useState(false)
+  const [showStartMenu, setShowStartMenu] = useState(false)
   const [sidebarWidth, setSidebarWidth] = useState(260)
   const [attachedFiles, setAttachedFiles] = useState<{ id: string; title: string }[]>([])
   const handleDividerMouseDown = useResizable(sidebarWidth, setSidebarWidth, { min: 180, max: 480 })
@@ -169,6 +171,7 @@ export default function App() {
 
   const profileAgent = profileAgentId ? agents.find((a) => a.id === profileAgentId) : undefined
   const showEditor = editingNoteId !== null && editingNote !== undefined && view !== 'workspace'
+  const activeProject = projects.find(p => p.id === activeProjectId)
 
   return (
     <div className="app">
@@ -188,7 +191,7 @@ export default function App() {
         unreadAlerts={unreadAlerts}
         onOpenAgents={() => { setView('agents'); setProfileAgentId(null) }}
         onOpenPlugins={() => { setView('plugins'); setProfileAgentId(null) }}
-        agents={agents}
+        onLogoClick={() => setShowStartMenu(s => !s)}
       />
 
       {/* Resizable divider */}
@@ -327,6 +330,22 @@ export default function App() {
         ) : view === 'graph' ? (
           <MemoizedGraphView notes={notes} onOpenNote={handleOpenNote} onCreateNote={handleCreateFromChat} />
         ) : null}
+
+        {/* Start Menu — inside the OS content area */}
+        {showStartMenu && (
+          <StartMenu
+            agents={agents}
+            view={view}
+            projectName={activeProject?.name || 'Zarnetti'}
+            theme={theme}
+            onNavigate={(v) => { setView(v); setEditingNoteId(null); setProfileAgentId(null) }}
+            onPost={() => { setView('feed'); setEditingNoteId(null); setProfileAgentId(null) }}
+            onOpenAgents={() => { setView('agents'); setProfileAgentId(null) }}
+            onOpenPlugins={() => { setView('plugins'); setProfileAgentId(null) }}
+            onToggleTheme={toggleTheme}
+            onClose={() => setShowStartMenu(false)}
+          />
+        )}
       </div>
 
       {/* People panel */}
