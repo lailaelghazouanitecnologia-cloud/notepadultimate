@@ -96,9 +96,22 @@ export function WorkspaceOS({
   // Services
   const [services, setServices] = useState<AgentService[]>([])
   const [editingService, setEditingService] = useState<AgentService | null>(null)
+  const [newEndpointMethod, setNewEndpointMethod] = useState<'GET' | 'POST'>('GET')
+  const [newEndpointPath, setNewEndpointPath] = useState('')
 
   const allApps = useMemo(() => [...BUILTIN_APPS, ...installedApps], [installedApps])
   const activeWs = workspaces.find(w => w.id === activeWorkspaceId)
+
+  // Ensure "contract" folder exists in workspace
+  const contractFolderCreated = useRef(false)
+  useEffect(() => {
+    if (contractFolderCreated.current) return
+    const hasContract = folders.some(f => f.name === 'contract' && !f.parentId)
+    if (!hasContract) {
+      onCreateFolder('contract')
+      contractFolderCreated.current = true
+    }
+  }, [folders, onCreateFolder])
 
   // ── Notifications ──
   const addNotification = useCallback((title: string, body: string, icon?: string) => {
@@ -406,74 +419,58 @@ export function WorkspaceOS({
           <div className="os-app-settings">
             <div className="os-app-files__header">
               <button className="os-app-files__crumb" onClick={() => setEditingService(null)}>← Services</button>
-              <span style={{ flex: 1, fontSize: 11, fontWeight: 600, fontFamily: 'var(--font-sans)' }}>{editingService.name || 'New Service'}</span>
+              <span style={{ flex: 1, fontSize: 11, fontWeight: 600, fontFamily: 'var(--font-sans)' }}>{editingService.name || 'New module'}</span>
             </div>
             <div className="os-app-settings__section">
-              <label className="os-app-settings__label">Name</label>
-              <input className="os-dialog__input" value={editingService.name}
+              <label className="os-app-settings__label">Module name</label>
+              <input className="os-dialog__input" value={editingService.name} placeholder="e.g. twitter, openai, analytics"
                 onChange={e => setEditingService({ ...editingService, name: e.target.value })} />
             </div>
             <div className="os-app-settings__section">
-              <label className="os-app-settings__label">Type</label>
-              <div className="os-app-settings__ws-list">
-                {(['api', 'llm', 'websocket', 'custom'] as const).map(t => (
-                  <button key={t} className={`os-app-settings__ws ${editingService.type === t ? 'active' : ''}`}
-                    onClick={() => setEditingService({ ...editingService, type: t })}>{t.toUpperCase()}</button>
+              <label className="os-app-settings__label">Description</label>
+              <input className="os-dialog__input" value={editingService.description} placeholder="Brief description of this module"
+                onChange={e => setEditingService({ ...editingService, description: e.target.value })} />
+            </div>
+            <div className="os-app-settings__section">
+              <label className="os-app-settings__label">Endpoints</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {editingService.endpoints.map((ep, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontFamily: 'var(--font-mono, monospace)', padding: '3px 0' }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, color: ep.method === 'GET' ? '#68d391' : '#f6ad55', minWidth: 30 }}>{ep.method}</span>
+                    <span style={{ flex: 1, color: 'var(--foreground)' }}>{ep.path}</span>
+                    <button style={{ background: 'none', border: 'none', color: 'var(--muted-foreground)', cursor: 'pointer', fontSize: 11, padding: '0 4px' }}
+                      onClick={() => setEditingService({ ...editingService, endpoints: editingService.endpoints.filter((_, j) => j !== i) })}>×</button>
+                  </div>
                 ))}
               </div>
-            </div>
-            <div className="os-app-settings__section">
-              <label className="os-app-settings__label">URL</label>
-              <input className="os-dialog__input" placeholder="https://api.example.com/..."
-                value={editingService.config.url}
-                onChange={e => setEditingService({ ...editingService, config: { ...editingService.config, url: e.target.value } })} />
-            </div>
-            <div className="os-app-settings__section">
-              <label className="os-app-settings__label">Method</label>
-              <div className="os-app-settings__ws-list">
-                {(['GET', 'POST', 'PUT', 'DELETE'] as const).map(m => (
-                  <button key={m} className={`os-app-settings__ws ${editingService.config.method === m ? 'active' : ''}`}
-                    onClick={() => setEditingService({ ...editingService, config: { ...editingService.config, method: m } })}>{m}</button>
-                ))}
+              <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                <div className="os-app-settings__ws-list" style={{ flexShrink: 0 }}>
+                  <button className={`os-app-settings__ws ${newEndpointMethod === 'GET' ? 'active' : ''}`}
+                    onClick={() => setNewEndpointMethod('GET')}>GET</button>
+                  <button className={`os-app-settings__ws ${newEndpointMethod === 'POST' ? 'active' : ''}`}
+                    onClick={() => setNewEndpointMethod('POST')}>POST</button>
+                </div>
+                <input className="os-dialog__input" style={{ flex: 1 }} placeholder="/api/endpoint"
+                  value={newEndpointPath}
+                  onChange={e => setNewEndpointPath(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && newEndpointPath.trim()) {
+                      setEditingService({ ...editingService, endpoints: [...editingService.endpoints, { method: newEndpointMethod, path: newEndpointPath.trim() }] })
+                      setNewEndpointPath('')
+                    }
+                  }} />
               </div>
-            </div>
-            <div className="os-app-settings__section">
-              <label className="os-app-settings__label">Auth</label>
-              <div className="os-app-settings__ws-list">
-                {(['none', 'bearer', 'apikey'] as const).map(a => (
-                  <button key={a} className={`os-app-settings__ws ${editingService.config.authType === a ? 'active' : ''}`}
-                    onClick={() => setEditingService({ ...editingService, config: { ...editingService.config, authType: a } })}>{a}</button>
-                ))}
-              </div>
-              {editingService.config.authType !== 'none' && (
-                <input className="os-dialog__input" placeholder="Token / API key" style={{ marginTop: 4 }}
-                  value={editingService.config.authValue || ''}
-                  onChange={e => setEditingService({ ...editingService, config: { ...editingService.config, authValue: e.target.value } })} />
-              )}
-            </div>
-            <div className="os-app-settings__section">
-              <label className="os-app-settings__label">Body (template)</label>
-              <textarea className="os-dialog__input" style={{ height: 60, resize: 'vertical', padding: 6 }}
-                placeholder='{"prompt": "{{input}}"}'
-                value={editingService.config.body || ''}
-                onChange={e => setEditingService({ ...editingService, config: { ...editingService.config, body: e.target.value } })} />
-            </div>
-            <div className="os-app-settings__section">
-              <label className="os-app-settings__label">Response field (JSON path)</label>
-              <input className="os-dialog__input" placeholder="data.result"
-                value={editingService.config.responseField || ''}
-                onChange={e => setEditingService({ ...editingService, config: { ...editingService.config, responseField: e.target.value } })} />
             </div>
             <button className="os-dialog__btn" style={{ margin: '8px 12px', width: 'calc(100% - 24px)' }}
               onClick={() => {
-                if (!editingService.name.trim() || !editingService.config.url.trim()) return
+                if (!editingService.name.trim()) return
                 setServices(prev => {
                   const exists = prev.find(s => s.id === editingService.id)
                   if (exists) return prev.map(s => s.id === editingService.id ? editingService : s)
                   return [...prev, editingService]
                 })
                 setEditingService(null)
-                addNotification('Service saved', editingService.name)
+                addNotification('Module saved', editingService.name)
               }}>Save</button>
           </div>
         )
@@ -485,9 +482,10 @@ export function WorkspaceOS({
             <span>Services</span>
             <button className="os-app-files__action" onClick={() => {
               setEditingService({
-                id: `svc-${Date.now()}`, name: '', type: 'api', enabled: true, status: 'idle',
-                config: { url: '', method: 'GET', authType: 'none' },
+                id: `svc-${Date.now()}`, name: '', description: '', endpoints: [],
               })
+              setNewEndpointPath('')
+              setNewEndpointMethod('GET')
             }}>{Icons.plus()}</button>
           </div>
           <div className="os-app-files__list">
@@ -497,17 +495,16 @@ export function WorkspaceOS({
                   e.preventDefault(); e.stopPropagation()
                   setContextMenu({ x: e.clientX, y: e.clientY, items: [
                     { label: 'Edit', action: () => { setEditingService(svc); setContextMenu(null) } },
-                    { label: 'Run', action: () => { addNotification('Running', svc.name); setContextMenu(null) } },
                     { label: 'Delete', danger: true, action: () => { setServices(prev => prev.filter(s => s.id !== svc.id)); setContextMenu(null) } },
                   ]})
                 }}>
                 <span className="os-app-files__icon">🔌</span>
                 <span className="os-app-files__name">{svc.name}</span>
-                <span className={`os-app-files__status os-app-files__status--${svc.status}`}>{svc.status}</span>
+                <span style={{ fontSize: 10, color: 'var(--muted-foreground)', fontFamily: 'var(--font-mono, monospace)' }}>{svc.endpoints.length} endpoints</span>
               </div>
             ))}
             {services.length === 0 && (
-              <div className="os-app-files__empty">No services configured</div>
+              <div className="os-app-files__empty">No modules configured</div>
             )}
           </div>
         </div>
@@ -579,7 +576,7 @@ export function WorkspaceOS({
       onAddNote, onOpenNote, onDeleteNote, onRenameNote, onCreateFolder, onDeleteFolder, onRenameFolder, onMoveNoteToFolder,
       onSwitchWorkspace, termHistory, handleTermCommand,
       wsBrowseFolderId, wsCreating, wsNewName, wsRenaming, wsRenameName,
-      services, editingService, addNotification])
+      services, editingService, newEndpointMethod, newEndpointPath, addNotification])
 
   return (
     <div className="content-area">

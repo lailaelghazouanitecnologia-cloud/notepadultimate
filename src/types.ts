@@ -44,30 +44,18 @@ export interface Agent {
 }
 
 // ── Agent Services ──
-// A service connects to external backends (API, LLM, server, etc.)
+// A service module: name, description, and a list of endpoints
 
-export type ServiceType = 'api' | 'llm' | 'websocket' | 'custom'
+export interface ServiceEndpoint {
+  method: 'GET' | 'POST'
+  path: string
+}
 
 export interface AgentService {
   id: string
   name: string
-  type: ServiceType
-  enabled: boolean
-  config: ServiceConfig
-  lastResponse?: string
-  lastRunAt?: number
-  status: 'idle' | 'running' | 'error' | 'success'
-}
-
-export interface ServiceConfig {
-  url: string
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
-  headers?: Record<string, string>
-  body?: string           // template string, can use {{variables}}
-  interval?: number       // auto-poll interval in seconds (0 = manual)
-  responseField?: string  // JSON path to extract from response (e.g. "data.result")
-  authType?: 'none' | 'bearer' | 'apikey'
-  authValue?: string
+  description: string
+  endpoints: ServiceEndpoint[]
 }
 
 export interface Alert {
