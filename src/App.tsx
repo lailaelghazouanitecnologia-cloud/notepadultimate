@@ -38,10 +38,11 @@ const MemoizedHomeScreen = memo(HomeScreen)
 export default function App() {
   const { theme, toggleTheme } = useTheme()
   const {
-    notes, setActiveId, addNote, updateNote, deleteNote,
+    notes, activeId, setActiveId, addNote, updateNote, deleteNote,
     moveNoteToFolder,
-    publishedNotes, publishNote, folders, createFolder, deleteFolder,
+    publishedNotes, publishNote, folders, createFolder, deleteFolder, moveFolderToParent,
     workspaces, activeWorkspaceId, setActiveWorkspaceId, createWorkspace,
+    workspaceNotes, workspaceFolders,
   } = useNotesContext()
   const {
     agents, alerts, unreadAlerts,
@@ -192,6 +193,20 @@ export default function App() {
         onOpenAgents={() => { setView('agents'); setProfileAgentId(null) }}
         onOpenPlugins={() => { setView('plugins'); setProfileAgentId(null) }}
         onLogoClick={() => setShowStartMenu(s => !s)}
+        notes={workspaceNotes}
+        folders={workspaceFolders}
+        activeNoteId={activeId}
+        onOpenNote={handleOpenNote}
+        onAddNote={handleAddNote}
+        onDeleteNote={deleteNote}
+        onRenameNote={handleRenameNote}
+        onMoveNoteToFolder={moveNoteToFolder}
+        onCreateFolder={createFolder}
+        onMoveFolderToParent={moveFolderToParent}
+        workspaces={workspaces.filter(w => w.spaceId === activeProjectId || w.id === 'ws-default')}
+        activeWorkspaceId={activeWorkspaceId}
+        onSwitchWorkspace={setActiveWorkspaceId}
+        onCreateWorkspace={(name: string) => createWorkspace(name, activeProjectId)}
       />
 
       {/* Resizable divider */}
