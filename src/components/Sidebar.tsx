@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import type { Project, Note, Folder, Workspace } from '../types'
+import type { Project, Agent } from '../types'
 import type { View } from '../contexts/UIContext'
 import { ZarnettiLogo, Identicon, Icons } from '../lib/icons'
 
@@ -19,26 +19,8 @@ interface SidebarProps {
   onPost?: () => void
   unreadAlerts?: number
   onOpenAgents?: () => void
-  onOpenContracts?: () => void
   onOpenPlugins?: () => void
-  // Workspace (files)
-  notes?: Note[]
-  folders?: Folder[]
-  activeNoteId?: string | null
-  onOpenNote?: (id: string) => void
-  onAddNote?: (folderId?: string) => void
-  onDeleteNote?: (id: string) => void
-  onRenameNote?: (id: string, newTitle: string) => void
-  onDuplicateNote?: (id: string) => void
-  onMoveNoteToFolder?: (noteId: string, folderId: string | null) => void
-  onCreateFolder?: (name: string, parentId?: string) => void
-  onRenameFolder?: (id: string, newName: string) => void
-  onMoveFolderToParent?: (folderId: string, parentId: string | null) => void
-  // Workspaces
-  workspaces?: Workspace[]
-  activeWorkspaceId?: string
-  onSwitchWorkspace?: (id: string) => void
-  onCreateWorkspace?: (name: string) => void
+  agents?: Agent[]
 }
 
 export function Sidebar({
@@ -47,9 +29,13 @@ export function Sidebar({
   theme, onToggleTheme,
   view, onNavigate, onPost, unreadAlerts,
   onOpenAgents, onOpenPlugins,
+  agents = [],
 }: SidebarProps) {
   const [showAvatarMenu, setShowAvatarMenu] = useState(false)
+  const [showStartMenu, setShowStartMenu] = useState(false)
+  const [startSearch, setStartSearch] = useState('')
   const avatarRef = useRef<HTMLDivElement>(null)
+  const startRef = useRef<HTMLDivElement>(null)
 
   const activeProject = projects.find(p => p.id === activeProjectId) || projects[0]
 
@@ -64,16 +50,51 @@ export function Sidebar({
     return () => document.removeEventListener('mousedown', handler)
   }, [showAvatarMenu])
 
+  useEffect(() => {
+    if (!showStartMenu) return
+    const handler = (e: MouseEvent) => {
+      if (startRef.current && !startRef.current.contains(e.target as Node)) {
+        setShowStartMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showStartMenu])
+
   const showNav = view !== 'graph'
+
+  const presetAgents = agents.filter(a => a.isPreset)
+  const filteredAgents = startSearch
+    ? presetAgents.filter(a =>
+        a.name.toLowerCase().includes(startSearch.toLowerCase()) ||
+        a.handle.toLowerCase().includes(startSearch.toLowerCase())
+      )
+    : presetAgents
+
+  const navItems: { label: string; icon: (p?: object) => React.JSX.Element; view?: View; action?: () => void }[] = [
+    { label: 'Home', icon: Icons.rss, view: 'feed' },
+    { label: 'Explore', icon: Icons.search, view: 'explore' },
+    { label: 'Messages', icon: Icons.messageCircle, view: 'messages' },
+    { label: 'Agents', icon: Icons.users, action: onOpenAgents },
+    { label: 'Workspace', icon: Icons.folder, view: 'workspace' },
+    { label: 'AI Chat', icon: Icons.bot, view: 'chat' },
+    { label: 'Graph', icon: Icons.network, view: 'graph' },
+  ]
+
+  const handleStartNav = (v: View) => {
+    onNavigate?.(v)
+    setShowStartMenu(false)
+    setStartSearch('')
+  }
 
   return (
     <aside className={`zw-sb ${collapsed ? 'collapsed' : ''}`} style={!collapsed && width ? { width } : undefined}>
-      {/* Logo */}
-      <div className="zw-sb-logo">
+      {/* Logo — opens start menu */}
+      <div className="zw-sb-logo" onClick={() => { setShowStartMenu(!showStartMenu); setStartSearch('') }} style={{ cursor: 'pointer' }}>
         <ZarnettiLogo className="zw-sb-logo__icon" />
       </div>
 
-      {/* Navigation — feed/agents/plugins only */}
+      {/* Navigation */}
       {showNav && <nav className="zw-sb-nav">
         <button
           className={`zw-sb-nav-item ${view === 'feed' ? 'active' : ''}`}
@@ -122,7 +143,7 @@ export function Sidebar({
         </button>
       </nav>}
 
-      {/* Post button — feed/agents/plugins only */}
+      {/* Post button */}
       {showNav && (
         <button className="zw-sb-post-btn" onClick={onPost}>
           {Icons.edit()}
@@ -204,6 +225,107 @@ export function Sidebar({
           </div>
         )}
       </div>
+
+      {/* ── Start Menu ── */}
+      {showStartMenu && <>
+        <div className="start-menu-backdrop" onClick={() => { setShowStartMenu(false); setStartSearch('') }} />
+        <div className="start-menu" ref={startRef}>
+          {/* Header — user banner */}
+          <div className="start-menu__header">
+            <div className="start-menu__avatar">
+              <Identicon />
+            </div>
+            <div>
+              <div className="start-menu__user-name">{activeProject?.name || 'Zarnetti'}</div>
+              <div className="start-menu__user-handle">@user</div>
+            </div>
+          </div>
+
+          {/* Body — two columns */}
+          <div className="start-menu__body">
+            {/* Left: pinned actions + agents */}
+            <div className="start-menu__left">
+              <div className="start-menu__section">Pinned</div>
+              <button className="start-menu__item" onClick={() => { onPost?.(); setShowStartMenu(false) }}>
+                {Icons.edit()}
+                <span>New Post</span>
+              </button>
+              <button className="start-menu__item" onClick={() => handleStartNav('chat')}>
+                {Icons.bot()}
+                <span>AI Chat</span>
+              </button>
+              <button className="start-menu__item" onClick={() => handleStartNav('workspace')}>
+                {Icons.fileText()}
+                <span>New Note</span>
+              </button>
+
+              <div className="start-menu__divider" />
+              <div className="start-menu__section">Agents</div>
+              {filteredAgents.map(agent => (
+                <button
+                  key={agent.id}
+                  className="start-menu__item"
+                  onClick={() => { onNavigate?.('agents'); setShowStartMenu(false); setStartSearch('') }}
+                >
+                  <div className="start-menu__agent-icon">{agent.avatar}</div>
+                  <div className="start-menu__agent-info">
+                    <span className="start-menu__agent-name">{agent.name}</span>
+                    <span className="start-menu__agent-handle">@{agent.handle}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Right: navigation */}
+            <div className="start-menu__right">
+              {navItems.map(item => (
+                <button
+                  key={item.label}
+                  className={`start-menu__item ${item.view === view ? 'start-menu__item--active' : ''}`}
+                  onClick={() => {
+                    if (item.action) { item.action(); setShowStartMenu(false); setStartSearch('') }
+                    else if (item.view) handleStartNav(item.view)
+                  }}
+                >
+                  {item.icon()}
+                  <span>{item.label}</span>
+                </button>
+              ))}
+
+              <div className="start-menu__divider" />
+
+              <button className="start-menu__item" onClick={() => { onOpenPlugins?.(); setShowStartMenu(false); setStartSearch('') }}>
+                {Icons.puzzle()}
+                <span>Plugins</span>
+              </button>
+              <button className="start-menu__item" onClick={() => setShowStartMenu(false)}>
+                {Icons.settings()}
+                <span>Settings</span>
+              </button>
+              <button className="start-menu__item" onClick={() => { onToggleTheme?.(); setShowStartMenu(false) }}>
+                {theme === 'dark' ? Icons.sun() : Icons.moon()}
+                <span>{theme === 'dark' ? 'Light' : 'Dark'} mode</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Footer — search + power */}
+          <div className="start-menu__footer">
+            <input
+              className="start-menu__search"
+              placeholder="Search..."
+              value={startSearch}
+              onChange={e => setStartSearch(e.target.value)}
+              autoFocus
+            />
+            <div className="start-menu__power">
+              <button className="start-menu__power-btn" title="Log out">
+                {Icons.logOut()}
+              </button>
+            </div>
+          </div>
+        </div>
+      </>}
     </aside>
   )
 }

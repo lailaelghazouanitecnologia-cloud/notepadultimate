@@ -1,0 +1,239 @@
+/* ── Start Menu (Vista-inspired) ── */
+
+.start-menu {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  width: 420px;
+  max-height: 520px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px 10px 0 0;
+  box-shadow: 0 -4px 40px rgba(0,0,0,0.35), 0 0 0 1px var(--border-overlay);
+  animation: start-slide-up 0.18s ease;
+  overflow: hidden;
+}
+
+@keyframes start-slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Header: user banner ── */
+.start-menu__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, var(--zw-accent), #6d28d9);
+  color: #fff;
+}
+
+.start-menu__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 2px solid rgba(255,255,255,0.3);
+  flex-shrink: 0;
+}
+
+.start-menu__user-name {
+  font-size: var(--font-lg);
+  font-weight: 600;
+}
+
+.start-menu__user-handle {
+  font-size: var(--font-xs);
+  opacity: 0.7;
+}
+
+/* ── Body: two-column layout ── */
+.start-menu__body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Left column: pinned + recent */
+.start-menu__left {
+  flex: 1;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* Right column: navigation links */
+.start-menu__right {
+  width: 170px;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+/* ── Section labels ── */
+.start-menu__section {
+  font-size: var(--font-xxs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-foreground);
+  padding: 10px 14px 4px;
+}
+
+.start-menu__divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 10px;
+}
+
+/* ── Menu items (shared) ── */
+.start-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 14px;
+  border: none;
+  background: none;
+  color: var(--foreground);
+  font-size: var(--font-md);
+  cursor: pointer;
+  text-align: left;
+  transition: background 80ms;
+}
+
+.start-menu__item:hover {
+  background: var(--hover-light);
+}
+
+.start-menu__item:active {
+  background: var(--hover-medium);
+}
+
+.start-menu__item svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+}
+
+.start-menu__item--active svg {
+  color: var(--zw-accent);
+}
+
+/* Agent items in left column */
+.start-menu__agent-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.start-menu__agent-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.start-menu__agent-name {
+  font-size: var(--font-md);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.start-menu__agent-handle {
+  font-size: var(--font-xxs);
+  color: var(--muted-foreground);
+}
+
+/* Right column items — slightly different sizing */
+.start-menu__right .start-menu__item {
+  padding: 8px 14px;
+  font-size: var(--font-sm);
+}
+
+.start-menu__right .start-menu__item svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ── Footer: search bar ── */
+.start-menu__footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.start-menu__search {
+  flex: 1;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: var(--font-sm);
+  outline: none;
+}
+
+.start-menu__search:focus {
+  border-color: var(--ring);
+}
+
+.start-menu__search::placeholder {
+  color: var(--muted-foreground);
+}
+
+.start-menu__power {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.start-menu__power-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: background 80ms;
+}
+
+.start-menu__power-btn:hover {
+  background: var(--hover-light);
+  color: var(--foreground);
+}
+
+.start-menu__power-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ── Backdrop ── */
+.start-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 199;
+}

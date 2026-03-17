@@ -37,11 +37,10 @@ const MemoizedHomeScreen = memo(HomeScreen)
 export default function App() {
   const { theme, toggleTheme } = useTheme()
   const {
-    notes, activeId, setActiveId, addNote, updateNote, deleteNote,
+    notes, setActiveId, addNote, updateNote, deleteNote,
     moveNoteToFolder,
-    publishedNotes, publishNote, folders, createFolder, deleteFolder, moveFolderToParent,
+    publishedNotes, publishNote, folders, createFolder, deleteFolder,
     workspaces, activeWorkspaceId, setActiveWorkspaceId, createWorkspace,
-    workspaceNotes, workspaceFolders,
   } = useNotesContext()
   const {
     agents, alerts, unreadAlerts,
@@ -122,13 +121,6 @@ export default function App() {
     updateNote(id, { title: newTitle })
   }, [updateNote])
 
-  const handleDuplicateNote = useCallback((id: string) => {
-    const source = notes.find((n) => n.id === id)
-    if (!source) return
-    const note = addNote()
-    updateNote(note.id, { title: `${source.title} (copy)`, content: source.content, folderId: source.folderId })
-  }, [notes, addNote, updateNote])
-
   const handleCreatePost = useCallback((content: string) => {
     const note = addNote()
     updateNote(note.id, { content, published: true })
@@ -195,23 +187,8 @@ export default function App() {
         onPost={() => { setView('feed'); setEditingNoteId(null); setProfileAgentId(null) }}
         unreadAlerts={unreadAlerts}
         onOpenAgents={() => { setView('agents'); setProfileAgentId(null) }}
-        onOpenContracts={() => { setView('agents'); setProfileAgentId(null) }}
         onOpenPlugins={() => { setView('plugins'); setProfileAgentId(null) }}
-        notes={workspaceNotes}
-        folders={workspaceFolders}
-        activeNoteId={activeId}
-        onOpenNote={handleOpenNote}
-        onAddNote={handleAddNote}
-        onDeleteNote={deleteNote}
-        onRenameNote={handleRenameNote}
-        onDuplicateNote={handleDuplicateNote}
-        onMoveNoteToFolder={moveNoteToFolder}
-        onCreateFolder={createFolder}
-        onMoveFolderToParent={moveFolderToParent}
-        workspaces={workspaces.filter(w => w.spaceId === activeProjectId || w.id === 'ws-default')}
-        activeWorkspaceId={activeWorkspaceId}
-        onSwitchWorkspace={setActiveWorkspaceId}
-        onCreateWorkspace={(name: string) => createWorkspace(name, activeProjectId)}
+        agents={agents}
       />
 
       {/* Resizable divider */}
