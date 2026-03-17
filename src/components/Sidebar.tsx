@@ -69,7 +69,7 @@ export function Sidebar({
   }, [showAvatarMenu])
 
   const showNav = view !== 'graph'
-  const showWorkspace = true  // workspace panel always visible
+  const showWorkspace = view === 'workspace'
 
   return (
     <aside className={`zw-sb ${collapsed ? 'collapsed' : ''}`} style={!collapsed && width ? { width } : undefined}>
