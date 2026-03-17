@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import type { Agent, Note } from '../types'
 import { Icons } from '../lib/icons'
 import { FollowButton } from './FollowButton'
@@ -14,22 +14,13 @@ interface ExploreViewProps {
 }
 
 const CATEGORIES = [
-  { id: 'foryou', label: 'For you', icon: 'zap' },
-  { id: 'science', label: 'Science', icon: 'globe' },
-  { id: 'technology', label: 'Technology', icon: 'monitor' },
-  { id: 'philosophy', label: 'Philosophy', icon: 'book' },
-  { id: 'security', label: 'Security', icon: 'shield' },
-  { id: 'agents', label: 'Agents', icon: 'users' },
+  { id: 'all', label: 'All' },
+  { id: 'science', label: 'Science' },
+  { id: 'technology', label: 'Technology' },
+  { id: 'philosophy', label: 'Philosophy' },
+  { id: 'security', label: 'Security' },
+  { id: 'agents', label: 'Agents' },
 ] as const
-
-const CAT_ICONS: Record<string, () => React.JSX.Element> = {
-  zap: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>,
-  globe: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,
-  monitor: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
-  book: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>,
-  shield: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
-  users: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>,
-}
 
 function formatRelative(ts: number): string {
   const diff = Date.now() - ts
@@ -39,32 +30,27 @@ function formatRelative(ts: number): string {
   const hrs = Math.floor(mins / 60)
   if (hrs < 24) return `${hrs}h`
   const days = Math.floor(hrs / 24)
-  return `${days}d`
+  if (days < 7) return `${days}d`
+  return new Date(ts).toLocaleDateString('en', { day: 'numeric', month: 'short' })
+}
+
+// Derive pseudo-engagement from content length + timestamp for variety
+function deriveStats(note: Note) {
+  const seed = note.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
+  const base = Math.max(1, Math.floor(note.content.length / 20))
+  return {
+    replies: (seed % 7) + Math.floor(base * 0.3),
+    reposts: (seed % 5) + Math.floor(base * 0.2),
+    likes: (seed % 12) + base,
+  }
 }
 
 export function ExploreView({
   agents, publishedNotes, onOpenNote, onOpenProfile,
   isFollowing, onFollow, onUnfollow,
 }: ExploreViewProps) {
-  const [activeCategory, setActiveCategory] = useState('foryou')
+  const [activeCategory, setActiveCategory] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
-
-  const trending = useMemo(() => {
-    const counts = new Map<string, number>()
-    agents.forEach(a => a.interests.forEach(i => counts.set(i, (counts.get(i) || 0) + 1)))
-    return Array.from(counts.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([topic, count], i) => ({ topic, count, rank: i + 1 }))
-  }, [agents])
-
-  const suggestedAgents = useMemo(() => agents.filter(a => a.isPreset).slice(0, 6), [agents])
-
-  const popularPosts = useMemo(() => {
-    return [...publishedNotes]
-      .sort((a, b) => b.updatedAt - a.updatedAt)
-      .slice(0, 5)
-  }, [publishedNotes])
 
   const agentMap = useMemo(() => {
     const m = new Map<string, Agent>()
@@ -72,129 +58,259 @@ export function ExploreView({
     return m
   }, [agents])
 
+  // Trending topics from agent interests
+  const trending = useMemo(() => {
+    const counts = new Map<string, number>()
+    agents.forEach(a => a.interests.forEach(i => counts.set(i, (counts.get(i) || 0) + 1)))
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([topic, count]) => ({ topic, count }))
+  }, [agents])
+
+  // Filter agents by category + search
+  const filteredAgents = useMemo(() => {
+    let result = agents
+    const q = searchQuery.toLowerCase().trim()
+    if (activeCategory !== 'all' && activeCategory !== 'agents') {
+      result = result.filter(a =>
+        a.interests.some(i => i.toLowerCase().includes(activeCategory))
+      )
+    }
+    if (q) {
+      result = result.filter(a =>
+        a.name.toLowerCase().includes(q) ||
+        a.handle.toLowerCase().includes(q) ||
+        a.bio.toLowerCase().includes(q) ||
+        a.interests.some(i => i.toLowerCase().includes(q))
+      )
+    }
+    return result
+  }, [agents, activeCategory, searchQuery])
+
+  // Filter posts by category + search
+  const filteredPosts = useMemo(() => {
+    let result = [...publishedNotes].sort((a, b) => b.updatedAt - a.updatedAt)
+    const q = searchQuery.toLowerCase().trim()
+    if (activeCategory !== 'all' && activeCategory !== 'agents') {
+      result = result.filter(n => {
+        const text = `${n.title} ${n.content}`.toLowerCase()
+        return text.includes(activeCategory)
+      })
+    }
+    if (q) {
+      result = result.filter(n => {
+        const text = `${n.title} ${n.content} ${n.author || ''}`.toLowerCase()
+        return text.includes(q)
+      })
+    }
+    return result
+  }, [publishedNotes, activeCategory, searchQuery])
+
+  // Agents to suggest (not following)
+  const suggestedAgents = useMemo(() => {
+    if (activeCategory === 'agents') return filteredAgents.slice(0, 12)
+    return filteredAgents.filter(a => a.isPreset).slice(0, 4)
+  }, [filteredAgents, activeCategory])
+
+  const handleSearchKey = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') setSearchQuery('')
+  }, [])
+
+  const showAgentsSection = activeCategory === 'all' || activeCategory === 'agents'
+  const showPostsSection = activeCategory !== 'agents'
+
   return (
     <div className="content-area">
-      <div className="explore">
-        <div className="explore-inner">
-          {/* Search */}
-          <div className="explore-search">
-            {Icons.search()}
-            <input
-              type="text"
-              placeholder="Search topics, agents, posts..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-            />
-            <kbd>/</kbd>
-          </div>
+      <div className="feed-view">
+        <div className="feed-layout">
+          {/* Main column */}
+          <div className="feed-col">
+            {/* Search */}
+            <div className="explore-search">
+              {Icons.search()}
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearchKey}
+              />
+              {searchQuery && (
+                <button className="explore-search__clear" onClick={() => setSearchQuery('')}>
+                  {Icons.x()}
+                </button>
+              )}
+            </div>
 
-          {/* Category chips */}
-          <div className="explore-cats">
-            {CATEGORIES.map(cat => {
-              const IconComp = CAT_ICONS[cat.icon]
-              return (
+            {/* Category tabs */}
+            <div className="explore-cats">
+              {CATEGORIES.map(cat => (
                 <button
                   key={cat.id}
                   className={`explore-cat ${activeCategory === cat.id ? 'active' : ''}`}
                   onClick={() => setActiveCategory(cat.id)}
                 >
-                  {IconComp && <IconComp />}
                   {cat.label}
                 </button>
-              )
-            })}
+              ))}
+            </div>
+
+            {/* Results */}
+            <div className="feed-scroll">
+              {/* Agents row */}
+              {showAgentsSection && suggestedAgents.length > 0 && (
+                <div className="explore-section">
+                  <div className="explore-section__head">
+                    <h2 className="explore-section__title">
+                      {activeCategory === 'agents' ? 'All agents' : 'Agents'}
+                    </h2>
+                    {activeCategory !== 'agents' && (
+                      <button className="explore-section__link" onClick={() => setActiveCategory('agents')}>
+                        See all
+                      </button>
+                    )}
+                  </div>
+                  <div className="explore-agents">
+                    {suggestedAgents.map(agent => (
+                      <div key={agent.id} className="explore-agent" onClick={() => onOpenProfile(agent.id)}>
+                        <div className="explore-agent__avatar">{agent.avatar}</div>
+                        <div className="explore-agent__info">
+                          <span className="explore-agent__name">{agent.name}</span>
+                          <span className="explore-agent__handle">{agent.handle}</span>
+                        </div>
+                        {isFollowing && onFollow && onUnfollow && (
+                          <div className="explore-agent__action" onClick={e => e.stopPropagation()}>
+                            <FollowButton
+                              isFollowing={isFollowing(agent.id)}
+                              onFollow={() => onFollow(agent.id)}
+                              onUnfollow={() => onUnfollow(agent.id)}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Posts */}
+              {showPostsSection && filteredPosts.length > 0 && (
+                <div className="explore-section">
+                  <div className="explore-section__head">
+                    <h2 className="explore-section__title">
+                      {searchQuery ? `Results` : activeCategory === 'all' ? 'Recent' : `${activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1)}`}
+                    </h2>
+                    <span className="explore-section__count">{filteredPosts.length}</span>
+                  </div>
+                  {filteredPosts.map(note => {
+                    const agent = note.authorId ? agentMap.get(note.authorId) : undefined
+                    const stats = deriveStats(note)
+                    return (
+                      <article key={note.id} className="feed-post" onClick={() => onOpenNote(note.id)}>
+                        <div
+                          className="feed-post__avatar"
+                          onClick={e => { e.stopPropagation(); if (agent) onOpenProfile(agent.id) }}
+                          style={{ cursor: agent ? 'pointer' : 'default' }}
+                        >
+                          {agent?.avatar || '📝'}
+                        </div>
+                        <div className="feed-post__body">
+                          <div className="feed-post__header">
+                            <span
+                              className="feed-post__name"
+                              onClick={e => { e.stopPropagation(); if (agent) onOpenProfile(agent.id) }}
+                            >
+                              {note.author || 'You'}
+                            </span>
+                            <span className="feed-post__handle">{agent?.handle || '@user'}</span>
+                            <span className="feed-post__dot">&middot;</span>
+                            <span className="feed-post__time">{formatRelative(note.updatedAt)}</span>
+                          </div>
+                          {note.title && <div className="feed-post__title">{note.title}</div>}
+                          <p className="feed-post__text">{note.content.slice(0, 300)}</p>
+                          <div className="feed-post__actions">
+                            <button className="feed-post__action" onClick={e => e.stopPropagation()}>
+                              {Icons.messageCircle()}<span>{stats.replies}</span>
+                            </button>
+                            <button className="feed-post__action" onClick={e => e.stopPropagation()}>
+                              {Icons.repeat()}<span>{stats.reposts}</span>
+                            </button>
+                            <button className="feed-post__action" onClick={e => e.stopPropagation()}>
+                              {Icons.heart()}<span>{stats.likes}</span>
+                            </button>
+                            <button className="feed-post__action" onClick={e => e.stopPropagation()}>
+                              {Icons.share()}
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Empty state */}
+              {filteredPosts.length === 0 && suggestedAgents.length === 0 && (
+                <div className="feed-empty">
+                  <div className="feed-empty__icon">{Icons.search()}</div>
+                  <h3 className="feed-empty__title">
+                    {searchQuery ? 'No results' : 'Nothing here yet'}
+                  </h3>
+                  <p className="feed-empty__sub">
+                    {searchQuery
+                      ? `No matches for "${searchQuery}"`
+                      : 'Publish notes and create agents to populate the explore page.'}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Trending */}
-          {trending.length > 0 && (
-            <div className="explore-section">
-              <div className="explore-section__head">
-                <h2 className="explore-section__title">Trending</h2>
-                <button className="explore-section__link">See all</button>
-              </div>
-              <div className="explore-trends">
+          {/* Side panel */}
+          <aside className="feed-panel">
+            {/* Trending */}
+            {trending.length > 0 && (
+              <div className="feed-card">
+                <h3 className="feed-card__title">Trending topics</h3>
                 {trending.map((t, i) => (
-                  <div key={t.topic} className="explore-trend">
-                    <span className="explore-trend__rank">{t.rank}</span>
-                    <div className="explore-trend__body">
-                      <span className="explore-trend__topic">#{t.topic}</span>
-                      <span className="explore-trend__meta">{t.count} interested</span>
+                  <div key={t.topic} className="feed-card__trend" onClick={() => setSearchQuery(t.topic)}>
+                    <span className="feed-card__trend-rank">{i + 1}</span>
+                    <div className="feed-card__trend-info">
+                      <span className="feed-card__trend-topic">#{t.topic}</span>
+                      <span className="feed-card__trend-count">{t.count} agents</span>
                     </div>
-                    {i === 0 && <span className="explore-trend__tag explore-trend__tag--hot">HOT</span>}
-                    {i === 1 && <span className="explore-trend__tag explore-trend__tag--new">NEW</span>}
-                    {i === 2 && <span className="explore-trend__tag explore-trend__tag--rising">RISING</span>}
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Suggested agents */}
-          {suggestedAgents.length > 0 && (
-            <div className="explore-section">
-              <div className="explore-section__head">
-                <h2 className="explore-section__title">Suggested agents</h2>
-                <button className="explore-section__link">See all</button>
-              </div>
-              <div className="explore-agents">
-                {suggestedAgents.map(agent => (
-                  <div key={agent.id} className="explore-agent" onClick={() => onOpenProfile(agent.id)}>
-                    <div className="explore-agent__emoji">{agent.avatar}</div>
-                    <span className="explore-agent__name">{agent.name}</span>
-                    <span className="explore-agent__handle">{agent.handle}</span>
-                    <span className="explore-agent__desc">{agent.bio.slice(0, 80)}</span>
+            {/* Suggested agents */}
+            {agents.filter(a => a.isPreset).length > 0 && (
+              <div className="feed-card">
+                <h3 className="feed-card__title">Who to follow</h3>
+                {agents.filter(a => a.isPreset).slice(0, 4).map(agent => (
+                  <div key={agent.id} className="feed-card__agent">
+                    <div className="feed-card__agent-emoji" onClick={() => onOpenProfile(agent.id)}>{agent.avatar}</div>
+                    <div className="feed-card__agent-info" onClick={() => onOpenProfile(agent.id)}>
+                      <span className="feed-card__agent-name">{agent.name}</span>
+                      <span className="feed-card__agent-handle">{agent.handle}</span>
+                    </div>
                     {isFollowing && onFollow && onUnfollow && (
-                      <div onClick={e => e.stopPropagation()}>
-                        <FollowButton
-                          isFollowing={isFollowing(agent.id)}
-                          onFollow={() => onFollow(agent.id)}
-                          onUnfollow={() => onUnfollow(agent.id)}
-                        />
-                      </div>
+                      <FollowButton
+                        isFollowing={isFollowing(agent.id)}
+                        onFollow={() => onFollow(agent.id)}
+                        onUnfollow={() => onUnfollow(agent.id)}
+                      />
                     )}
                   </div>
                 ))}
+                <button className="feed-card__more" onClick={() => setActiveCategory('agents')}>
+                  Show more
+                </button>
               </div>
-            </div>
-          )}
-
-          {/* Popular posts */}
-          {popularPosts.length > 0 && (
-            <div className="explore-section">
-              <div className="explore-section__head">
-                <h2 className="explore-section__title">Popular</h2>
-                <button className="explore-section__link">See all</button>
-              </div>
-              <div className="explore-posts">
-                {popularPosts.map(note => {
-                  const agent = note.authorId ? agentMap.get(note.authorId) : undefined
-                  return (
-                    <div key={note.id} className="explore-post" onClick={() => onOpenNote(note.id)}>
-                      <div className="explore-post__avatar">{agent?.avatar || '📝'}</div>
-                      <div className="explore-post__body">
-                        <div className="explore-post__head">
-                          <span className="explore-post__author" onClick={e => { e.stopPropagation(); if (agent) onOpenProfile(agent.id) }}>
-                            {note.author || 'You'}
-                          </span>
-                          <span className="explore-post__handle">{agent?.handle || '@user'}</span>
-                          <span className="explore-post__dot">&middot;</span>
-                          <span className="explore-post__time">{formatRelative(note.updatedAt)}</span>
-                        </div>
-                        {note.title && <div className="explore-post__title">{note.title}</div>}
-                        <div className="explore-post__text">{note.content.slice(0, 200)}</div>
-                        <div className="explore-post__stats">
-                          <span className="explore-post__stat">{Icons.messageCircle()}<span>0</span></span>
-                          <span className="explore-post__stat">{Icons.repeat()}<span>0</span></span>
-                          <span className="explore-post__stat">{Icons.heart()}<span>0</span></span>
-                          <span className="explore-post__stat">{Icons.share()}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
+            )}
+          </aside>
         </div>
       </div>
     </div>
