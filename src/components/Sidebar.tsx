@@ -68,7 +68,7 @@ export function Sidebar({
     return () => document.removeEventListener('mousedown', handler)
   }, [showAvatarMenu])
 
-  const showNav = view !== 'chat' && view !== 'graph'
+  const showNav = view !== 'graph'
   const showWorkspace = true  // workspace panel always visible
 
   return (
@@ -102,8 +102,8 @@ export function Sidebar({
           )}
         </button>
         <button
-          className="zw-sb-nav-item"
-          onClick={() => onNavigate?.('chat')}
+          className={`zw-sb-nav-item ${view === 'messages' ? 'active' : ''}`}
+          onClick={() => onNavigate?.('messages')}
         >
           {Icons.messageCircle()}
           <span>Messages</span>

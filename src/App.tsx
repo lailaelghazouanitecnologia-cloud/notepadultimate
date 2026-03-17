@@ -9,6 +9,7 @@ import { PluginsView } from './components/PluginsView'
 import { WorkspaceOS } from './components/WorkspaceOS'
 import { ExploreView } from './components/ExploreView'
 import { MessagesView } from './components/MessagesView'
+import { HomeScreen } from './components/HomeScreen'
 import { Header } from './components/Header'
 import { TabsBar } from './components/TabsBar'
 import { PublishModal } from './components/PublishModal'
@@ -31,6 +32,7 @@ const MemoizedExploreView = memo(ExploreView)
 const MemoizedProfileView = memo(ProfileView)
 const MemoizedPluginsView = memo(PluginsView)
 const MemoizedMessagesView = memo(MessagesView)
+const MemoizedHomeScreen = memo(HomeScreen)
 
 export default function App() {
   const { theme, toggleTheme } = useTheme()
@@ -52,6 +54,7 @@ export default function App() {
     editingNoteId, setEditingNoteId,
     openTabs, openTab, closeTab,
     profileAgentId, setProfileAgentId,
+    chatSessions, activeChatId, saveChat,
     showHistory, setShowHistory,
   } = useUIContext()
   const {
@@ -62,6 +65,7 @@ export default function App() {
   const [showPublishModal, setShowPublishModal] = useState(false)
   const [showPeoplePanel, setShowPeoplePanel] = useState(false)
   const [sidebarWidth, setSidebarWidth] = useState(260)
+  const [attachedFiles, setAttachedFiles] = useState<{ id: string; title: string }[]>([])
   const handleDividerMouseDown = useResizable(sidebarWidth, setSidebarWidth, { min: 180, max: 480 })
 
   // Social data
@@ -69,6 +73,20 @@ export default function App() {
   const followedAgentIds = useMemo(() => new Set(followedAgents.map(a => a.id)), [followedAgents])
 
   const editingNote = editingNoteId ? notes.find((n) => n.id === editingNoteId) : null
+  const activeSession = activeChatId ? chatSessions.find(s => s.id === activeChatId) : undefined
+
+  const handleFileDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    const noteId = e.dataTransfer.getData('text/note-id')
+    const noteTitle = e.dataTransfer.getData('text/note-title')
+    if (noteId && noteTitle) {
+      setAttachedFiles(prev => prev.some(f => f.id === noteId) ? prev : [...prev, { id: noteId, title: noteTitle }])
+    }
+  }, [])
+
+  const removeAttachedFile = useCallback((id: string) => {
+    setAttachedFiles(prev => prev.filter(f => f.id !== id))
+  }, [])
 
   const openNoteInEditor = useCallback((id: string) => {
     setEditingNoteId(id)
@@ -313,6 +331,18 @@ export default function App() {
             onMoveNoteToFolder={moveNoteToFolder}
           />
         ) : view === 'chat' ? (
+          <MemoizedHomeScreen
+            notes={notes}
+            publishedNotes={publishedNotes}
+            onCreateNote={handleCreateFromChat}
+            onOpenNote={handleOpenNote}
+            onSaveChat={saveChat}
+            initialSession={activeSession}
+            attachedFiles={attachedFiles}
+            onRemoveAttachedFile={removeAttachedFile}
+            onFileDrop={handleFileDrop}
+          />
+        ) : view === 'messages' ? (
           <MemoizedMessagesView
             agents={agents}
             onOpenProfile={handleOpenProfile}

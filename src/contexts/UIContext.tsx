@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 
-export type View = 'feed' | 'explore' | 'workspace' | 'chat' | 'graph' | 'agents' | 'plugins'
+export type View = 'feed' | 'explore' | 'workspace' | 'chat' | 'graph' | 'agents' | 'plugins' | 'messages'
 
 export interface ChatSession {
   id: string
@@ -19,6 +19,7 @@ const VIEW_PATHS: Record<string, View> = {
   '/graph': 'graph',
   '/agents': 'agents',
   '/plugins': 'plugins',
+  '/messages': 'messages',
 }
 
 const PATH_FOR_VIEW: Record<View, string> = {
@@ -29,6 +30,7 @@ const PATH_FOR_VIEW: Record<View, string> = {
   graph: '/graph',
   agents: '/agents',
   plugins: '/plugins',
+  messages: '/messages',
 }
 
 interface UIContextValue {
