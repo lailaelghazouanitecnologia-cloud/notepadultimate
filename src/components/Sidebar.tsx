@@ -37,7 +37,7 @@ interface SidebarProps {
 
 export function Sidebar({
   projects, activeProjectId, onSwitchProject, onCreateProject,
-  collapsed, width,
+  collapsed, onToggleCollapse, width,
   theme, onToggleTheme,
   view, onNavigate, onPost, unreadAlerts,
   onOpenAgents, onOpenContracts, onOpenPlugins,
@@ -66,9 +66,16 @@ export function Sidebar({
 
   return (
     <aside className={`zw-sb ${collapsed ? 'collapsed' : ''}`} style={!collapsed && width ? { width } : undefined}>
-      {/* Logo */}
+      {/* Logo + collapse */}
       <div className="zw-sb-logo">
         <ZarnettiLogo className="zw-sb-logo__icon" />
+        <button
+          className="zw-sb-collapse-btn"
+          onClick={onToggleCollapse}
+          title="Close sidebar"
+        >
+          {Icons.panelLeftClose()}
+        </button>
       </div>
 
       {/* ── Nav: feed, agents, plugins views ── */}
@@ -148,8 +155,8 @@ export function Sidebar({
         />
       )}
 
-      {/* Spacer */}
-      <div className="zw-sb-spacer" />
+      {/* Spacer — only when nav is shown (workspace fills its own space) */}
+      {!showWorkspace && <div className="zw-sb-spacer" />}
 
       {/* Account row */}
       <div className="zw-sb-account" ref={avatarRef}>

@@ -16,10 +16,10 @@ interface HeaderProps {
   onToggleHistory?: () => void
 }
 
-const MODE_TABS: { view: View; label: string }[] = [
-  { view: 'feed', label: 'Feed' },
-  { view: 'chat', label: 'Chat' },
-  { view: 'graph', label: 'Graph' },
+const MODE_TABS: { view: View; icon: (p?: object) => React.ReactNode; label: string }[] = [
+  { view: 'feed', icon: Icons.rss, label: 'Feed' },
+  { view: 'chat', icon: Icons.messageCircle, label: 'Chat' },
+  { view: 'graph', icon: Icons.network, label: 'Graph' },
 ]
 
 export function Header({
@@ -30,9 +30,11 @@ export function Header({
   onPublish,
   showHistory, onToggleHistory,
 }: HeaderProps) {
+  const noBorder = !showEditor && (view === 'chat' || view === 'graph')
+
   return (
-    <header className="header">
-      {/* LEFT: sidebar toggle + mode switcher (always) + optional title/history */}
+    <header className={`header ${noBorder ? 'header--no-border' : ''}`}>
+      {/* LEFT: sidebar toggle + mode switcher (always) + optional title */}
       <div className="header__left">
         <button
           className={`header__icon-btn ${sidebarCollapsed ? '' : 'header__icon-btn--hidden'}`}
@@ -43,29 +45,19 @@ export function Header({
           {Icons.menu()}
         </button>
 
-        {/* Mode tabs — always visible */}
-        <div className="header__tabs">
+        {/* Mode switcher pill — always visible */}
+        <div className="zw-mode-switcher">
           {MODE_TABS.map(tab => (
             <button
               key={tab.view}
-              className={`header__tab ${view === tab.view ? 'header__tab--active' : ''}`}
+              className={`zw-mode-tab ${view === tab.view && !showEditor ? 'active' : ''}`}
               onClick={() => setView(tab.view)}
             >
-              {tab.label}
+              {tab.icon()}
+              <span>{tab.label}</span>
             </button>
           ))}
         </div>
-
-        {/* History icon — only in chat view */}
-        {view === 'chat' && (
-          <button
-            className={`header__icon-btn header__icon-btn--borderless ${showHistory ? 'active' : ''}`}
-            title="Chat history"
-            onClick={onToggleHistory}
-          >
-            {Icons.clock()}
-          </button>
-        )}
 
         {/* Note title when editing */}
         {showEditor && editingNote && (
@@ -73,8 +65,18 @@ export function Header({
         )}
       </div>
 
-      {/* RIGHT: people + publish (no search — FeedView has its own) */}
+      {/* RIGHT: history + people + publish */}
       <div className="header__right">
+        {/* History icon — only in chat view */}
+        <button
+          className={`header__icon-btn ${showHistory ? 'active' : ''} ${view !== 'chat' ? 'header__icon-btn--hidden' : ''}`}
+          onClick={onToggleHistory}
+          title="Chat history"
+          tabIndex={view === 'chat' ? 0 : -1}
+        >
+          {Icons.clock()}
+        </button>
+
         <button
           className={`header__icon-btn header__icon-btn--borderless ${showPeoplePanel ? 'active' : ''}`}
           title="Add people"

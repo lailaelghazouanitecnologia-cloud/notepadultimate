@@ -56,6 +56,14 @@
   .editor-area__inner { padding: 16px; }
 
   .content-area { overflow-x: hidden; }
+
+  .header { padding: 0 8px; }
+  .header__right { gap: 4px; }
+  .header__publish-btn span { display: none; }
+
+  .zw-mode-switcher { gap: 2px; }
+  .zw-mode-tab span { display: none; }
+  .zw-mode-tab { padding: 4px 8px; }
 }
 
 @media (max-width: 480px) {
