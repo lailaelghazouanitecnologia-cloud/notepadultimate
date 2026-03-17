@@ -37,10 +37,9 @@ export function Header({
       {/* LEFT: sidebar toggle + mode switcher (always) + optional title */}
       <div className="header__left">
         <button
-          className={`header__icon-btn ${sidebarCollapsed ? '' : 'header__icon-btn--hidden'}`}
+          className={`zw-sb-toggle ${sidebarCollapsed ? '' : 'hidden'}`}
           onClick={() => setSidebarCollapsed(false)}
           title="Open sidebar"
-          tabIndex={sidebarCollapsed ? 0 : -1}
         >
           {Icons.menu()}
         </button>

@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
-import type { Project, Note, Folder } from '../types'
-import type { View } from '../contexts/UIContext'
+import type { Project, Note } from '../types'
+import type { View, ChatSession } from '../contexts/UIContext'
 import { ZarnettiLogo, Identicon, Icons } from '../lib/icons'
-import { SidebarFiles } from './SidebarFiles'
 
 interface SidebarProps {
   projects: Project[]
@@ -21,29 +20,24 @@ interface SidebarProps {
   onOpenAgents?: () => void
   onOpenContracts?: () => void
   onOpenPlugins?: () => void
-  // Workspace (files)
+  // Chat sidebar
+  chatSessions?: ChatSession[]
+  activeChatId?: string | null
+  onNewChat?: () => void
+  onOpenChat?: (id: string) => void
+  // Graph sidebar
   notes?: Note[]
-  folders?: Folder[]
-  activeNoteId?: string | null
   onOpenNote?: (id: string) => void
-  onAddNote?: (folderId?: string) => void
-  onDeleteNote?: (id: string) => void
-  onRenameNote?: (id: string, newTitle: string) => void
-  onDuplicateNote?: (id: string) => void
-  onCreateFolder?: (name: string, parentId?: string) => void
-  onDeleteFolder?: (id: string) => void
-  onRenameFolder?: (id: string, newName: string) => void
 }
 
 export function Sidebar({
   projects, activeProjectId, onSwitchProject, onCreateProject,
-  collapsed, onToggleCollapse, width,
+  collapsed, width,
   theme, onToggleTheme,
   view, onNavigate, onPost, unreadAlerts,
   onOpenAgents, onOpenContracts, onOpenPlugins,
-  notes = [], folders = [], activeNoteId, onOpenNote,
-  onAddNote, onDeleteNote, onRenameNote, onDuplicateNote,
-  onCreateFolder, onDeleteFolder, onRenameFolder,
+  chatSessions = [], activeChatId, onNewChat, onOpenChat,
+  notes = [], onOpenNote,
 }: SidebarProps) {
   const [showAvatarMenu, setShowAvatarMenu] = useState(false)
   const avatarRef = useRef<HTMLDivElement>(null)
@@ -61,102 +55,128 @@ export function Sidebar({
     return () => document.removeEventListener('mousedown', handler)
   }, [showAvatarMenu])
 
-  const showNav = view === 'feed' || view === 'agents' || view === 'plugins'
-  const showWorkspace = view === 'chat' || view === 'graph'
-
   return (
     <aside className={`zw-sb ${collapsed ? 'collapsed' : ''}`} style={!collapsed && width ? { width } : undefined}>
-      {/* Logo + collapse */}
+      {/* Logo */}
       <div className="zw-sb-logo">
         <ZarnettiLogo className="zw-sb-logo__icon" />
-        <button
-          className="zw-sb-collapse-btn"
-          onClick={onToggleCollapse}
-          title="Close sidebar"
-        >
-          {Icons.panelLeftClose()}
-        </button>
       </div>
 
-      {/* ── Nav: feed, agents, plugins views ── */}
-      {showNav && (
-        <>
-          <nav className="zw-sb-nav">
-            <button
-              className={`zw-sb-nav-item ${view === 'feed' ? 'active' : ''}`}
-              onClick={() => onNavigate?.('feed')}
-            >
-              {Icons.rss()}
-              <span>Home</span>
-            </button>
-            <button className="zw-sb-nav-item">
-              {Icons.search()}
-              <span>Explore</span>
-            </button>
-            <button className="zw-sb-nav-item">
-              {Icons.bell()}
-              <span>Notifications</span>
-              {unreadAlerts != null && unreadAlerts > 0 && (
-                <span className="zw-sb-nav-badge">{unreadAlerts}</span>
-              )}
-            </button>
-            <button
-              className="zw-sb-nav-item"
-              onClick={() => onNavigate?.('chat')}
-            >
-              {Icons.messageCircle()}
-              <span>Messages</span>
-            </button>
-            <button
-              className={`zw-sb-nav-item ${view === 'agents' ? 'active' : ''}`}
-              onClick={onOpenAgents}
-            >
-              {Icons.users()}
-              <span>Agents</span>
-            </button>
-            <button
-              className="zw-sb-nav-item"
-              onClick={onOpenContracts}
-            >
-              {Icons.file()}
-              <span>Contracts</span>
-            </button>
-            <button
-              className={`zw-sb-nav-item ${view === 'plugins' ? 'active' : ''}`}
-              onClick={onOpenPlugins}
-            >
-              {Icons.puzzle()}
-              <span>Plugins</span>
-            </button>
-          </nav>
+      {/* Navigation — always visible */}
+      <nav className="zw-sb-nav">
+        <button
+          className={`zw-sb-nav-item ${view === 'feed' ? 'active' : ''}`}
+          onClick={() => onNavigate?.('feed')}
+        >
+          {Icons.rss()}
+          <span>Home</span>
+        </button>
+        <button className="zw-sb-nav-item">
+          {Icons.search()}
+          <span>Explore</span>
+        </button>
+        <button className="zw-sb-nav-item">
+          {Icons.bell()}
+          <span>Notifications</span>
+          {unreadAlerts != null && unreadAlerts > 0 && (
+            <span className="zw-sb-nav-badge">{unreadAlerts}</span>
+          )}
+        </button>
+        <button
+          className={`zw-sb-nav-item ${view === 'chat' ? 'active' : ''}`}
+          onClick={() => onNavigate?.('chat')}
+        >
+          {Icons.messageCircle()}
+          <span>Messages</span>
+        </button>
+        <button
+          className={`zw-sb-nav-item ${view === 'agents' ? 'active' : ''}`}
+          onClick={onOpenAgents}
+        >
+          {Icons.users()}
+          <span>Agents</span>
+          {unreadAlerts != null && unreadAlerts > 0 && (
+            <span className="zw-sb-nav-badge">{unreadAlerts}</span>
+          )}
+        </button>
+        <button
+          className="zw-sb-nav-item"
+          onClick={onOpenContracts}
+        >
+          {Icons.file()}
+          <span>Contracts</span>
+        </button>
+        <button
+          className={`zw-sb-nav-item ${view === 'plugins' ? 'active' : ''}`}
+          onClick={onOpenPlugins}
+        >
+          {Icons.puzzle()}
+          <span>Plugins</span>
+        </button>
+      </nav>
 
-          {/* Post button */}
-          <button className="zw-sb-post-btn" onClick={onPost}>
-            {Icons.edit()}
-            <span>Post</span>
-          </button>
-        </>
+      {/* Post button */}
+      <button className="zw-sb-post-btn" onClick={onPost}>
+        {Icons.edit()}
+        <span>Post</span>
+      </button>
+
+      {/* ── Contextual panel per view ── */}
+      {view === 'chat' && (
+        <div className="zw-sb-panel">
+          <div className="zw-sb-panel__header">
+            <span className="zw-sb-panel__title">Conversations</span>
+            <button className="zw-sb-panel__action" onClick={onNewChat} title="New chat">
+              {Icons.plus()}
+            </button>
+          </div>
+          <div className="zw-sb-panel__list">
+            {chatSessions.length === 0 ? (
+              <div className="zw-sb-panel__empty">No conversations yet</div>
+            ) : chatSessions.map(s => (
+              <button
+                key={s.id}
+                className={`zw-sb-panel__item ${s.id === activeChatId ? 'active' : ''}`}
+                onClick={() => onOpenChat?.(s.id)}
+              >
+                {Icons.messageCircle()}
+                <div className="zw-sb-panel__item-info">
+                  <span className="zw-sb-panel__item-title">{s.title}</span>
+                  <span className="zw-sb-panel__item-meta">{s.messages.length} messages</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
-      {/* ── Workspace: chat, graph views ── */}
-      {showWorkspace && onAddNote && onDeleteNote && onRenameNote && onCreateFolder && onDeleteFolder && (
-        <SidebarFiles
-          notes={notes}
-          activeId={activeNoteId || null}
-          onSelect={onOpenNote || (() => {})}
-          onAdd={onAddNote}
-          onDelete={onDeleteNote}
-          onRename={onRenameNote}
-          onDuplicate={onDuplicateNote}
-          folders={folders}
-          onCreateFolder={onCreateFolder}
-          onDeleteFolder={onDeleteFolder}
-          onRenameFolder={onRenameFolder}
-        />
+      {view === 'graph' && (
+        <div className="zw-sb-panel">
+          <div className="zw-sb-panel__header">
+            <span className="zw-sb-panel__title">Notes</span>
+            <span className="zw-sb-panel__count">{notes.length}</span>
+          </div>
+          <div className="zw-sb-panel__list">
+            {notes.length === 0 ? (
+              <div className="zw-sb-panel__empty">No notes yet</div>
+            ) : notes.slice(0, 30).map(n => (
+              <button
+                key={n.id}
+                className="zw-sb-panel__item"
+                onClick={() => onOpenNote?.(n.id)}
+              >
+                {Icons.file()}
+                <div className="zw-sb-panel__item-info">
+                  <span className="zw-sb-panel__item-title">{n.title || 'Untitled'}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
-      {/* Spacer — only when nav is shown (workspace fills its own space) */}
-      {!showWorkspace && <div className="zw-sb-spacer" />}
+      {/* Spacer */}
+      <div className="zw-sb-spacer" />
 
       {/* Account row */}
       <div className="zw-sb-account" ref={avatarRef}>

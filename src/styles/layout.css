@@ -16,7 +16,8 @@
   transition: opacity 0.15s;
 }
 .app-divider:hover::after { opacity: 0.5; }
-.app-main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.app-main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; transition: padding-left 0.15s ease; }
+.zw-sb.collapsed ~ .app-main { padding-left: 8px; }
 
 /* ── Header ── adapts per page */
 .header {
@@ -26,6 +27,16 @@
   border-bottom: 1px solid var(--border);
 }
 .header--no-border { border-bottom: none; }
+
+/* Sidebar toggle button (in header) */
+.zw-sb-toggle {
+  width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+  border: none; background: transparent; color: var(--muted-foreground); border-radius: 5px;
+  cursor: pointer; transition: all 0.12s ease;
+}
+.zw-sb-toggle.hidden { visibility: hidden; pointer-events: none; }
+.zw-sb-toggle:hover { background: var(--hover-light); color: var(--foreground); }
+.zw-sb-toggle svg { width: 16px; height: 16px; }
 
 .header__left { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .header__title {
