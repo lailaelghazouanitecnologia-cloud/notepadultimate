@@ -1,4 +1,4 @@
-import { useCallback, useState, memo } from 'react'
+import { useCallback, useState, useMemo, memo } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { Editor } from './components/Editor'
 import { HomeScreen } from './components/HomeScreen'
@@ -17,6 +17,7 @@ import { useNotesContext } from './contexts/NotesContext'
 import { useAgentsContext } from './contexts/AgentsContext'
 import { useProjectContext } from './contexts/ProjectContext'
 import { useUIContext } from './contexts/UIContext'
+import { useSocialContext } from './contexts/SocialContext'
 
 const MemoizedSidebar = memo(Sidebar)
 const MemoizedEditor = memo(Editor)
@@ -37,7 +38,7 @@ export default function App() {
     createAgent, deleteAgent, markAlertRead,
     createContract, deleteContract, getProjectContracts,
   } = useAgentsContext()
-  const { projects, activeProjectId, systemEvents, switchProject, createProject } = useProjectContext()
+  const { projects, activeProjectId, activeProject, systemEvents, switchProject, createProject } = useProjectContext()
   const {
     view, setView,
     sidebarCollapsed, toggleSidebar, setSidebarCollapsed,
@@ -49,6 +50,10 @@ export default function App() {
     showHistory, setShowHistory,
     saveChat, newChat, openChat,
   } = useUIContext()
+  const {
+    isFollowing, followUser, unfollowUser,
+    getFollowedAgents, getSuggestedAgents,
+  } = useSocialContext()
 
   const [showPlugins, setShowPlugins] = useState(false)
   const [showPublishModal, setShowPublishModal] = useState(false)
@@ -57,6 +62,11 @@ export default function App() {
   const [attachedFiles, setAttachedFiles] = useState<{ id: string; title: string }[]>([])
 
   const handleDividerMouseDown = useResizable(sidebarWidth, setSidebarWidth, { min: 180, max: 480 })
+
+  // Social data
+  const followedAgents = useMemo(() => getFollowedAgents(agents), [getFollowedAgents, agents])
+  const suggestedAgents = useMemo(() => getSuggestedAgents(agents), [getSuggestedAgents, agents])
+  const followedAgentIds = useMemo(() => new Set(followedAgents.map(a => a.id)), [followedAgents])
 
   // Handle file drop from sidebar into chat
   const handleFileDrop = useCallback((e: React.DragEvent) => {
@@ -188,6 +198,18 @@ export default function App() {
         onNavigate={(v) => { setView(v); setEditingNoteId(null); setPluginPanel(null); setProfileAgentId(null) }}
         onPost={() => { setView('feed'); setEditingNoteId(null); setPluginPanel(null); setProfileAgentId(null) }}
         unreadAlerts={unreadAlerts}
+        agents={agents}
+        followedAgents={followedAgents}
+        suggestedAgents={suggestedAgents}
+        isFollowing={isFollowing}
+        onFollow={followUser}
+        onUnfollow={unfollowUser}
+        onOpenProfile={handleOpenProfile}
+        chatSessions={chatSessions}
+        activeChatId={activeChatId}
+        onNewChat={newChat}
+        onOpenChat={openChat}
+        showEditor={showEditor}
       />
 
       {/* Resizable divider */}
@@ -267,6 +289,12 @@ export default function App() {
             onOpenNote={handleOpenNote}
             onOpenProfile={handleOpenProfile}
             onCreatePost={handleCreatePost}
+            isFollowing={isFollowing}
+            onFollow={followUser}
+            onUnfollow={unfollowUser}
+            followedAgentIds={followedAgentIds}
+            activeSpaceId={activeProjectId}
+            activeSpaceName={activeProject?.name}
           />
         ) : view === 'chat' ? (
           <div className="content-area" style={{ flexDirection: 'row' }}>
@@ -282,32 +310,6 @@ export default function App() {
               onFileDrop={handleFileDrop}
               key={activeChatId || 'new'}
             />
-            {showHistory && (
-              <div className="chat-history-panel">
-                <div className="chat-history-panel__header">
-                  <span className="chat-history-panel__title">History</span>
-                  <button className="chat-history-panel__new" onClick={newChat}>
-                    {Icons.plus()}
-                    <span>New</span>
-                  </button>
-                </div>
-                <div className="chat-history-panel__list">
-                  {chatSessions.length === 0 && (
-                    <div className="chat-history-panel__empty">No conversations yet</div>
-                  )}
-                  {chatSessions.map((session) => (
-                    <button
-                      key={session.id}
-                      className={`chat-history-panel__item ${activeChatId === session.id ? 'active' : ''}`}
-                      onClick={() => openChat(session.id)}
-                    >
-                      <div className="chat-history-panel__item-title">{session.title || 'Untitled chat'}</div>
-                      <div className="chat-history-panel__item-meta">{session.messages.length} msgs</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         ) : view === 'graph' ? (
           <MemoizedGraphView notes={notes} onOpenNote={handleOpenNote} onCreateNote={handleCreateFromChat} />

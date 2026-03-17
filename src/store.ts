@@ -1,4 +1,4 @@
-import type { Note, Agent, Alert, Project, Contract, Folder, SystemEvent } from './types'
+import type { Note, Agent, Alert, Project, Contract, Folder, SystemEvent, Follow, SpaceInvite, UserProfile } from './types'
 
 const STORAGE_KEY = 'zarnetti-notes'
 const PUBLISHED_KEY = 'zarnetti-published'
@@ -118,13 +118,13 @@ export function loadProjects(): Project[] {
     const raw = localStorage.getItem(PROJECTS_KEY)
     const projects: Project[] = raw ? JSON.parse(raw) : []
     if (projects.length === 0) {
-      const def: Project = { id: 'default', name: 'Zarnetti', emoji: '📁', createdAt: Date.now() }
+      const def: Project = { id: 'default', name: 'Zarnetti', emoji: '📁', createdAt: Date.now(), isGlobal: true }
       localStorage.setItem(PROJECTS_KEY, JSON.stringify([def]))
       return [def]
     }
     return projects
   } catch {
-    return [{ id: 'default', name: 'Zarnetti', emoji: '📁', createdAt: Date.now() }]
+    return [{ id: 'default', name: 'Zarnetti', emoji: '📁', createdAt: Date.now(), isGlobal: true }]
   }
 }
 
@@ -343,4 +343,68 @@ export function addSystemEvent(type: SystemEvent['type'], message: string, detai
   events.push(event)
   saveSystemEvents(events)
   return event
+}
+
+// ── Follows (social) ──
+const FOLLOWS_KEY = 'zarnetti-follows'
+
+export function loadFollows(): Follow[] {
+  try {
+    const raw = localStorage.getItem(FOLLOWS_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+export function saveFollows(follows: Follow[]): void {
+  localStorage.setItem(FOLLOWS_KEY, JSON.stringify(follows))
+}
+
+export function addFollow(followerId: string, followingId: string): Follow {
+  const follow: Follow = { followerId, followingId, createdAt: Date.now() }
+  const all = loadFollows().filter(f => !(f.followerId === followerId && f.followingId === followingId))
+  all.push(follow)
+  saveFollows(all)
+  return follow
+}
+
+export function removeFollow(followerId: string, followingId: string): void {
+  const all = loadFollows().filter(f => !(f.followerId === followerId && f.followingId === followingId))
+  saveFollows(all)
+}
+
+// ── Space invites ──
+const INVITES_KEY = 'zarnetti-invites'
+
+export function loadInvites(): SpaceInvite[] {
+  try {
+    const raw = localStorage.getItem(INVITES_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+export function saveInvites(invites: SpaceInvite[]): void {
+  localStorage.setItem(INVITES_KEY, JSON.stringify(invites))
+}
+
+// ── User profile ──
+const PROFILE_KEY = 'zarnetti-profile'
+
+const DEFAULT_PROFILE: UserProfile = {
+  id: 'user-self',
+  name: 'User',
+  handle: '@user',
+  avatar: '',
+  bio: '',
+  createdAt: Date.now(),
+}
+
+export function loadProfile(): UserProfile {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY)
+    return raw ? JSON.parse(raw) : DEFAULT_PROFILE
+  } catch { return DEFAULT_PROFILE }
+}
+
+export function saveProfile(profile: UserProfile): void {
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
 }

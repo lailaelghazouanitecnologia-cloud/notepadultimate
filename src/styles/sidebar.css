@@ -50,10 +50,10 @@
 .zw-sb-post-btn:active { transform: scale(0.98); }
 .zw-sb-post-btn svg { width: 16px; height: 16px; }
 
-/* Files panel (expandable within sidebar) */
-.zw-sb-files-panel {
+/* Files panel (within sidebar) */
+.zw-sb-files-panel,
+.sb-panel--files {
   display: flex; flex-direction: column; flex: 1; min-height: 0;
-  margin-top: 4px; border-top: 1px solid var(--border); padding-top: 4px;
 }
 .zw-sb-files-scroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; }
 

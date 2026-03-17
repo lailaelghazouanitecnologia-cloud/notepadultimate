@@ -7,6 +7,7 @@ import { NotesProvider, useNotesContext } from './contexts/NotesContext'
 import { AgentsProvider } from './contexts/AgentsContext'
 import { ProjectProvider } from './contexts/ProjectContext'
 import { UIProvider } from './contexts/UIContext'
+import { SocialProvider } from './contexts/SocialContext'
 import { ErrorBoundary } from './components/ErrorBoundary'
 
 // Bridge component to pass publishedNotes from NotesContext to AgentsProvider
@@ -26,9 +27,11 @@ createRoot(document.getElementById('root')!).render(
         <NotesProvider>
           <AgentsBridge>
             <ProjectProvider>
-              <UIProvider>
-                <App />
-              </UIProvider>
+              <SocialProvider>
+                <UIProvider>
+                  <App />
+                </UIProvider>
+              </SocialProvider>
             </ProjectProvider>
           </AgentsBridge>
         </NotesProvider>

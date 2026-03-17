@@ -1,0 +1,186 @@
+/* ═══════════════════════════════════════════════════
+   SOCIAL — follows, sidebar panels, follow button
+   ═══════════════════════════════════════════════════ */
+
+/* ── Space indicator ── */
+.sb-space-indicator {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 12px 8px; flex-shrink: 0;
+  font-family: var(--font-sans);
+}
+.sb-space-indicator__emoji { font-size: 14px; }
+.sb-space-indicator__name {
+  font-size: 12px; font-weight: 600; color: var(--foreground);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ── Sidebar panel container ── */
+.sb-panel-container {
+  flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden;
+}
+.sb-panel { display: flex; flex-direction: column; gap: 4px; }
+
+/* ── Sections ── */
+.sb-section { padding: 0; }
+.sb-section__header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px 4px; flex-shrink: 0;
+}
+.sb-section__title {
+  font-size: 10px; font-weight: 600; color: var(--muted-foreground);
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.sb-section__action {
+  width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+  border: none; background: transparent; color: var(--muted-foreground);
+  border-radius: 4px; cursor: pointer; transition: all 0.12s ease;
+}
+.sb-section__action:hover { background: var(--hover-light); color: var(--foreground); }
+.sb-section__action svg { width: 12px; height: 12px; }
+.sb-section__list { display: flex; flex-direction: column; }
+
+/* ── Profile mini (Feed sidebar) ── */
+.sb-profile-mini {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 12px; border-bottom: 1px solid var(--border);
+}
+.sb-profile-mini__avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  overflow: hidden; background: var(--hover-medium);
+}
+.sb-profile-mini__avatar-img { width: 100%; height: 100%; display: block; }
+.sb-profile-mini__info { display: flex; flex-direction: column; gap: 1px; }
+.sb-profile-mini__name {
+  font-size: 13px; font-weight: 600; color: var(--foreground);
+  font-family: var(--font-sans);
+}
+.sb-profile-mini__handle {
+  font-size: 11px; color: var(--muted-foreground);
+  font-family: var(--font-sans);
+}
+.sb-profile-mini__stats {
+  font-size: 11px; color: var(--muted-foreground);
+  font-family: var(--font-sans);
+}
+.sb-profile-mini__stats strong {
+  color: var(--foreground); font-weight: 600;
+}
+
+/* ── User row (used in feed sidebar, suggestions) ── */
+.sb-user-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px; cursor: pointer;
+  border: none; background: transparent; width: 100%; text-align: left;
+  transition: background 80ms; font-family: var(--font-sans);
+}
+.sb-user-row:hover { background: var(--hover-light); }
+.sb-user-row__avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--accent); display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+.sb-user-row__info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.sb-user-row__name {
+  font-size: 12px; font-weight: 500; color: var(--foreground);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sb-user-row__handle { font-size: 10px; color: var(--muted-foreground); }
+
+/* ── Trending item (sidebar) ── */
+.sb-trending-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 12px; cursor: pointer;
+  transition: background 80ms;
+}
+.sb-trending-item:hover { background: var(--hover-light); }
+.sb-trending-item__rank {
+  width: 14px; font-size: 10px; font-weight: 500;
+  color: var(--muted-foreground); text-align: right; flex-shrink: 0;
+  font-variant-numeric: tabular-nums; font-family: var(--font-sans);
+}
+.sb-trending-item__info { display: flex; flex-direction: column; gap: 1px; }
+.sb-trending-item__topic {
+  font-size: 12px; font-weight: 500; color: var(--foreground);
+  font-family: var(--font-sans);
+}
+.sb-trending-item__count {
+  font-size: 10px; color: var(--muted-foreground);
+  font-family: var(--font-sans);
+}
+
+/* ── Chat sidebar items ── */
+.sb-chat-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; cursor: pointer;
+  border: none; background: transparent; width: 100%; text-align: left;
+  transition: background 80ms; font-family: var(--font-sans);
+  border-radius: 4px;
+}
+.sb-chat-item:hover { background: var(--hover-light); }
+.sb-chat-item.active { background: var(--hover-medium); }
+.sb-chat-item__icon {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--accent); display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.sb-chat-item__icon svg { width: 14px; height: 14px; color: var(--muted-foreground); }
+.sb-chat-item__info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.sb-chat-item__title {
+  font-size: 12px; font-weight: 500; color: var(--foreground);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sb-chat-item__meta { font-size: 10px; color: var(--muted-foreground); }
+
+/* ── Empty state (sidebar) ── */
+.sb-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 24px 12px; text-align: center;
+}
+.sb-empty__text {
+  font-size: 11px; color: var(--muted-foreground);
+  font-family: var(--font-sans);
+}
+.sb-empty__btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 6px 12px; border: 1px solid var(--border);
+  background: transparent; color: var(--foreground);
+  font-size: 11px; font-family: var(--font-sans);
+  border-radius: 6px; cursor: pointer;
+  transition: all 120ms;
+}
+.sb-empty__btn:hover { background: var(--hover-light); }
+.sb-empty__btn svg { width: 12px; height: 12px; }
+
+/* ── Follow button ── */
+.follow-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border); border-radius: 18px;
+  font-family: var(--font-sans); font-weight: 600;
+  cursor: pointer; transition: all 120ms;
+  white-space: nowrap; flex-shrink: 0;
+}
+
+.follow-btn--sm {
+  height: 26px; padding: 0 12px; font-size: 11px;
+}
+.follow-btn--md {
+  height: 32px; padding: 0 16px; font-size: 13px;
+}
+
+/* Not following → dark filled button */
+.follow-btn:not(.follow-btn--following) {
+  background: var(--foreground); color: var(--background);
+  border-color: var(--foreground);
+}
+.follow-btn:not(.follow-btn--following):hover {
+  opacity: 0.85;
+}
+
+/* Following → outlined */
+.follow-btn--following {
+  background: transparent; color: var(--foreground);
+  border-color: var(--border);
+}
+.follow-btn--following:hover {
+  border-color: var(--destructive); color: var(--destructive);
+}

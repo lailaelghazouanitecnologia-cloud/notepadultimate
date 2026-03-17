@@ -56,6 +56,39 @@ export interface Project {
   name: string
   emoji: string
   createdAt: number
+  ownerId?: string
+  members?: SpaceMember[]
+  isGlobal?: boolean  // true for the "Zarnetti" global space
+}
+
+export interface SpaceMember {
+  userId: string
+  role: 'owner' | 'member'
+  joinedAt: number
+}
+
+export interface SpaceInvite {
+  id: string
+  spaceId: string
+  invitedHandle: string
+  invitedBy: string
+  status: 'pending' | 'accepted' | 'declined'
+  createdAt: number
+}
+
+export interface UserProfile {
+  id: string
+  name: string
+  handle: string
+  avatar: string
+  bio: string
+  createdAt: number
+}
+
+export interface Follow {
+  followerId: string
+  followingId: string
+  createdAt: number
 }
 
 export interface Contract {

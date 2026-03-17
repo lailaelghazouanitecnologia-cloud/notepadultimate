@@ -1,7 +1,10 @@
 import { useMemo, useState, useCallback, useRef } from 'react'
 import type { Note, Agent, SystemEvent } from '../types'
 import { Icons, Identicon } from '../lib/icons'
+import { FollowButton } from './FollowButton'
 import { detectFiles, extractImages } from '../lib/markdown'
+
+type FeedFilter = 'global' | 'following' | 'space'
 
 interface FeedViewProps {
   publishedNotes: Note[]
@@ -10,6 +13,13 @@ interface FeedViewProps {
   onOpenNote: (noteId: string) => void
   onOpenProfile: (agentId: string) => void
   onCreatePost?: (content: string) => void
+  // Social
+  isFollowing?: (id: string) => boolean
+  onFollow?: (id: string) => void
+  onUnfollow?: (id: string) => void
+  followedAgentIds?: Set<string>
+  activeSpaceId?: string
+  activeSpaceName?: string
 }
 
 function formatRelative(ts: number): string {
@@ -50,9 +60,13 @@ function stripImages(text: string): string {
   return text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '').trim()
 }
 
-export function FeedView({ publishedNotes, agents, systemEvents, onOpenNote, onOpenProfile, onCreatePost }: FeedViewProps) {
+export function FeedView({
+  publishedNotes, agents, systemEvents, onOpenNote, onOpenProfile, onCreatePost,
+  isFollowing, onFollow, onUnfollow, followedAgentIds, activeSpaceId, activeSpaceName,
+}: FeedViewProps) {
   const [composerText, setComposerText] = useState('')
   const composerRef = useRef<HTMLTextAreaElement>(null)
+  const [feedFilter, setFeedFilter] = useState<FeedFilter>('global')
 
   const handlePost = useCallback(() => {
     const text = composerText.trim()
@@ -74,13 +88,22 @@ export function FeedView({ publishedNotes, agents, systemEvents, onOpenNote, onO
     | { kind: 'post'; note: Note; ts: number }
     | { kind: 'system'; event: SystemEvent; ts: number }
 
+  // Filter posts based on selected feed filter
+  const filteredNotes = useMemo(() => {
+    if (feedFilter === 'following' && followedAgentIds) {
+      return publishedNotes.filter(n => n.authorId && followedAgentIds.has(n.authorId))
+    }
+    // 'global' and 'space' show all for now
+    return publishedNotes
+  }, [publishedNotes, feedFilter, followedAgentIds])
+
   const timeline = useMemo(() => {
     const items: TimelineItem[] = [
-      ...publishedNotes.map((note) => ({ kind: 'post' as const, note, ts: note.updatedAt })),
-      ...systemEvents.map((event) => ({ kind: 'system' as const, event, ts: event.createdAt })),
+      ...filteredNotes.map((note) => ({ kind: 'post' as const, note, ts: note.updatedAt })),
+      ...(feedFilter === 'global' ? systemEvents.map((event) => ({ kind: 'system' as const, event, ts: event.createdAt })) : []),
     ]
     return items.sort((a, b) => b.ts - a.ts)
-  }, [publishedNotes, systemEvents])
+  }, [filteredNotes, systemEvents, feedFilter])
 
   const agentMap = useMemo(() => {
     const map = new Map<string, Agent>()
@@ -111,6 +134,30 @@ export function FeedView({ publishedNotes, agents, systemEvents, onOpenNote, onO
         <div className="feed-layout">
           {/* Timeline */}
           <div className="feed-timeline">
+            {/* Feed filter tabs */}
+            <div className="feed-tabs">
+              <button
+                className={`feed-tab ${feedFilter === 'global' ? 'active' : ''}`}
+                onClick={() => setFeedFilter('global')}
+              >
+                Global
+              </button>
+              <button
+                className={`feed-tab ${feedFilter === 'following' ? 'active' : ''}`}
+                onClick={() => setFeedFilter('following')}
+              >
+                Following
+              </button>
+              {activeSpaceId && activeSpaceId !== 'default' && (
+                <button
+                  className={`feed-tab ${feedFilter === 'space' ? 'active' : ''}`}
+                  onClick={() => setFeedFilter('space')}
+                >
+                  {activeSpaceName || 'Space'}
+                </button>
+              )}
+            </div>
+
             {/* Composer */}
             <div className="feed-composer">
               <div className="feed-composer__body">
@@ -318,13 +365,19 @@ export function FeedView({ publishedNotes, agents, systemEvents, onOpenNote, onO
                   <div
                     key={agent.id}
                     className="feed-suggestion"
-                    onClick={() => onOpenProfile(agent.id)}
                   >
-                    <div className="feed-suggestion__avatar">{agent.avatar}</div>
-                    <div className="feed-suggestion__info">
+                    <div className="feed-suggestion__avatar" onClick={() => onOpenProfile(agent.id)} style={{ cursor: 'pointer' }}>{agent.avatar}</div>
+                    <div className="feed-suggestion__info" onClick={() => onOpenProfile(agent.id)} style={{ cursor: 'pointer' }}>
                       <span className="feed-suggestion__name">{agent.name}</span>
                       <span className="feed-suggestion__handle">{agent.handle}</span>
                     </div>
+                    {isFollowing && onFollow && onUnfollow && (
+                      <FollowButton
+                        isFollowing={isFollowing(agent.id)}
+                        onFollow={() => onFollow(agent.id)}
+                        onUnfollow={() => onUnfollow(agent.id)}
+                      />
+                    )}
                   </div>
                 ))}
                 <button className="feed-card__more">Show more</button>
