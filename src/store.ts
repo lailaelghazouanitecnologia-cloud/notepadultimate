@@ -234,12 +234,23 @@ export function saveAlerts(alerts: Alert[]): void {
 // ── Folders ──
 const FOLDERS_KEY = 'zarnetti-folders'
 
+const DEFAULT_FOLDERS: Folder[] = [
+  { id: 'folder-workspace', name: 'workspace', createdAt: Date.now() },
+  { id: 'folder-chat', name: 'chat', createdAt: Date.now() },
+  { id: 'folder-graph', name: 'graph', createdAt: Date.now() },
+]
+
 export function loadFolders(): Folder[] {
   try {
     const raw = localStorage.getItem(FOLDERS_KEY)
-    return raw ? JSON.parse(raw) : []
+    const folders: Folder[] = raw ? JSON.parse(raw) : []
+    if (folders.length === 0) {
+      saveFolders(DEFAULT_FOLDERS)
+      return [...DEFAULT_FOLDERS]
+    }
+    return folders
   } catch {
-    return []
+    return [...DEFAULT_FOLDERS]
   }
 }
 

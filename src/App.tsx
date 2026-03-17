@@ -47,6 +47,7 @@ export default function App() {
     openTabs, openTab, closeTab,
     profileAgentId, setProfileAgentId,
     chatSessions, activeChatId,
+    showHistory, setShowHistory,
     saveChat, newChat, openChat,
   } = useUIContext()
   const {
@@ -65,6 +66,20 @@ export default function App() {
   const followedAgents = useMemo(() => getFollowedAgents(agents), [getFollowedAgents, agents])
   const suggestedAgents = useMemo(() => getSuggestedAgents(agents), [getSuggestedAgents, agents])
   const followedAgentIds = useMemo(() => new Set(followedAgents.map(a => a.id)), [followedAgents])
+
+  // Trending for sidebar
+  const trending = useMemo(() => {
+    const counts = new Map<string, number>()
+    agents.forEach((a) => {
+      a.interests.forEach((i) => {
+        counts.set(i, (counts.get(i) || 0) + 1)
+      })
+    })
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([topic, count]) => ({ topic, count }))
+  }, [agents])
 
   // Handle file drop from sidebar into chat
   const handleFileDrop = useCallback((e: React.DragEvent) => {
@@ -109,16 +124,11 @@ export default function App() {
     else { const note = addNote(); updateNote(note.id, { title }); openNoteInEditor(note.id) }
   }, [notes, addNote, updateNote, openNoteInEditor])
 
-  const handleSidebarSelect = useCallback((id: string) => { openNoteInEditor(id) }, [openNoteInEditor])
   const handleAddNote = useCallback((folderId?: string) => {
     const note = addNote()
     if (folderId) updateNote(note.id, { folderId })
     openNoteInEditor(note.id)
   }, [addNote, updateNote, openNoteInEditor])
-
-  const handleMoveNote = useCallback((noteId: string, folderId?: string) => {
-    updateNote(noteId, { folderId })
-  }, [updateNote])
 
   const handleRenameNote = useCallback((id: string, newTitle: string) => {
     updateNote(id, { title: newTitle })
@@ -192,7 +202,23 @@ export default function App() {
         onNewChat={newChat}
         onOpenChat={openChat}
         notes={notes}
+        folders={folders}
+        activeNoteId={activeId}
         onOpenNote={handleOpenNote}
+        onAddNote={handleAddNote}
+        onDeleteNote={deleteNote}
+        onRenameNote={handleRenameNote}
+        onDuplicateNote={handleDuplicateNote}
+        onCreateFolder={createFolder}
+        onDeleteFolder={deleteFolder}
+        agents={agents}
+        followedAgents={followedAgents}
+        suggestedAgents={suggestedAgents}
+        isFollowing={isFollowing}
+        onFollow={followUser}
+        onUnfollow={unfollowUser}
+        onOpenProfile={handleOpenProfile}
+        trending={trending}
       />
 
       {/* Resizable divider */}
@@ -205,11 +231,14 @@ export default function App() {
           sidebarCollapsed={sidebarCollapsed}
           setSidebarCollapsed={setSidebarCollapsed}
           view={view}
+          setView={(v) => { setView(v); setEditingNoteId(null); setProfileAgentId(null) }}
           showEditor={showEditor}
           editingNote={editingNote}
           showPeoplePanel={showPeoplePanel}
           setShowPeoplePanel={setShowPeoplePanel}
           onPublish={handlePublish}
+          showHistory={showHistory}
+          onToggleHistory={() => setShowHistory(!showHistory)}
         />
 
         {/* Tabs bar — open files (only in editor) */}

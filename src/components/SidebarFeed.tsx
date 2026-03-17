@@ -1,5 +1,4 @@
 import type { Agent } from '../types'
-import { Icons } from '../lib/icons'
 import { FollowButton } from './FollowButton'
 
 interface SidebarFeedProps {
@@ -19,16 +18,6 @@ export function SidebarFeed({
 }: SidebarFeedProps) {
   return (
     <div className="sb-panel sb-panel--feed">
-      {/* Search */}
-      <div className="sb-search">
-        <span className="sb-search__icon">{Icons.search()}</span>
-        <input
-          type="text"
-          className="sb-search__input"
-          placeholder="Search"
-        />
-      </div>
-
       {/* Trending */}
       {trending.length > 0 && (
         <div className="sb-card">

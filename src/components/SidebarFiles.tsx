@@ -221,7 +221,7 @@ export function SidebarFiles({
     <div className="sb-panel sb-panel--files">
       <div className="sb-section">
         <div className="sb-section__header">
-          <span className="sb-section__title">Files</span>
+          <span className="sb-section__title">Workspace</span>
           <div ref={createMenuRef} style={{ position: 'relative' }}>
             <button className="sb-section__action" onClick={() => setShowCreateMenu(!showCreateMenu)} title="New...">
               {Icons.plus()}

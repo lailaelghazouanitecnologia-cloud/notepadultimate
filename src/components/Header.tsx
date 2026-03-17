@@ -6,42 +6,38 @@ interface HeaderProps {
   sidebarCollapsed: boolean
   setSidebarCollapsed: (v: boolean) => void
   view: View
+  setView: (v: View) => void
   showEditor: boolean
   editingNote: Note | null | undefined
   showPeoplePanel: boolean
   setShowPeoplePanel: (v: boolean) => void
   onPublish: () => void
+  showHistory?: boolean
+  onToggleHistory?: () => void
 }
 
-const PAGE_TITLES: Record<View, string> = {
-  feed: 'Home',
-  chat: 'Messages',
-  graph: 'Graph',
-  agents: 'Agents',
-  plugins: 'Plugins',
-}
+const MODE_TABS: { view: View; label: string }[] = [
+  { view: 'feed', label: 'Feed' },
+  { view: 'chat', label: 'Chat' },
+  { view: 'graph', label: 'Graph' },
+]
 
 // Pages that show search in the right zone
 const SEARCH_VIEWS: View[] = ['feed', 'agents', 'plugins']
-// Pages without border-bottom
-const NO_BORDER_VIEWS: View[] = ['chat', 'graph']
 
 export function Header({
   sidebarCollapsed, setSidebarCollapsed,
-  view,
+  view, setView,
   showEditor, editingNote,
   showPeoplePanel, setShowPeoplePanel,
   onPublish,
+  showHistory, onToggleHistory,
 }: HeaderProps) {
   const showSearch = !showEditor && SEARCH_VIEWS.includes(view)
-  const hasBorder = showEditor || !NO_BORDER_VIEWS.includes(view)
-  const title = showEditor
-    ? (editingNote?.title || 'Untitled')
-    : PAGE_TITLES[view] || ''
 
   return (
-    <header className={`header ${!hasBorder ? 'header--no-border' : ''}`}>
-      {/* LEFT: sidebar toggle + page title */}
+    <header className="header">
+      {/* LEFT: sidebar toggle + mode switcher tabs */}
       <div className="header__left">
         <button
           className={`header__icon-btn ${sidebarCollapsed ? '' : 'header__icon-btn--hidden'}`}
@@ -51,7 +47,35 @@ export function Header({
         >
           {Icons.menu()}
         </button>
-        <h1 className="header__title">{title}</h1>
+
+        {!showEditor && (
+          <div className="header__tabs">
+            {MODE_TABS.map(tab => (
+              <button
+                key={tab.view}
+                className={`header__tab ${view === tab.view ? 'header__tab--active' : ''}`}
+                onClick={() => setView(tab.view)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {showEditor && editingNote && (
+          <h1 className="header__title">{editingNote.title || 'Untitled'}</h1>
+        )}
+
+        {/* History icon — only in chat view */}
+        {!showEditor && view === 'chat' && (
+          <button
+            className={`header__icon-btn header__icon-btn--borderless ${showHistory ? 'active' : ''}`}
+            title="Chat history"
+            onClick={onToggleHistory}
+          >
+            {Icons.clock()}
+          </button>
+        )}
       </div>
 
       {/* RIGHT: search (conditional) + people + publish */}

@@ -25,13 +25,27 @@
   background: var(--background);
   border-bottom: 1px solid var(--border);
 }
-.header--no-border { border-bottom: none; }
-
 .header__left { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .header__title {
   font-size: 16px; font-weight: 700; color: var(--foreground);
   margin: 0; white-space: nowrap; font-family: var(--font-sans);
   letter-spacing: -0.3px;
+}
+
+/* ── Mode switcher tabs ── */
+.header__tabs {
+  display: flex; align-items: center; gap: 2px;
+}
+.header__tab {
+  padding: 5px 14px; border: none; border-radius: 6px;
+  background: transparent; color: var(--muted-foreground);
+  font-size: 13px; font-weight: 500; font-family: var(--font-sans);
+  cursor: pointer; transition: all 0.12s ease;
+  white-space: nowrap;
+}
+.header__tab:hover { background: var(--hover-light); color: var(--foreground); }
+.header__tab--active {
+  background: var(--accent); color: var(--foreground); font-weight: 600;
 }
 
 .header__right {
