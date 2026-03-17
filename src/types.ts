@@ -58,6 +58,24 @@ export interface AgentService {
   endpoints: ServiceEndpoint[]
 }
 
+// ── Direct Messages ──
+
+export interface DirectMessage {
+  id: string
+  conversationId: string
+  sender: 'user' | 'agent'
+  content: string
+  timestamp: number
+}
+
+export interface Conversation {
+  id: string
+  agentId: string
+  messages: DirectMessage[]
+  unread: number
+  updatedAt: number
+}
+
 export interface Alert {
   id: string
   agentId: string

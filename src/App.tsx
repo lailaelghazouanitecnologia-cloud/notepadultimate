@@ -1,7 +1,6 @@
 import { useCallback, useState, useMemo, memo } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { Editor } from './components/Editor'
-import { HomeScreen } from './components/HomeScreen'
 import { FeedView } from './components/FeedView'
 import { GraphView } from './components/GraphView'
 import { AgentsView } from './components/AgentsView'
@@ -9,6 +8,7 @@ import { ProfileView } from './components/ProfileView'
 import { PluginsView } from './components/PluginsView'
 import { WorkspaceOS } from './components/WorkspaceOS'
 import { ExploreView } from './components/ExploreView'
+import { MessagesView } from './components/MessagesView'
 import { Header } from './components/Header'
 import { TabsBar } from './components/TabsBar'
 import { PublishModal } from './components/PublishModal'
@@ -24,13 +24,13 @@ import { useSocialContext } from './contexts/SocialContext'
 const MemoizedSidebar = memo(Sidebar)
 const MemoizedEditor = memo(Editor)
 const MemoizedFeedView = memo(FeedView)
-const MemoizedHomeScreen = memo(HomeScreen)
 const MemoizedGraphView = memo(GraphView)
 const MemoizedAgentsView = memo(AgentsView)
 const MemoizedWorkspaceOS = memo(WorkspaceOS)
 const MemoizedExploreView = memo(ExploreView)
 const MemoizedProfileView = memo(ProfileView)
 const MemoizedPluginsView = memo(PluginsView)
+const MemoizedMessagesView = memo(MessagesView)
 
 export default function App() {
   const { theme, toggleTheme } = useTheme()
@@ -52,9 +52,7 @@ export default function App() {
     editingNoteId, setEditingNoteId,
     openTabs, openTab, closeTab,
     profileAgentId, setProfileAgentId,
-    chatSessions, activeChatId,
     showHistory, setShowHistory,
-    saveChat,
   } = useUIContext()
   const {
     isFollowing, followUser, unfollowUser,
@@ -64,30 +62,11 @@ export default function App() {
   const [showPublishModal, setShowPublishModal] = useState(false)
   const [showPeoplePanel, setShowPeoplePanel] = useState(false)
   const [sidebarWidth, setSidebarWidth] = useState(260)
-  const [attachedFiles, setAttachedFiles] = useState<{ id: string; title: string }[]>([])
-
   const handleDividerMouseDown = useResizable(sidebarWidth, setSidebarWidth, { min: 180, max: 480 })
 
   // Social data
   const followedAgents = useMemo(() => getFollowedAgents(agents), [getFollowedAgents, agents])
   const followedAgentIds = useMemo(() => new Set(followedAgents.map(a => a.id)), [followedAgents])
-
-  // Handle file drop from sidebar into chat
-  const handleFileDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    const noteId = e.dataTransfer.getData('text/note-id')
-    const noteTitle = e.dataTransfer.getData('text/note-title')
-    if (noteId && noteTitle) {
-      setAttachedFiles(prev => {
-        if (prev.some(f => f.id === noteId)) return prev
-        return [...prev, { id: noteId, title: noteTitle }]
-      })
-    }
-  }, [setAttachedFiles])
-
-  const removeAttachedFile = useCallback((id: string) => {
-    setAttachedFiles(prev => prev.filter(f => f.id !== id))
-  }, [setAttachedFiles])
 
   const editingNote = editingNoteId ? notes.find((n) => n.id === editingNoteId) : null
 
@@ -178,7 +157,6 @@ export default function App() {
   }, [deleteNote])
   const tabNotes = openTabs.map((id) => notes.find((n) => n.id === id)).filter(Boolean) as import('./types').Note[]
 
-  const activeSession = activeChatId ? chatSessions.find((s) => s.id === activeChatId) : undefined
   const profileAgent = profileAgentId ? agents.find((a) => a.id === profileAgentId) : undefined
   const showEditor = editingNoteId !== null && editingNote !== undefined && view !== 'workspace'
 
@@ -335,20 +313,10 @@ export default function App() {
             onMoveNoteToFolder={moveNoteToFolder}
           />
         ) : view === 'chat' ? (
-          <div className="content-area" style={{ flexDirection: 'row' }}>
-            <MemoizedHomeScreen
-              notes={notes}
-              publishedNotes={publishedNotes}
-              onCreateNote={handleCreateFromChat}
-              onOpenNote={handleOpenNote}
-              onSaveChat={saveChat}
-              initialSession={activeSession}
-              attachedFiles={attachedFiles}
-              onRemoveAttachedFile={removeAttachedFile}
-              onFileDrop={handleFileDrop}
-              key={activeChatId || 'new'}
-            />
-          </div>
+          <MemoizedMessagesView
+            agents={agents}
+            onOpenProfile={handleOpenProfile}
+          />
         ) : view === 'graph' ? (
           <MemoizedGraphView notes={notes} onOpenNote={handleOpenNote} onCreateNote={handleCreateFromChat} />
         ) : null}
