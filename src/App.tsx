@@ -7,6 +7,7 @@ import { GraphView } from './components/GraphView'
 import { AgentsView } from './components/AgentsView'
 import { ProfileView } from './components/ProfileView'
 import { PluginsView } from './components/PluginsView'
+import { WorkspaceOS } from './components/WorkspaceOS'
 import { Header } from './components/Header'
 import { TabsBar } from './components/TabsBar'
 import { PublishModal } from './components/PublishModal'
@@ -25,6 +26,7 @@ const MemoizedFeedView = memo(FeedView)
 const MemoizedHomeScreen = memo(HomeScreen)
 const MemoizedGraphView = memo(GraphView)
 const MemoizedAgentsView = memo(AgentsView)
+const MemoizedWorkspaceOS = memo(WorkspaceOS)
 const MemoizedProfileView = memo(ProfileView)
 const MemoizedPluginsView = memo(PluginsView)
 
@@ -291,26 +293,15 @@ export default function App() {
             onCreateFolder={createFolder}
           />
         ) : view === 'workspace' ? (
-          <MemoizedFeedView
-            mode="workspace"
-            publishedNotes={publishedNotes}
-            agents={agents}
-            systemEvents={systemEvents}
-            onOpenNote={handleOpenNote}
-            onOpenProfile={handleOpenProfile}
-            onCreatePost={handleCreatePost}
-            isFollowing={isFollowing}
-            onFollow={followUser}
-            onUnfollow={unfollowUser}
-            followedAgentIds={followedAgentIds}
+          <MemoizedWorkspaceOS
             workspaces={workspaces.filter(w => w.spaceId === activeProjectId || w.id === 'ws-default')}
             activeWorkspaceId={activeWorkspaceId}
             onSwitchWorkspace={setActiveWorkspaceId}
             onCreateWorkspace={(name: string) => createWorkspace(name, activeProjectId)}
             notes={notes}
             folders={folders}
+            onOpenNote={handleOpenNote}
             onAddNote={handleAddNote}
-            onDeleteNote={deleteNote}
             onCreateFolder={createFolder}
           />
         ) : view === 'chat' ? (

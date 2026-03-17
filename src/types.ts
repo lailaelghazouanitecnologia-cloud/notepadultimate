@@ -110,3 +110,30 @@ export interface Contract {
   status: 'active' | 'paused'
   createdAt: number
 }
+
+// ── Workspace OS ──
+
+export interface WorkspaceApp {
+  id: string
+  name: string
+  icon: string          // emoji or URL
+  type: 'builtin' | 'web' | 'sandbox'
+  url?: string          // for web apps (iframe src)
+  builtinId?: string    // for builtin apps: 'files', 'notes', 'settings', 'terminal'
+  workspaceId: string
+  installedAt: number
+  pinned?: boolean      // pinned to taskbar
+}
+
+export interface WindowState {
+  id: string
+  appId: string
+  title: string
+  x: number
+  y: number
+  width: number
+  height: number
+  minimized: boolean
+  maximized: boolean
+  zIndex: number
+}
