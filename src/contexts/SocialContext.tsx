@@ -5,13 +5,12 @@ import { loadFollows, addFollow, removeFollow, loadProfile, saveProfile } from '
 interface SocialContextValue {
   profile: UserProfile
   updateProfile: (updates: Partial<UserProfile>) => void
-  follows: Follow[]
-  followUser: (targetId: string) => void
-  unfollowUser: (targetId: string) => void
-  isFollowing: (targetId: string) => boolean
-  getFollowersOf: (userId: string) => Follow[]
-  getFollowingOf: (userId: string) => Follow[]
-  getFollowedAgents: (agents: Agent[]) => Agent[]
+  contracts: Follow[]
+  establishContract: (targetId: string) => void
+  revokeContract: (targetId: string) => void
+  hasContract: (targetId: string) => boolean
+  getContractsOf: (userId: string) => Follow[]
+  getContractedAgents: (agents: Agent[]) => Agent[]
   getSuggestedAgents: (agents: Agent[]) => Agent[]
 }
 
@@ -19,7 +18,7 @@ const SocialContext = createContext<SocialContextValue | null>(null)
 
 export function SocialProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile>(() => loadProfile())
-  const [follows, setFollows] = useState<Follow[]>(() => loadFollows())
+  const [contracts, setContracts] = useState<Follow[]>(() => loadFollows())
 
   const updateProfile = useCallback((updates: Partial<UserProfile>) => {
     setProfile(prev => {
@@ -29,44 +28,39 @@ export function SocialProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
-  const followUser = useCallback((targetId: string) => {
+  const establishContract = useCallback((targetId: string) => {
     addFollow(profile.id, targetId)
-    setFollows(loadFollows())
+    setContracts(loadFollows())
   }, [profile.id])
 
-  const unfollowUser = useCallback((targetId: string) => {
+  const revokeContract = useCallback((targetId: string) => {
     removeFollow(profile.id, targetId)
-    setFollows(loadFollows())
+    setContracts(loadFollows())
   }, [profile.id])
 
-  const isFollowing = useCallback((targetId: string) => {
-    return follows.some(f => f.followerId === profile.id && f.followingId === targetId)
-  }, [follows, profile.id])
+  const hasContract = useCallback((targetId: string) => {
+    return contracts.some(f => f.followerId === profile.id && f.followingId === targetId)
+  }, [contracts, profile.id])
 
-  const getFollowersOf = useCallback((userId: string) => {
-    return follows.filter(f => f.followingId === userId)
-  }, [follows])
+  const getContractsOf = useCallback((userId: string) => {
+    return contracts.filter(f => f.followerId === userId || f.followingId === userId)
+  }, [contracts])
 
-  const getFollowingOf = useCallback((userId: string) => {
-    return follows.filter(f => f.followerId === userId)
-  }, [follows])
-
-  const getFollowedAgents = useCallback((agents: Agent[]) => {
-    const followingIds = new Set(follows.filter(f => f.followerId === profile.id).map(f => f.followingId))
-    return agents.filter(a => followingIds.has(a.id))
-  }, [follows, profile.id])
+  const getContractedAgents = useCallback((agents: Agent[]) => {
+    const contractedIds = new Set(contracts.filter(f => f.followerId === profile.id).map(f => f.followingId))
+    return agents.filter(a => contractedIds.has(a.id))
+  }, [contracts, profile.id])
 
   const getSuggestedAgents = useCallback((agents: Agent[]) => {
-    const followingIds = new Set(follows.filter(f => f.followerId === profile.id).map(f => f.followingId))
-    return agents.filter(a => !followingIds.has(a.id)).slice(0, 5)
-  }, [follows, profile.id])
+    const contractedIds = new Set(contracts.filter(f => f.followerId === profile.id).map(f => f.followingId))
+    return agents.filter(a => !contractedIds.has(a.id)).slice(0, 5)
+  }, [contracts, profile.id])
 
   const value = useMemo(() => ({
     profile, updateProfile,
-    follows, followUser, unfollowUser, isFollowing,
-    getFollowersOf, getFollowingOf,
-    getFollowedAgents, getSuggestedAgents,
-  }), [profile, updateProfile, follows, followUser, unfollowUser, isFollowing, getFollowersOf, getFollowingOf, getFollowedAgents, getSuggestedAgents])
+    contracts, establishContract, revokeContract, hasContract,
+    getContractsOf, getContractedAgents, getSuggestedAgents,
+  }), [profile, updateProfile, contracts, establishContract, revokeContract, hasContract, getContractsOf, getContractedAgents, getSuggestedAgents])
 
   return (
     <SocialContext.Provider value={value}>

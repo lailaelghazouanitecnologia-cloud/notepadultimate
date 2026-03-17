@@ -1,16 +1,16 @@
 import { useState, useMemo, useCallback } from 'react'
 import type { Agent, Note } from '../types'
 import { Icons } from '../lib/icons'
-import { FollowButton } from './FollowButton'
+import { ContractButton } from './ContractButton'
 
 interface ExploreViewProps {
   agents: Agent[]
   publishedNotes: Note[]
   onOpenNote: (id: string) => void
   onOpenProfile: (agentId: string) => void
-  isFollowing?: (id: string) => boolean
-  onFollow?: (id: string) => void
-  onUnfollow?: (id: string) => void
+  hasContract?: (id: string) => boolean
+  onEstablishContract?: (id: string) => void
+  onRevokeContract?: (id: string) => void
 }
 
 const CATEGORIES = [
@@ -47,7 +47,7 @@ function deriveStats(note: Note) {
 
 export function ExploreView({
   agents, publishedNotes, onOpenNote, onOpenProfile,
-  isFollowing, onFollow, onUnfollow,
+  hasContract, onEstablishContract, onRevokeContract,
 }: ExploreViewProps) {
   const [activeCategory, setActiveCategory] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -179,12 +179,12 @@ export function ExploreView({
                           <span className="explore-agent__name">{agent.name}</span>
                           <span className="explore-agent__handle">{agent.handle}</span>
                         </div>
-                        {isFollowing && onFollow && onUnfollow && (
+                        {hasContract && onEstablishContract && onRevokeContract && (
                           <div className="explore-agent__action" onClick={e => e.stopPropagation()}>
-                            <FollowButton
-                              isFollowing={isFollowing(agent.id)}
-                              onFollow={() => onFollow(agent.id)}
-                              onUnfollow={() => onUnfollow(agent.id)}
+                            <ContractButton
+                              hasContract={hasContract(agent.id)}
+                              onEstablish={() => onEstablishContract(agent.id)}
+                              onRevoke={() => onRevokeContract(agent.id)}
                             />
                           </div>
                         )}
@@ -288,7 +288,7 @@ export function ExploreView({
             {/* Suggested agents */}
             {agents.filter(a => a.isPreset).length > 0 && (
               <div className="feed-card">
-                <h3 className="feed-card__title">Who to follow</h3>
+                <h3 className="feed-card__title">Suggested profiles</h3>
                 {agents.filter(a => a.isPreset).slice(0, 4).map(agent => (
                   <div key={agent.id} className="feed-card__agent">
                     <div className="feed-card__agent-emoji" onClick={() => onOpenProfile(agent.id)}>{agent.avatar}</div>
@@ -296,11 +296,11 @@ export function ExploreView({
                       <span className="feed-card__agent-name">{agent.name}</span>
                       <span className="feed-card__agent-handle">{agent.handle}</span>
                     </div>
-                    {isFollowing && onFollow && onUnfollow && (
-                      <FollowButton
-                        isFollowing={isFollowing(agent.id)}
-                        onFollow={() => onFollow(agent.id)}
-                        onUnfollow={() => onUnfollow(agent.id)}
+                    {hasContract && onEstablishContract && onRevokeContract && (
+                      <ContractButton
+                        hasContract={hasContract(agent.id)}
+                        onEstablish={() => onEstablishContract(agent.id)}
+                        onRevoke={() => onRevokeContract(agent.id)}
                       />
                     )}
                   </div>

@@ -169,26 +169,26 @@
 .sb-section__action:hover { background: var(--hover-light); color: var(--foreground); }
 .sb-section__action svg { width: 14px; height: 14px; }
 
-/* ── Follow button ── */
-.follow-btn {
+/* ── Contract button ── */
+.contract-btn {
   display: inline-flex; align-items: center; justify-content: center;
   border: 1px solid var(--border); border-radius: 18px;
   font-family: var(--font-sans); font-weight: 600;
   cursor: pointer; transition: all 120ms;
   white-space: nowrap; flex-shrink: 0;
 }
-.follow-btn--sm { height: 28px; padding: 0 14px; font-size: 12px; }
-.follow-btn--md { height: 34px; padding: 0 18px; font-size: 13px; }
+.contract-btn--sm { height: 28px; padding: 0 14px; font-size: 12px; }
+.contract-btn--md { height: 34px; padding: 0 18px; font-size: 13px; }
 
-.follow-btn:not(.follow-btn--following) {
+.contract-btn:not(.contract-btn--active) {
   background: var(--foreground); color: var(--background);
   border-color: var(--foreground);
 }
-.follow-btn:not(.follow-btn--following):hover { opacity: 0.85; }
-.follow-btn--following {
+.contract-btn:not(.contract-btn--active):hover { opacity: 0.85; }
+.contract-btn--active {
   background: transparent; color: var(--foreground);
   border-color: var(--border);
 }
-.follow-btn--following:hover {
+.contract-btn--active:hover {
   border-color: var(--destructive); color: var(--destructive);
 }

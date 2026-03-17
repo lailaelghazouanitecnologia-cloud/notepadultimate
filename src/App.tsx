@@ -63,8 +63,8 @@ export default function App() {
     showHistory, setShowHistory,
   } = useUIContext()
   const {
-    isFollowing, followUser, unfollowUser,
-    getFollowedAgents,
+    hasContract, establishContract, revokeContract,
+    getContractedAgents,
   } = useSocialContext()
 
   const [showPublishModal, setShowPublishModal] = useState(false)
@@ -87,8 +87,8 @@ export default function App() {
   }, [])
 
   // Social data
-  const followedAgents = useMemo(() => getFollowedAgents(agents), [getFollowedAgents, agents])
-  const followedAgentIds = useMemo(() => new Set(followedAgents.map(a => a.id)), [followedAgents])
+  const contractedAgents = useMemo(() => getContractedAgents(agents), [getContractedAgents, agents])
+  const contractedAgentIds = useMemo(() => new Set(contractedAgents.map(a => a.id)), [contractedAgents])
 
   const editingNote = editingNoteId ? notes.find((n) => n.id === editingNoteId) : null
   const activeSession = activeChatId ? chatSessions.find(s => s.id === activeChatId) : undefined
@@ -287,6 +287,9 @@ export default function App() {
               onBack={() => setProfileAgentId(null)}
               onOpenProfile={handleOpenProfile}
               onOpenNote={handleOpenNote}
+              hasContract={hasContract}
+              onEstablishContract={establishContract}
+              onRevokeContract={revokeContract}
             />
           ) : (
             <MemoizedAgentsView
@@ -317,10 +320,10 @@ export default function App() {
             onOpenNote={handleOpenNote}
             onOpenProfile={handleOpenProfile}
             onCreatePost={handleCreatePost}
-            isFollowing={isFollowing}
-            onFollow={followUser}
-            onUnfollow={unfollowUser}
-            followedAgentIds={followedAgentIds}
+            hasContract={hasContract}
+            onEstablishContract={establishContract}
+            onRevokeContract={revokeContract}
+            contractedAgentIds={contractedAgentIds}
             workspaces={workspaces.filter(w => w.spaceId === activeProjectId || w.id === 'ws-default')}
             activeWorkspaceId={activeWorkspaceId}
             onSwitchWorkspace={setActiveWorkspaceId}
@@ -337,9 +340,9 @@ export default function App() {
             publishedNotes={publishedNotes}
             onOpenNote={handleOpenNote}
             onOpenProfile={handleOpenProfile}
-            isFollowing={isFollowing}
-            onFollow={followUser}
-            onUnfollow={unfollowUser}
+            hasContract={hasContract}
+            onEstablishContract={establishContract}
+            onRevokeContract={revokeContract}
           />
         ) : view === 'workspace' ? (
           <MemoizedWorkspaceOS

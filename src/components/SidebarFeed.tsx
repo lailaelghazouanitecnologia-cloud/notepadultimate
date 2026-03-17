@@ -1,20 +1,20 @@
 import type { Agent } from '../types'
-import { FollowButton } from './FollowButton'
+import { ContractButton } from './ContractButton'
 
 interface SidebarFeedProps {
   agents: Agent[]
-  followedAgents: Agent[]
+  contractedAgents: Agent[]
   suggestedAgents: Agent[]
-  isFollowing: (id: string) => boolean
-  onFollow: (id: string) => void
-  onUnfollow: (id: string) => void
+  hasContract: (id: string) => boolean
+  onEstablishContract: (id: string) => void
+  onRevokeContract: (id: string) => void
   onOpenProfile: (id: string) => void
   trending: { topic: string; count: number }[]
 }
 
 export function SidebarFeed({
-  followedAgents, suggestedAgents,
-  isFollowing, onFollow, onUnfollow, onOpenProfile, trending,
+  contractedAgents, suggestedAgents,
+  hasContract, onEstablishContract, onRevokeContract, onOpenProfile, trending,
 }: SidebarFeedProps) {
   return (
     <div className="sb-panel sb-panel--feed">
@@ -34,10 +34,10 @@ export function SidebarFeed({
         </div>
       )}
 
-      {/* Who to follow */}
+      {/* Suggested profiles */}
       {suggestedAgents.length > 0 && (
         <div className="sb-card">
-          <h3 className="sb-card__title">Who to follow</h3>
+          <h3 className="sb-card__title">Suggested profiles</h3>
           {suggestedAgents.map(agent => (
             <div key={agent.id} className="sb-agent-row">
               <span
@@ -53,21 +53,21 @@ export function SidebarFeed({
                 <span className="sb-agent-row__name">{agent.name}</span>
                 <span className="sb-agent-row__handle">{agent.handle}</span>
               </div>
-              <FollowButton
-                isFollowing={isFollowing(agent.id)}
-                onFollow={() => onFollow(agent.id)}
-                onUnfollow={() => onUnfollow(agent.id)}
+              <ContractButton
+                hasContract={hasContract(agent.id)}
+                onEstablish={() => onEstablishContract(agent.id)}
+                onRevoke={() => onRevokeContract(agent.id)}
               />
             </div>
           ))}
         </div>
       )}
 
-      {/* Following */}
-      {followedAgents.length > 0 && (
+      {/* Contracts */}
+      {contractedAgents.length > 0 && (
         <div className="sb-card">
-          <h3 className="sb-card__title">Following</h3>
-          {followedAgents.map(agent => (
+          <h3 className="sb-card__title">Contracts</h3>
+          {contractedAgents.map(agent => (
             <button
               key={agent.id}
               className="sb-agent-row"

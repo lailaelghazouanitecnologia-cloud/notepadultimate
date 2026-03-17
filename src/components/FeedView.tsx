@@ -1,10 +1,10 @@
 import { useMemo, useState, useCallback, useRef } from 'react'
 import type { Note, Agent, SystemEvent, Workspace, Folder } from '../types'
 import { Icons, Identicon, FileTypeIcon } from '../lib/icons'
-import { FollowButton } from './FollowButton'
+import { ContractButton } from './ContractButton'
 import { detectFiles, extractImages } from '../lib/markdown'
 
-type FeedFilter = 'global' | 'following'
+type FeedFilter = 'global' | 'contracts'
 
 interface FeedViewProps {
   mode: 'workspace' | 'home'
@@ -14,10 +14,10 @@ interface FeedViewProps {
   onOpenNote: (noteId: string) => void
   onOpenProfile: (agentId: string) => void
   onCreatePost?: (content: string) => void
-  isFollowing?: (id: string) => boolean
-  onFollow?: (id: string) => void
-  onUnfollow?: (id: string) => void
-  followedAgentIds?: Set<string>
+  hasContract?: (id: string) => boolean
+  onEstablishContract?: (id: string) => void
+  onRevokeContract?: (id: string) => void
+  contractedAgentIds?: Set<string>
   // Filesystem
   workspaces: Workspace[]
   activeWorkspaceId: string
@@ -61,7 +61,7 @@ function getFileIcon(type: string): string {
 
 export function FeedView({
   mode, publishedNotes, agents, systemEvents, onOpenNote, onOpenProfile, onCreatePost,
-  isFollowing, onFollow, onUnfollow, followedAgentIds,
+  hasContract, onEstablishContract, onRevokeContract, contractedAgentIds,
   workspaces, activeWorkspaceId, onSwitchWorkspace, onCreateWorkspace,
   notes, folders, onAddNote, onCreateFolder,
 }: FeedViewProps) {
@@ -154,11 +154,11 @@ export function FeedView({
     | { kind: 'system'; event: SystemEvent; ts: number }
 
   const filteredNotes = useMemo(() => {
-    if (feedFilter === 'following' && followedAgentIds) {
-      return publishedNotes.filter(n => n.authorId && followedAgentIds.has(n.authorId))
+    if (feedFilter === 'contracts' && contractedAgentIds) {
+      return publishedNotes.filter(n => n.authorId && contractedAgentIds.has(n.authorId))
     }
     return publishedNotes
-  }, [publishedNotes, feedFilter, followedAgentIds])
+  }, [publishedNotes, feedFilter, contractedAgentIds])
 
   const timeline = useMemo(() => {
     const items: TimelineItem[] = [
@@ -345,7 +345,7 @@ export function FeedView({
           <div className="feed-col">
             <div className="feed-filter-tabs">
               <button className={`feed-filter-tab ${feedFilter === 'global' ? 'active' : ''}`} onClick={() => setFeedFilter('global')}>Global</button>
-              <button className={`feed-filter-tab ${feedFilter === 'following' ? 'active' : ''}`} onClick={() => setFeedFilter('following')}>Following</button>
+              <button className={`feed-filter-tab ${feedFilter === 'contracts' ? 'active' : ''}`} onClick={() => setFeedFilter('contracts')}>Contracts</button>
             </div>
             <div className="feed-scroll">
               {timeline.length === 0 ? (
@@ -466,8 +466,8 @@ export function FeedView({
                       <span className="feed-card__agent-name">{agent.name}</span>
                       <span className="feed-card__agent-handle">{agent.handle}</span>
                     </div>
-                    {isFollowing && onFollow && onUnfollow && (
-                      <FollowButton isFollowing={isFollowing(agent.id)} onFollow={() => onFollow(agent.id)} onUnfollow={() => onUnfollow(agent.id)} />
+                    {hasContract && onEstablishContract && onRevokeContract && (
+                      <ContractButton hasContract={hasContract(agent.id)} onEstablish={() => onEstablishContract(agent.id)} onRevoke={() => onRevokeContract(agent.id)} />
                     )}
                   </div>
                 ))}

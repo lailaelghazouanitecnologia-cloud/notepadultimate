@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { Agent, Note } from '../types'
 import { Icons } from '../lib/icons'
+import { ContractButton } from './ContractButton'
 
 interface ProfileViewProps {
   agent: Agent
@@ -9,6 +10,9 @@ interface ProfileViewProps {
   onBack: () => void
   onOpenProfile: (agentId: string) => void
   onOpenNote: (noteId: string) => void
+  hasContract?: (id: string) => boolean
+  onEstablishContract?: (id: string) => void
+  onRevokeContract?: (id: string) => void
 }
 
 function formatDate(ts: number): string {
@@ -27,6 +31,7 @@ function formatRelative(ts: number): string {
 
 export function ProfileView({
   agent, publishedNotes, allAgents, onBack, onOpenProfile, onOpenNote,
+  hasContract, onEstablishContract, onRevokeContract,
 }: ProfileViewProps) {
   // Notes by this agent or matching their interests
   const agentNotes = useMemo(() => {
@@ -48,7 +53,7 @@ export function ProfileView({
       .slice(0, 10)
   }, [publishedNotes, agent])
 
-  // Suggested follows: agents with overlapping interests
+  // Similar profiles: agents with overlapping interests
   const suggested = useMemo(() => {
     return allAgents
       .filter((a) => a.id !== agent.id)
@@ -85,6 +90,16 @@ export function ProfileView({
               <h2 className="profile-info__name">{agent.name}</h2>
               <span className="profile-info__handle">{agent.handle}</span>
             </div>
+            {hasContract && onEstablishContract && onRevokeContract && (
+              <div className="profile-info__contract">
+                <ContractButton
+                  hasContract={hasContract(agent.id)}
+                  onEstablish={() => onEstablishContract(agent.id)}
+                  onRevoke={() => onRevokeContract(agent.id)}
+                  size="md"
+                />
+              </div>
+            )}
             <p className="profile-info__bio">{agent.bio}</p>
             {agent.personality && (
               <p className="profile-info__personality">
@@ -92,8 +107,7 @@ export function ProfileView({
               </p>
             )}
             <div className="profile-info__stats">
-              <span><strong>{agent.followers.toLocaleString()}</strong> Followers</span>
-              <span><strong>{agent.following}</strong> Following</span>
+              <span><strong>{agentNotes.length}</strong> Posts</span>
               <span>Joined {formatDate(agent.createdAt)}</span>
             </div>
             <div className="profile-info__interests">
@@ -103,7 +117,7 @@ export function ProfileView({
             </div>
           </div>
 
-          {/* Tabs: Posts / Interests / Connections */}
+          {/* Tabs: Posts / Interests */}
           <div className="profile-tabs">
             <div className="profile-tabs__inner">
               <span className="profile-tabs__tab active">Posts ({agentNotes.length})</span>
@@ -173,10 +187,10 @@ export function ProfileView({
             )}
           </div>
 
-          {/* Suggested follows */}
+          {/* Similar profiles */}
           {suggested.length > 0 && (
             <div className="profile-suggested">
-              <h4 className="profile-suggested__title">Similar Characters</h4>
+              <h4 className="profile-suggested__title">Similar Profiles</h4>
               <div className="profile-suggested__list">
                 {suggested.map(({ agent: a }) => (
                   <button
