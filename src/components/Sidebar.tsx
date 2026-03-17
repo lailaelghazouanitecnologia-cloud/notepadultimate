@@ -61,6 +61,9 @@ export function Sidebar({
     return () => document.removeEventListener('mousedown', handler)
   }, [showAvatarMenu])
 
+  const showNav = view !== 'chat' && view !== 'graph'
+  const showWorkspace = view === 'chat' || view === 'graph'
+
   return (
     <aside className={`zw-sb ${collapsed ? 'collapsed' : ''}`} style={!collapsed && width ? { width } : undefined}>
       {/* Logo */}
@@ -68,8 +71,8 @@ export function Sidebar({
         <ZarnettiLogo className="zw-sb-logo__icon" />
       </div>
 
-      {/* Navigation — always visible */}
-      <nav className="zw-sb-nav">
+      {/* Navigation — feed/agents/plugins only */}
+      {showNav && <nav className="zw-sb-nav">
         <button
           className={`zw-sb-nav-item ${view === 'feed' ? 'active' : ''}`}
           onClick={() => onNavigate?.('feed')}
@@ -89,7 +92,7 @@ export function Sidebar({
           )}
         </button>
         <button
-          className={`zw-sb-nav-item ${view === 'chat' ? 'active' : ''}`}
+          className="zw-sb-nav-item"
           onClick={() => onNavigate?.('chat')}
         >
           {Icons.messageCircle()}
@@ -119,16 +122,18 @@ export function Sidebar({
           {Icons.puzzle()}
           <span>Plugins</span>
         </button>
-      </nav>
+      </nav>}
 
-      {/* Post button */}
-      <button className="zw-sb-post-btn" onClick={onPost}>
-        {Icons.edit()}
-        <span>Post</span>
-      </button>
+      {/* Post button — feed/agents/plugins only */}
+      {showNav && (
+        <button className="zw-sb-post-btn" onClick={onPost}>
+          {Icons.edit()}
+          <span>Post</span>
+        </button>
+      )}
 
       {/* ── Workspace panel: chat/graph views ── */}
-      {(view === 'chat' || view === 'graph') && onAddNote && onDeleteNote && onRenameNote && onCreateFolder && onDeleteFolder && (
+      {showWorkspace && onAddNote && onDeleteNote && onRenameNote && onCreateFolder && onDeleteFolder && (
         <SidebarFiles
           notes={notes}
           activeId={activeNoteId || null}
@@ -145,7 +150,7 @@ export function Sidebar({
       )}
 
       {/* Spacer — only when no workspace panel (workspace uses flex:1) */}
-      {view !== 'chat' && view !== 'graph' && <div className="zw-sb-spacer" />}
+      {!showWorkspace && <div className="zw-sb-spacer" />}
 
       {/* Account row */}
       <div className="zw-sb-account" ref={avatarRef}>
