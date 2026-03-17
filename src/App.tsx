@@ -173,14 +173,6 @@ export default function App() {
   return (
     <div className="app">
       <MemoizedSidebar
-        notes={notes}
-        activeId={activeId}
-        onSelect={handleSidebarSelect}
-        onAdd={handleAddNote}
-        onDelete={deleteNote}
-        onRename={handleRenameNote}
-        onDuplicate={handleDuplicateNote}
-        onDragNote={true}
         projects={projects}
         activeProjectId={activeProjectId}
         onSwitchProject={switchProject}
@@ -188,28 +180,14 @@ export default function App() {
         collapsed={sidebarCollapsed}
         onToggleCollapse={toggleSidebar}
         width={sidebarWidth}
-        folders={folders}
-        onCreateFolder={createFolder}
-        onDeleteFolder={deleteFolder}
-        onMoveNote={handleMoveNote}
         theme={theme}
         onToggleTheme={toggleTheme}
         view={view}
         onNavigate={(v) => { setView(v); setEditingNoteId(null); setPluginPanel(null); setProfileAgentId(null) }}
         onPost={() => { setView('feed'); setEditingNoteId(null); setPluginPanel(null); setProfileAgentId(null) }}
         unreadAlerts={unreadAlerts}
-        agents={agents}
-        followedAgents={followedAgents}
-        suggestedAgents={suggestedAgents}
-        isFollowing={isFollowing}
-        onFollow={followUser}
-        onUnfollow={unfollowUser}
-        onOpenProfile={handleOpenProfile}
-        chatSessions={chatSessions}
-        activeChatId={activeChatId}
-        onNewChat={newChat}
-        onOpenChat={openChat}
-        showEditor={showEditor}
+        onOpenAgents={() => { setPluginPanel('agents'); setProfileAgentId(null) }}
+        onOpenContracts={() => { setPluginPanel('agents'); setProfileAgentId(null) }}
       />
 
       {/* Resizable divider */}
