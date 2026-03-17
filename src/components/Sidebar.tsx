@@ -157,8 +157,8 @@ export function Sidebar({
         />
       )}
 
-      {/* Spacer — fallback if workspace props missing */}
-      {!(onAddNote && onDeleteNote && onRenameNote && onCreateFolder && onMoveNoteToFolder && onMoveFolderToParent && onSwitchWorkspace && onCreateWorkspace) && <div className="zw-sb-spacer" />}
+      {/* Spacer — push avatar to bottom */}
+      <div className="zw-sb-spacer" />
 
       {/* Account row */}
       <div className="zw-sb-account" ref={avatarRef}>
