@@ -123,13 +123,6 @@ export function Sidebar({
           <span>Contracts</span>
         </button>
         <button
-          className={`zw-sb-nav-item ${view === 'plugins' ? 'active' : ''}`}
-          onClick={onOpenPlugins}
-        >
-          {Icons.puzzle()}
-          <span>Plugins</span>
-        </button>
-        <button
           className={`zw-sb-nav-item ${view === 'workspace' ? 'active' : ''}`}
           onClick={() => onNavigate?.('workspace')}
         >

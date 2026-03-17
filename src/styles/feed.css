@@ -65,19 +65,19 @@
   gap: 6px;
 }
 
-/* ── Filesystem item — small square, dotted border ── */
+/* ── Filesystem item — small square, no border by default ── */
 .fs-item {
   display: flex; flex-direction: column; align-items: center;
   justify-content: center; gap: 4px;
   aspect-ratio: 1; padding: 6px 4px;
-  border: 1px dotted var(--border); border-radius: 6px;
+  border: 1px solid transparent; border-radius: 6px;
   background: transparent; cursor: pointer;
   transition: background 80ms, border-color 80ms;
   font-family: var(--font-sans); text-align: center;
   min-width: 0;
 }
-.fs-item:hover { background: var(--hover-light); border-color: var(--muted-foreground); }
-.fs-item--active { border-color: var(--zw-accent, var(--ring)); border-style: solid; }
+.fs-item:hover { background: var(--hover-light); border-color: var(--border); }
+.fs-item--active { border-color: var(--zw-accent, var(--ring)); }
 .fs-item--active:hover { border-color: var(--zw-accent, var(--ring)); }
 .fs-item--creating {
   border: 1px dashed var(--muted-foreground); cursor: default;
