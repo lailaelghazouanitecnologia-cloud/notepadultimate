@@ -31,8 +31,8 @@ const MemoizedPluginsView = memo(PluginsView)
 export default function App() {
   const { theme, toggleTheme } = useTheme()
   const {
-    notes, setActiveId, addNote, updateNote,
-    publishedNotes, publishNote,
+    notes, activeId, setActiveId, addNote, updateNote, deleteNote,
+    publishedNotes, publishNote, folders, createFolder, deleteFolder,
   } = useNotesContext()
   const {
     agents, alerts, unreadAlerts,
@@ -48,7 +48,7 @@ export default function App() {
     profileAgentId, setProfileAgentId,
     chatSessions, activeChatId,
     showHistory, setShowHistory,
-    saveChat, newChat, openChat,
+    saveChat,
   } = useUIContext()
   const {
     isFollowing, followUser, unfollowUser,
@@ -119,6 +119,13 @@ export default function App() {
     updateNote(id, { title: newTitle })
   }, [updateNote])
 
+  const handleDuplicateNote = useCallback((id: string) => {
+    const source = notes.find((n) => n.id === id)
+    if (!source) return
+    const note = addNote()
+    updateNote(note.id, { title: `${source.title} (copy)`, content: source.content, folderId: source.folderId })
+  }, [notes, addNote, updateNote])
+
   const handleCreatePost = useCallback((content: string) => {
     const note = addNote()
     updateNote(note.id, { content, published: true })
@@ -175,12 +182,16 @@ export default function App() {
         onOpenAgents={() => { setView('agents'); setProfileAgentId(null) }}
         onOpenContracts={() => { setView('agents'); setProfileAgentId(null) }}
         onOpenPlugins={() => { setView('plugins'); setProfileAgentId(null) }}
-        chatSessions={chatSessions}
-        activeChatId={activeChatId}
-        onNewChat={newChat}
-        onOpenChat={openChat}
         notes={notes}
+        folders={folders}
+        activeNoteId={activeId}
         onOpenNote={handleOpenNote}
+        onAddNote={handleAddNote}
+        onDeleteNote={deleteNote}
+        onRenameNote={handleRenameNote}
+        onDuplicateNote={handleDuplicateNote}
+        onCreateFolder={createFolder}
+        onDeleteFolder={deleteFolder}
       />
 
       {/* Resizable divider */}
