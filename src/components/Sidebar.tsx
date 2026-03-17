@@ -33,7 +33,6 @@ interface SidebarProps {
   onNavigate?: (view: View) => void
   onPost?: () => void
   unreadAlerts?: number
-  // Social props
   agents: Agent[]
   followedAgents: Agent[]
   suggestedAgents: Agent[]
@@ -41,19 +40,17 @@ interface SidebarProps {
   onFollow: (id: string) => void
   onUnfollow: (id: string) => void
   onOpenProfile: (id: string) => void
-  // Chat props
   chatSessions: ChatSession[]
   activeChatId: string | null
   onNewChat: () => void
   onOpenChat: (id: string) => void
-  // Editor active
   showEditor?: boolean
 }
 
 export function Sidebar({
   notes, activeId, onSelect, onAdd, onDelete, onRename, onDuplicate, onDragNote,
   projects, activeProjectId, onSwitchProject, onCreateProject,
-  collapsed, onToggleCollapse, width,
+  collapsed, width,
   folders, onCreateFolder, onDeleteFolder, onRenameFolder, onMoveNote: _onMoveNote,
   theme, onToggleTheme,
   view, onNavigate, onPost, unreadAlerts,
@@ -79,7 +76,6 @@ export function Sidebar({
     return () => document.removeEventListener('mousedown', handler)
   }, [showAvatarMenu])
 
-  // Trending topics from agent interests
   const trending = useMemo(() => {
     const counts = new Map<string, number>()
     agents.forEach(a => {
@@ -93,8 +89,14 @@ export function Sidebar({
       .map(([topic, count]) => ({ topic, count }))
   }, [agents])
 
-  // Determine which panel to show based on view
   const currentView = showEditor ? 'editor' : view
+
+  // Nav items for each view
+  const navItems: { id: View; icon: (p?: object) => React.ReactNode; label: string; badge?: number }[] = [
+    { id: 'feed', icon: Icons.rss, label: 'Home' },
+    { id: 'chat', icon: Icons.messageCircle, label: 'Messages' },
+    { id: 'graph', icon: Icons.network, label: 'Graph' },
+  ]
 
   return (
     <aside className={`zw-sb ${collapsed ? 'collapsed' : ''}`} style={!collapsed && width ? { width } : undefined}>
@@ -103,13 +105,33 @@ export function Sidebar({
         <ZarnettiLogo className="zw-sb-logo__icon" />
       </div>
 
-      {/* Space indicator */}
-      <div className="sb-space-indicator">
-        <span className="sb-space-indicator__emoji">{activeProject?.emoji || '📁'}</span>
-        <span className="sb-space-indicator__name">{activeProject?.name || 'Zarnetti'}</span>
-      </div>
+      {/* Navigation */}
+      <nav className="zw-sb-nav">
+        {navItems.map(item => (
+          <button
+            key={item.id}
+            className={`zw-sb-nav-item ${currentView === item.id || (currentView === 'editor' && item.id === 'graph') ? 'active' : ''}`}
+            onClick={() => onNavigate?.(item.id)}
+          >
+            {item.icon()}
+            <span>{item.label}</span>
+            {item.id === 'feed' && unreadAlerts != null && unreadAlerts > 0 && (
+              <span className="zw-sb-nav-badge">{unreadAlerts}</span>
+            )}
+          </button>
+        ))}
+      </nav>
 
-      {/* Contextual panel */}
+      {/* Post button */}
+      <button className="zw-sb-post-btn" onClick={onPost}>
+        {Icons.edit()}
+        <span>Post</span>
+      </button>
+
+      {/* Separator */}
+      <div className="zw-sb-divider" />
+
+      {/* Contextual panel — different per view */}
       <div className="sb-panel-container">
         {currentView === 'feed' && (
           <SidebarFeed
@@ -149,17 +171,6 @@ export function Sidebar({
         )}
       </div>
 
-      {/* Post button (visible in feed mode) */}
-      {currentView === 'feed' && (
-        <button className="zw-sb-post-btn" onClick={onPost}>
-          {Icons.edit()}
-          <span>Post</span>
-        </button>
-      )}
-
-      {/* Spacer */}
-      <div className="zw-sb-spacer" />
-
       {/* Account row */}
       <div className="zw-sb-account" ref={avatarRef}>
         <button className="zw-sb-account-btn" onClick={() => setShowAvatarMenu(!showAvatarMenu)}>
@@ -192,7 +203,6 @@ export function Sidebar({
               <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
             </button>
             <div className="zw-avatar-menu__divider" />
-            {/* Space switcher */}
             <div className="zw-avatar-menu__section">Spaces</div>
             {projects.map(p => (
               <button
