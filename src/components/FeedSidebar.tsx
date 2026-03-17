@@ -1,17 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
-import type { Project, Note, Folder, Workspace } from '../types'
+import type { Project } from '../types'
 import type { View } from '../contexts/UIContext'
 import { ZarnettiLogo, Identicon, Icons } from '../lib/icons'
-import { SidebarFiles } from './SidebarFiles'
 
-
-interface SidebarProps {
+interface FeedSidebarProps {
   projects: Project[]
   activeProjectId: string
   onSwitchProject: (id: string) => void
   onCreateProject: (name: string, emoji: string) => void
   collapsed: boolean
-  onToggleCollapse: () => void
   width?: number
   theme?: 'light' | 'dark'
   onToggleTheme?: () => void
@@ -22,34 +19,15 @@ interface SidebarProps {
   onOpenAgents?: () => void
   onOpenPlugins?: () => void
   onLogoClick?: () => void
-  // Workspace file tree (shown in chat & graph views)
-  notes?: Note[]
-  folders?: Folder[]
-  activeNoteId?: string | null
-  onOpenNote?: (id: string) => void
-  onAddNote?: (folderId?: string) => void
-  onDeleteNote?: (id: string) => void
-  onRenameNote?: (id: string, newTitle: string) => void
-  onMoveNoteToFolder?: (noteId: string, folderId: string | null) => void
-  onCreateFolder?: (name: string, parentId?: string) => void
-  onMoveFolderToParent?: (folderId: string, parentId: string | null) => void
-  workspaces?: Workspace[]
-  activeWorkspaceId?: string
-  onSwitchWorkspace?: (id: string) => void
-  onCreateWorkspace?: (name: string) => void
 }
 
-export function Sidebar({
+export function FeedSidebar({
   projects, activeProjectId, onSwitchProject, onCreateProject,
   collapsed, width,
   theme, onToggleTheme,
   view, onNavigate, onPost, unreadAlerts,
   onOpenAgents, onOpenPlugins, onLogoClick,
-  notes = [], folders = [], activeNoteId, onOpenNote,
-  onAddNote, onDeleteNote, onRenameNote,
-  onMoveNoteToFolder, onCreateFolder, onMoveFolderToParent,
-  workspaces = [], activeWorkspaceId = '', onSwitchWorkspace, onCreateWorkspace,
-}: SidebarProps) {
+}: FeedSidebarProps) {
   const [showAvatarMenu, setShowAvatarMenu] = useState(false)
   const avatarRef = useRef<HTMLDivElement>(null)
 
@@ -66,9 +44,6 @@ export function Sidebar({
     return () => document.removeEventListener('mousedown', handler)
   }, [showAvatarMenu])
 
-  const showNav = view !== 'graph'
-  const showWorkspace = (view === 'chat' || view === 'graph')
-
   return (
     <aside className={`zw-sb ${collapsed ? 'collapsed' : ''}`} style={!collapsed && width ? { width } : undefined}>
       {/* Logo — opens start menu */}
@@ -77,18 +52,12 @@ export function Sidebar({
       </div>
 
       {/* Navigation */}
-      {showNav && <nav className="zw-sb-nav">
-        <button
-          className={`zw-sb-nav-item ${view === 'feed' ? 'active' : ''}`}
-          onClick={() => onNavigate?.('feed')}
-        >
+      <nav className="zw-sb-nav">
+        <button className={`zw-sb-nav-item ${view === 'feed' ? 'active' : ''}`} onClick={() => onNavigate?.('feed')}>
           {Icons.rss()}
           <span>Home</span>
         </button>
-        <button
-          className={`zw-sb-nav-item ${view === 'explore' ? 'active' : ''}`}
-          onClick={() => onNavigate?.('explore')}
-        >
+        <button className={`zw-sb-nav-item ${view === 'explore' ? 'active' : ''}`} onClick={() => onNavigate?.('explore')}>
           {Icons.search()}
           <span>Explore</span>
         </button>
@@ -99,61 +68,27 @@ export function Sidebar({
             <span className="zw-sb-nav-badge">{unreadAlerts}</span>
           )}
         </button>
-        <button
-          className={`zw-sb-nav-item ${view === 'messages' ? 'active' : ''}`}
-          onClick={() => onNavigate?.('messages')}
-        >
+        <button className={`zw-sb-nav-item ${view === 'messages' ? 'active' : ''}`} onClick={() => onNavigate?.('messages')}>
           {Icons.messageCircle()}
           <span>Messages</span>
         </button>
-        <button
-          className={`zw-sb-nav-item ${view === 'agents' ? 'active' : ''}`}
-          onClick={onOpenAgents}
-        >
+        <button className={`zw-sb-nav-item ${view === 'agents' ? 'active' : ''}`} onClick={onOpenAgents}>
           {Icons.users()}
           <span>Agents</span>
-          {unreadAlerts != null && unreadAlerts > 0 && (
-            <span className="zw-sb-nav-badge">{unreadAlerts}</span>
-          )}
         </button>
-        <button
-          className={`zw-sb-nav-item ${view === 'workspace' ? 'active' : ''}`}
-          onClick={() => onNavigate?.('workspace')}
-        >
+        <button className={`zw-sb-nav-item ${view === 'workspace' ? 'active' : ''}`} onClick={() => onNavigate?.('workspace')}>
           {Icons.folder()}
           <span>Workspace</span>
         </button>
-      </nav>}
+      </nav>
 
       {/* Post button */}
-      {showNav && (
-        <button className="zw-sb-post-btn" onClick={onPost}>
-          {Icons.edit()}
-          <span>Post</span>
-        </button>
-      )}
+      <button className="zw-sb-post-btn" onClick={onPost}>
+        {Icons.edit()}
+        <span>Post</span>
+      </button>
 
-      {/* Workspace file tree — chat & graph views */}
-      {showWorkspace && onAddNote && onDeleteNote && onRenameNote && onCreateFolder && onMoveNoteToFolder && onMoveFolderToParent && onSwitchWorkspace && onCreateWorkspace && (
-        <SidebarFiles
-          notes={notes}
-          activeId={activeNoteId || null}
-          onSelect={onOpenNote || (() => {})}
-          onAdd={onAddNote}
-          onDelete={onDeleteNote}
-          onRename={onRenameNote}
-          onMoveNoteToFolder={onMoveNoteToFolder}
-          folders={folders}
-          onCreateFolder={onCreateFolder}
-          onMoveFolderToParent={onMoveFolderToParent}
-          workspaces={workspaces}
-          activeWorkspaceId={activeWorkspaceId}
-          onSwitchWorkspace={onSwitchWorkspace}
-          onCreateWorkspace={onCreateWorkspace}
-        />
-      )}
-
-      {/* Spacer — push avatar to bottom */}
+      {/* Spacer */}
       <div className="zw-sb-spacer" />
 
       {/* Account row */}

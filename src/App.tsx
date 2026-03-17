@@ -1,5 +1,6 @@
 import { useCallback, useState, useMemo, memo } from 'react'
-import { Sidebar } from './components/Sidebar'
+import { FeedSidebar } from './components/FeedSidebar'
+import { WorkSidebar } from './components/WorkSidebar'
 import { Editor } from './components/Editor'
 import { FeedView } from './components/FeedView'
 import { GraphView } from './components/GraphView'
@@ -23,7 +24,8 @@ import { useProjectContext } from './contexts/ProjectContext'
 import { useUIContext } from './contexts/UIContext'
 import { useSocialContext } from './contexts/SocialContext'
 
-const MemoizedSidebar = memo(Sidebar)
+const MemoizedFeedSidebar = memo(FeedSidebar)
+const MemoizedWorkSidebar = memo(WorkSidebar)
 const MemoizedEditor = memo(Editor)
 const MemoizedFeedView = memo(FeedView)
 const MemoizedGraphView = memo(GraphView)
@@ -51,7 +53,7 @@ export default function App() {
   const { projects, activeProjectId, systemEvents, switchProject, createProject } = useProjectContext()
   const {
     view, setView,
-    sidebarCollapsed, toggleSidebar, setSidebarCollapsed,
+    sidebarCollapsed, setSidebarCollapsed,
     editingNoteId, setEditingNoteId,
     openTabs, openTab, closeTab,
     profileAgentId, setProfileAgentId,
@@ -176,38 +178,54 @@ export default function App() {
 
   return (
     <div className="app">
-      <MemoizedSidebar
-        projects={projects}
-        activeProjectId={activeProjectId}
-        onSwitchProject={switchProject}
-        onCreateProject={createProject}
-        collapsed={sidebarCollapsed}
-        onToggleCollapse={toggleSidebar}
-        width={sidebarWidth}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-        view={view}
-        onNavigate={(v) => { setView(v); setEditingNoteId(null); setProfileAgentId(null) }}
-        onPost={() => { setView('feed'); setEditingNoteId(null); setProfileAgentId(null) }}
-        unreadAlerts={unreadAlerts}
-        onOpenAgents={() => { setView('agents'); setProfileAgentId(null) }}
-        onOpenPlugins={() => { setView('plugins'); setProfileAgentId(null) }}
-        onLogoClick={() => setShowStartMenu(s => !s)}
-        notes={workspaceNotes}
-        folders={workspaceFolders}
-        activeNoteId={activeId}
-        onOpenNote={handleOpenNote}
-        onAddNote={handleAddNote}
-        onDeleteNote={deleteNote}
-        onRenameNote={handleRenameNote}
-        onMoveNoteToFolder={moveNoteToFolder}
-        onCreateFolder={createFolder}
-        onMoveFolderToParent={moveFolderToParent}
-        workspaces={workspaces.filter(w => w.spaceId === activeProjectId || w.id === 'ws-default')}
-        activeWorkspaceId={activeWorkspaceId}
-        onSwitchWorkspace={setActiveWorkspaceId}
-        onCreateWorkspace={(name: string) => createWorkspace(name, activeProjectId)}
-      />
+      {/* Sidebar — FeedSidebar for social views, WorkSidebar for chat/graph */}
+      {(view === 'chat' || view === 'graph') ? (
+        <MemoizedWorkSidebar
+          projects={projects}
+          activeProjectId={activeProjectId}
+          onSwitchProject={switchProject}
+          onCreateProject={createProject}
+          collapsed={sidebarCollapsed}
+          width={sidebarWidth}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onNavigate={(v) => { setView(v); setEditingNoteId(null); setProfileAgentId(null) }}
+          onOpenPlugins={() => { setView('plugins'); setProfileAgentId(null) }}
+          onLogoClick={() => setShowStartMenu(s => !s)}
+          notes={workspaceNotes}
+          folders={workspaceFolders}
+          activeNoteId={activeId}
+          onOpenNote={handleOpenNote}
+          onAddNote={handleAddNote}
+          onDeleteNote={deleteNote}
+          onRenameNote={handleRenameNote}
+          onMoveNoteToFolder={moveNoteToFolder}
+          onCreateFolder={createFolder}
+          onMoveFolderToParent={moveFolderToParent}
+          workspaces={workspaces.filter(w => w.spaceId === activeProjectId || w.id === 'ws-default')}
+          activeWorkspaceId={activeWorkspaceId}
+          onSwitchWorkspace={setActiveWorkspaceId}
+          onCreateWorkspace={(name: string) => createWorkspace(name, activeProjectId)}
+        />
+      ) : (
+        <MemoizedFeedSidebar
+          projects={projects}
+          activeProjectId={activeProjectId}
+          onSwitchProject={switchProject}
+          onCreateProject={createProject}
+          collapsed={sidebarCollapsed}
+          width={sidebarWidth}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          view={view}
+          onNavigate={(v) => { setView(v); setEditingNoteId(null); setProfileAgentId(null) }}
+          onPost={() => { setView('feed'); setEditingNoteId(null); setProfileAgentId(null) }}
+          unreadAlerts={unreadAlerts}
+          onOpenAgents={() => { setView('agents'); setProfileAgentId(null) }}
+          onOpenPlugins={() => { setView('plugins'); setProfileAgentId(null) }}
+          onLogoClick={() => setShowStartMenu(s => !s)}
+        />
+      )}
 
       {/* Resizable divider */}
       {!sidebarCollapsed && (
