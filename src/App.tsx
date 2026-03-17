@@ -42,7 +42,7 @@ export default function App() {
     createAgent, deleteAgent, markAlertRead,
     createContract, deleteContract, getProjectContracts,
   } = useAgentsContext()
-  const { projects, activeProjectId, activeProject, systemEvents, switchProject, createProject } = useProjectContext()
+  const { projects, activeProjectId, systemEvents, switchProject, createProject } = useProjectContext()
   const {
     view, setView,
     sidebarCollapsed, toggleSidebar, setSidebarCollapsed,
@@ -269,6 +269,7 @@ export default function App() {
           />
         ) : view === 'feed' ? (
           <MemoizedFeedView
+            mode="home"
             publishedNotes={publishedNotes}
             agents={agents}
             systemEvents={systemEvents}
@@ -279,8 +280,29 @@ export default function App() {
             onFollow={followUser}
             onUnfollow={unfollowUser}
             followedAgentIds={followedAgentIds}
-            activeSpaceId={activeProjectId}
-            activeSpaceName={activeProject?.name}
+            workspaces={workspaces.filter(w => w.spaceId === activeProjectId || w.id === 'ws-default')}
+            activeWorkspaceId={activeWorkspaceId}
+            onSwitchWorkspace={setActiveWorkspaceId}
+            onCreateWorkspace={(name: string) => createWorkspace(name, activeProjectId)}
+            notes={notes}
+            folders={folders}
+            onAddNote={handleAddNote}
+            onDeleteNote={deleteNote}
+            onCreateFolder={createFolder}
+          />
+        ) : view === 'workspace' ? (
+          <MemoizedFeedView
+            mode="workspace"
+            publishedNotes={publishedNotes}
+            agents={agents}
+            systemEvents={systemEvents}
+            onOpenNote={handleOpenNote}
+            onOpenProfile={handleOpenProfile}
+            onCreatePost={handleCreatePost}
+            isFollowing={isFollowing}
+            onFollow={followUser}
+            onUnfollow={unfollowUser}
+            followedAgentIds={followedAgentIds}
             workspaces={workspaces.filter(w => w.spaceId === activeProjectId || w.id === 'ws-default')}
             activeWorkspaceId={activeWorkspaceId}
             onSwitchWorkspace={setActiveWorkspaceId}

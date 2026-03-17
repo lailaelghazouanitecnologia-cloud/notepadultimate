@@ -129,6 +129,13 @@ export function Sidebar({
           {Icons.puzzle()}
           <span>Plugins</span>
         </button>
+        <button
+          className={`zw-sb-nav-item ${view === 'workspace' ? 'active' : ''}`}
+          onClick={() => onNavigate?.('workspace')}
+        >
+          {Icons.folder()}
+          <span>Workspace</span>
+        </button>
       </nav>}
 
       {/* Post button — feed/agents/plugins only */}

@@ -4,10 +4,10 @@ import { Icons, Identicon, FileTypeIcon } from '../lib/icons'
 import { FollowButton } from './FollowButton'
 import { detectFiles, extractImages } from '../lib/markdown'
 
-type FeedTab = 'workspace' | 'home'
 type FeedFilter = 'global' | 'following'
 
 interface FeedViewProps {
+  mode: 'workspace' | 'home'
   publishedNotes: Note[]
   agents: Agent[]
   systemEvents: SystemEvent[]
@@ -18,8 +18,6 @@ interface FeedViewProps {
   onFollow?: (id: string) => void
   onUnfollow?: (id: string) => void
   followedAgentIds?: Set<string>
-  activeSpaceId?: string
-  activeSpaceName?: string
   // Filesystem
   workspaces: Workspace[]
   activeWorkspaceId: string
@@ -62,31 +60,27 @@ function getFileIcon(type: string): string {
 }
 
 export function FeedView({
-  publishedNotes, agents, systemEvents, onOpenNote, onOpenProfile, onCreatePost,
+  mode, publishedNotes, agents, systemEvents, onOpenNote, onOpenProfile, onCreatePost,
   isFollowing, onFollow, onUnfollow, followedAgentIds,
   workspaces, activeWorkspaceId, onSwitchWorkspace, onCreateWorkspace,
   notes, folders, onAddNote, onCreateFolder,
 }: FeedViewProps) {
-  const [tab, setTab] = useState<FeedTab>('workspace')
   const [feedFilter, setFeedFilter] = useState<FeedFilter>('global')
   const [composerText, setComposerText] = useState('')
   const composerRef = useRef<HTMLTextAreaElement>(null)
 
   // Filesystem state
-  const [browsePath, setBrowsePath] = useState<string[]>([])  // [] = root (workspaces), ['ws-id'] = inside workspace, ['ws-id', 'folder-id'] = inside folder
+  const [browsePath, setBrowsePath] = useState<string[]>([])
   const [creatingWs, setCreatingWs] = useState(false)
   const [newWsName, setNewWsName] = useState('')
   const [creatingFolder, setCreatingFolder] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
-  const wsInputRef = useRef<HTMLInputElement>(null)
-  const folderInputRef = useRef<HTMLInputElement>(null)
 
   // Current browsing context
   const currentWsId = browsePath[0] || null
   const currentFolderId = browsePath.length >= 2 ? browsePath[browsePath.length - 1] : null
   const currentWs = currentWsId ? workspaces.find(w => w.id === currentWsId) : null
 
-  // Items in current view
   const currentFolders = useMemo(() => {
     if (!currentWsId) return []
     return folders.filter(f => {
@@ -105,7 +99,6 @@ export function FeedView({
     })
   }, [notes, currentWsId, currentFolderId])
 
-  // Breadcrumb segments
   const breadcrumbs = useMemo(() => {
     const segs: { label: string; path: string[] }[] = [
       { label: 'workspace', path: [] },
@@ -123,16 +116,6 @@ export function FeedView({
     }
     return segs
   }, [browsePath, workspaces, folders])
-
-  // Note counts per workspace
-  const wsCounts = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const n of notes) {
-      const wsId = n.workspaceId || 'ws-default'
-      map.set(wsId, (map.get(wsId) || 0) + 1)
-    }
-    return map
-  }, [notes])
 
   const handleCreateWs = useCallback(() => {
     const name = newWsName.trim()
@@ -165,7 +148,7 @@ export function FeedView({
     ta.style.height = ta.scrollHeight + 'px'
   }, [])
 
-  // Timeline for Home tab
+  // Timeline for Home mode
   type TimelineItem =
     | { kind: 'post'; note: Note; ts: number }
     | { kind: 'system'; event: SystemEvent; ts: number }
@@ -199,25 +182,10 @@ export function FeedView({
 
   const suggestions = useMemo(() => agents.filter((a) => a.isPreset).slice(0, 3), [agents])
 
-  return (
-    <div className="content-area">
-      <div className="feed-view">
-        {/* Top tabs: Workspace | Home */}
-        <div className="feed-tabs">
-          <button className={`feed-tab ${tab === 'workspace' ? 'active' : ''}`} onClick={() => setTab('workspace')}>
-            {Icons.folder()}
-            <span>Workspace</span>
-          </button>
-          <button className={`feed-tab ${tab === 'home' ? 'active' : ''}`} onClick={() => setTab('home')}>
-            {Icons.rss()}
-            <span>Home</span>
-          </button>
-        </div>
-
-        {tab === 'workspace' ? (
-          /* ════════════════════════════════════════════
-             WORKSPACE — OS-style filesystem
-             ════════════════════════════════════════════ */
+  if (mode === 'workspace') {
+    return (
+      <div className="content-area">
+        <div className="feed-view">
           <div className="fs">
             {/* Breadcrumb bar */}
             <div className="fs-breadcrumb">
@@ -239,27 +207,24 @@ export function FeedView({
                   <>
                     <button className="fs-action-btn" onClick={() => setCreatingFolder(true)} title="New folder">
                       {Icons.folder()}
-                      <span>New folder</span>
                     </button>
                     <button className="fs-action-btn" onClick={() => onAddNote(currentFolderId || undefined)} title="New file">
                       {Icons.plus()}
-                      <span>New file</span>
                     </button>
                   </>
                 )}
                 {!currentWsId && (
                   <button className="fs-action-btn" onClick={() => setCreatingWs(true)} title="New workspace">
                     {Icons.plus()}
-                    <span>New workspace</span>
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Grid content */}
+            {/* Grid */}
             <div className="fs-grid-scroll">
               <div className="fs-grid">
-                {/* Root level: show workspaces */}
+                {/* Root: workspaces */}
                 {!currentWsId && (
                   <>
                     {workspaces.map(ws => (
@@ -269,24 +234,16 @@ export function FeedView({
                         onClick={() => setBrowsePath([ws.id])}
                         onDoubleClick={() => { onSwitchWorkspace(ws.id); setBrowsePath([ws.id]) }}
                       >
-                        <div className="fs-item__icon fs-item__icon--ws">
-                          {ws.isPublic ? '🌐' : '📁'}
-                        </div>
+                        <div className="fs-item__icon">{ws.isPublic ? '🌐' : '📁'}</div>
                         <div className="fs-item__name">{ws.name}</div>
-                        <div className="fs-item__meta">
-                          {wsCounts.get(ws.id) || 0} files
-                          {ws.id === activeWorkspaceId && <span className="fs-item__badge">active</span>}
-                          {ws.isPublic && <span className="fs-item__badge fs-item__badge--pub">public</span>}
-                        </div>
                       </button>
                     ))}
                     {creatingWs && (
                       <div className="fs-item fs-item--creating">
-                        <div className="fs-item__icon fs-item__icon--ws">📁</div>
+                        <div className="fs-item__icon">📁</div>
                         <input
-                          ref={wsInputRef}
                           className="fs-item__input"
-                          placeholder="Workspace name..."
+                          placeholder="Name..."
                           value={newWsName}
                           onChange={(e) => setNewWsName(e.target.value)}
                           onKeyDown={(e) => {
@@ -301,7 +258,7 @@ export function FeedView({
                   </>
                 )}
 
-                {/* Inside workspace: show folders and files */}
+                {/* Inside workspace: folders + files */}
                 {currentWsId && (
                   <>
                     {currentFolders.map(folder => (
@@ -310,9 +267,8 @@ export function FeedView({
                         className="fs-item"
                         onClick={() => setBrowsePath([...browsePath, folder.id])}
                       >
-                        <div className="fs-item__icon fs-item__icon--folder">📁</div>
+                        <div className="fs-item__icon">📁</div>
                         <div className="fs-item__name">{folder.name}</div>
-                        <div className="fs-item__meta">folder</div>
                       </button>
                     ))}
                     {currentNotes.map(note => (
@@ -325,16 +281,14 @@ export function FeedView({
                           {/\.\w+$/.test(note.title) ? <FileTypeIcon filename={note.title} /> : Icons.file()}
                         </div>
                         <div className="fs-item__name">{note.title || 'Untitled'}</div>
-                        <div className="fs-item__meta">{formatRelative(note.updatedAt)}</div>
                       </button>
                     ))}
                     {creatingFolder && (
                       <div className="fs-item fs-item--creating">
-                        <div className="fs-item__icon fs-item__icon--folder">📁</div>
+                        <div className="fs-item__icon">📁</div>
                         <input
-                          ref={folderInputRef}
                           className="fs-item__input"
-                          placeholder="Folder name..."
+                          placeholder="Name..."
                           value={newFolderName}
                           onChange={(e) => setNewFolderName(e.target.value)}
                           onKeyDown={(e) => {
@@ -348,12 +302,7 @@ export function FeedView({
                     )}
                     {currentFolders.length === 0 && currentNotes.length === 0 && !creatingFolder && (
                       <div className="fs-empty">
-                        <div className="fs-empty__icon">{Icons.folder()}</div>
                         <div className="fs-empty__text">Empty</div>
-                        <button className="fs-empty__btn" onClick={() => onAddNote(currentFolderId || undefined)}>
-                          {Icons.plus()}
-                          <span>Create a file</span>
-                        </button>
                       </div>
                     )}
                   </>
@@ -365,20 +314,15 @@ export function FeedView({
             <div className="fs-statusbar">
               {currentWsId ? (
                 <>
-                  <span>{currentFolders.length} folder{currentFolders.length !== 1 ? 's' : ''}</span>
-                  <span className="fs-statusbar__sep">&middot;</span>
-                  <span>{currentNotes.length} file{currentNotes.length !== 1 ? 's' : ''}</span>
+                  <span>{currentFolders.length + currentNotes.length} items</span>
                   {currentWs && currentWs.id === activeWorkspaceId && (
                     <>
                       <span className="fs-statusbar__sep">&middot;</span>
-                      <span className="fs-statusbar__active">Active workspace</span>
+                      <span className="fs-statusbar__active">Active</span>
                     </>
                   )}
                   {currentWs && currentWs.id !== activeWorkspaceId && (
-                    <button
-                      className="fs-statusbar__set-active"
-                      onClick={() => onSwitchWorkspace(currentWs.id)}
-                    >
+                    <button className="fs-statusbar__set-active" onClick={() => onSwitchWorkspace(currentWs.id)}>
                       Set as active
                     </button>
                   )}
@@ -388,145 +332,149 @@ export function FeedView({
               )}
             </div>
           </div>
-        ) : (
-          /* ════════════════════════════════════════════
-             HOME — social timeline
-             ════════════════════════════════════════════ */
-          <div className="feed-layout">
-            <div className="feed-col">
-              <div className="feed-filter-tabs">
-                <button className={`feed-filter-tab ${feedFilter === 'global' ? 'active' : ''}`} onClick={() => setFeedFilter('global')}>Global</button>
-                <button className={`feed-filter-tab ${feedFilter === 'following' ? 'active' : ''}`} onClick={() => setFeedFilter('following')}>Following</button>
-              </div>
-              <div className="feed-scroll">
-                {timeline.length === 0 ? (
-                  <div className="feed-empty">
-                    <div className="feed-empty__icon">{Icons.rss()}</div>
-                    <h3 className="feed-empty__title">Welcome to your feed</h3>
-                    <p className="feed-empty__sub">Publish notes to share with the community.</p>
-                  </div>
-                ) : (
-                  timeline.map((item) => {
-                    if (item.kind === 'system') {
-                      const { event } = item
-                      return (
-                        <div key={event.id} className="feed-sys">
-                          <div className="feed-sys__icon">{EVENT_ICONS[event.type]}</div>
-                          <div className="feed-sys__body">
-                            <div className="feed-sys__head">
-                              <span className="feed-sys__label">System</span>
-                              <span className="feed-sys__time">{formatRelative(event.createdAt)}</span>
-                            </div>
-                            <div className="feed-sys__msg">{event.message}</div>
-                            {event.detail && <div className="feed-sys__detail">{event.detail}</div>}
-                          </div>
-                        </div>
-                      )
-                    }
+        </div>
+      </div>
+    )
+  }
 
-                    const { note } = item
-                    const agent = note.authorId ? agentMap.get(note.authorId) : undefined
-                    const authorAvatar = agent?.avatar || '📝'
-                    const authorName = note.author || 'You'
-                    const authorHandle = agent?.handle || `@${(note.author || 'you').toLowerCase().replace(/\s+/g, '')}`
-                    const files = detectFiles(note.content)
-                    const images = extractImages(note.content)
-                    const textContent = stripImages(note.content)
-
-                    return (
-                      <article key={note.id} className="feed-post" onClick={() => onOpenNote(note.id)}>
-                        <div className="feed-post__avatar" onClick={(e) => { e.stopPropagation(); if (agent) onOpenProfile(agent.id) }} style={{ cursor: agent ? 'pointer' : 'default' }}>{authorAvatar}</div>
-                        <div className="feed-post__body">
-                          <div className="feed-post__header">
-                            <span className="feed-post__name" onClick={(e) => { e.stopPropagation(); if (agent) onOpenProfile(agent.id) }}>{authorName}</span>
-                            <span className="feed-post__handle">{authorHandle}</span>
-                            <span className="feed-post__dot">&middot;</span>
-                            <span className="feed-post__time">{formatRelative(note.updatedAt)}</span>
-                          </div>
-                          {note.title && <div className="feed-post__title">{note.title}</div>}
-                          {textContent && <p className="feed-post__text">{textContent.slice(0, 400)}</p>}
-                          {images.length > 0 && (
-                            <div className={`feed-post__images feed-post__images--${Math.min(images.length, 4)}`}>
-                              {images.slice(0, 4).map((img, i) => (
-                                <div key={i} className="feed-post__image-wrap">
-                                  <img src={img.url} alt={img.alt} className="feed-post__image" loading="lazy" onClick={(e) => e.stopPropagation()} />
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          {files.length > 0 && (
-                            <div className="feed-post__files">
-                              {files.slice(0, 4).map((f) => (
-                                <button key={f.name} className="feed-file-badge" onClick={(e) => { e.stopPropagation(); onOpenNote(note.id) }} title={f.name}>
-                                  <span className="feed-file-badge__icon">{getFileIcon(f.type)}</span>
-                                  <span className="feed-file-badge__name">{f.name}</span>
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                          <div className="feed-post__actions">
-                            <button className="feed-post__action" onClick={(e) => e.stopPropagation()}>{Icons.messageCircle()}<span>0</span></button>
-                            <button className="feed-post__action" onClick={(e) => e.stopPropagation()}>{Icons.repeat()}<span>0</span></button>
-                            <button className="feed-post__action" onClick={(e) => e.stopPropagation()}>{Icons.heart()}<span>0</span></button>
-                            <button className="feed-post__action" onClick={(e) => e.stopPropagation()}>{Icons.share()}</button>
-                          </div>
-                        </div>
-                      </article>
-                    )
-                  })
-                )}
-              </div>
-              {/* Floating composer */}
-              <div className="feed-composer">
-                <div className="feed-composer__avatar"><Identicon className="feed-composer__avatar-img" /></div>
-                <textarea ref={composerRef} className="feed-composer__input" placeholder="What's happening?" value={composerText} onChange={handleComposerInput} onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handlePost() }} rows={1} />
-                <div className="feed-composer__tools">
-                  <button className="feed-composer__tool" title="Image">{Icons.image()}</button>
-                  <button className="feed-composer__tool" title="Attach">{Icons.paperclip()}</button>
-                  <button className="feed-composer__post-btn" disabled={composerText.trim().length === 0} onClick={handlePost}>Post</button>
+  // ── HOME mode: social timeline ──
+  return (
+    <div className="content-area">
+      <div className="feed-view">
+        <div className="feed-layout">
+          <div className="feed-col">
+            <div className="feed-filter-tabs">
+              <button className={`feed-filter-tab ${feedFilter === 'global' ? 'active' : ''}`} onClick={() => setFeedFilter('global')}>Global</button>
+              <button className={`feed-filter-tab ${feedFilter === 'following' ? 'active' : ''}`} onClick={() => setFeedFilter('following')}>Following</button>
+            </div>
+            <div className="feed-scroll">
+              {timeline.length === 0 ? (
+                <div className="feed-empty">
+                  <div className="feed-empty__icon">{Icons.rss()}</div>
+                  <h3 className="feed-empty__title">Welcome to your feed</h3>
+                  <p className="feed-empty__sub">Publish notes to share with the community.</p>
                 </div>
+              ) : (
+                timeline.map((item) => {
+                  if (item.kind === 'system') {
+                    const { event } = item
+                    return (
+                      <div key={event.id} className="feed-sys">
+                        <div className="feed-sys__icon">{EVENT_ICONS[event.type]}</div>
+                        <div className="feed-sys__body">
+                          <div className="feed-sys__head">
+                            <span className="feed-sys__label">System</span>
+                            <span className="feed-sys__time">{formatRelative(event.createdAt)}</span>
+                          </div>
+                          <div className="feed-sys__msg">{event.message}</div>
+                          {event.detail && <div className="feed-sys__detail">{event.detail}</div>}
+                        </div>
+                      </div>
+                    )
+                  }
+
+                  const { note } = item
+                  const agent = note.authorId ? agentMap.get(note.authorId) : undefined
+                  const authorAvatar = agent?.avatar || '📝'
+                  const authorName = note.author || 'You'
+                  const authorHandle = agent?.handle || `@${(note.author || 'you').toLowerCase().replace(/\s+/g, '')}`
+                  const files = detectFiles(note.content)
+                  const images = extractImages(note.content)
+                  const textContent = stripImages(note.content)
+
+                  return (
+                    <article key={note.id} className="feed-post" onClick={() => onOpenNote(note.id)}>
+                      <div className="feed-post__avatar" onClick={(e) => { e.stopPropagation(); if (agent) onOpenProfile(agent.id) }} style={{ cursor: agent ? 'pointer' : 'default' }}>{authorAvatar}</div>
+                      <div className="feed-post__body">
+                        <div className="feed-post__header">
+                          <span className="feed-post__name" onClick={(e) => { e.stopPropagation(); if (agent) onOpenProfile(agent.id) }}>{authorName}</span>
+                          <span className="feed-post__handle">{authorHandle}</span>
+                          <span className="feed-post__dot">&middot;</span>
+                          <span className="feed-post__time">{formatRelative(note.updatedAt)}</span>
+                        </div>
+                        {note.title && <div className="feed-post__title">{note.title}</div>}
+                        {textContent && <p className="feed-post__text">{textContent.slice(0, 400)}</p>}
+                        {images.length > 0 && (
+                          <div className={`feed-post__images feed-post__images--${Math.min(images.length, 4)}`}>
+                            {images.slice(0, 4).map((img, i) => (
+                              <div key={i} className="feed-post__image-wrap">
+                                <img src={img.url} alt={img.alt} className="feed-post__image" loading="lazy" onClick={(e) => e.stopPropagation()} />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {files.length > 0 && (
+                          <div className="feed-post__files">
+                            {files.slice(0, 4).map((f) => (
+                              <button key={f.name} className="feed-file-badge" onClick={(e) => { e.stopPropagation(); onOpenNote(note.id) }} title={f.name}>
+                                <span className="feed-file-badge__icon">{getFileIcon(f.type)}</span>
+                                <span className="feed-file-badge__name">{f.name}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        <div className="feed-post__actions">
+                          <button className="feed-post__action" onClick={(e) => e.stopPropagation()}>{Icons.messageCircle()}<span>0</span></button>
+                          <button className="feed-post__action" onClick={(e) => e.stopPropagation()}>{Icons.repeat()}<span>0</span></button>
+                          <button className="feed-post__action" onClick={(e) => e.stopPropagation()}>{Icons.heart()}<span>0</span></button>
+                          <button className="feed-post__action" onClick={(e) => e.stopPropagation()}>{Icons.share()}</button>
+                        </div>
+                      </div>
+                    </article>
+                  )
+                })
+              )}
+            </div>
+            {/* Floating composer */}
+            <div className="feed-composer">
+              <div className="feed-composer__avatar"><Identicon className="feed-composer__avatar-img" /></div>
+              <textarea ref={composerRef} className="feed-composer__input" placeholder="What's happening?" value={composerText} onChange={handleComposerInput} onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handlePost() }} rows={1} />
+              <div className="feed-composer__tools">
+                <button className="feed-composer__tool" title="Image">{Icons.image()}</button>
+                <button className="feed-composer__tool" title="Attach">{Icons.paperclip()}</button>
+                <button className="feed-composer__post-btn" disabled={composerText.trim().length === 0} onClick={handlePost}>Post</button>
               </div>
             </div>
-            {/* Context panel */}
-            <aside className="feed-panel">
-              <div className="feed-panel__search">
-                {Icons.search()}
-                <input type="text" className="feed-panel__search-input" placeholder="Search Zarnet..." />
-              </div>
-              {trending.length > 0 && (
-                <div className="feed-card">
-                  <h3 className="feed-card__title">Trending</h3>
-                  {trending.map((t, i) => (
-                    <div key={t.topic} className="feed-card__trend">
-                      <span className="feed-card__trend-rank">{i + 1}</span>
-                      <div className="feed-card__trend-info">
-                        <span className="feed-card__trend-topic">#{t.topic}</span>
-                        <span className="feed-card__trend-count">{t.count} interested</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {suggestions.length > 0 && (
-                <div className="feed-card">
-                  <h3 className="feed-card__title">Agents</h3>
-                  {suggestions.map((agent) => (
-                    <div key={agent.id} className="feed-card__agent">
-                      <div className="feed-card__agent-emoji" onClick={() => onOpenProfile(agent.id)}>{agent.avatar}</div>
-                      <div className="feed-card__agent-info" onClick={() => onOpenProfile(agent.id)}>
-                        <span className="feed-card__agent-name">{agent.name}</span>
-                        <span className="feed-card__agent-handle">{agent.handle}</span>
-                      </div>
-                      {isFollowing && onFollow && onUnfollow && (
-                        <FollowButton isFollowing={isFollowing(agent.id)} onFollow={() => onFollow(agent.id)} onUnfollow={() => onUnfollow(agent.id)} />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </aside>
           </div>
-        )}
+          {/* Context panel */}
+          <aside className="feed-panel">
+            <div className="feed-panel__search">
+              {Icons.search()}
+              <input type="text" className="feed-panel__search-input" placeholder="Search Zarnet..." />
+            </div>
+            {trending.length > 0 && (
+              <div className="feed-card">
+                <h3 className="feed-card__title">Trending</h3>
+                {trending.map((t, i) => (
+                  <div key={t.topic} className="feed-card__trend">
+                    <span className="feed-card__trend-rank">{i + 1}</span>
+                    <div className="feed-card__trend-info">
+                      <span className="feed-card__trend-topic">#{t.topic}</span>
+                      <span className="feed-card__trend-count">{t.count} interested</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {suggestions.length > 0 && (
+              <div className="feed-card">
+                <h3 className="feed-card__title">Agents</h3>
+                {suggestions.map((agent) => (
+                  <div key={agent.id} className="feed-card__agent">
+                    <div className="feed-card__agent-emoji" onClick={() => onOpenProfile(agent.id)}>{agent.avatar}</div>
+                    <div className="feed-card__agent-info" onClick={() => onOpenProfile(agent.id)}>
+                      <span className="feed-card__agent-name">{agent.name}</span>
+                      <span className="feed-card__agent-handle">{agent.handle}</span>
+                    </div>
+                    {isFollowing && onFollow && onUnfollow && (
+                      <FollowButton isFollowing={isFollowing(agent.id)} onFollow={() => onFollow(agent.id)} onUnfollow={() => onUnfollow(agent.id)} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </aside>
+        </div>
       </div>
     </div>
   )
