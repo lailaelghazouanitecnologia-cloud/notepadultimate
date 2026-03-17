@@ -10,9 +10,7 @@ interface ProfileViewProps {
   onBack: () => void
   onOpenProfile: (agentId: string) => void
   onOpenNote: (noteId: string) => void
-  hasContract?: (id: string) => boolean
-  onEstablishContract?: (id: string) => void
-  onRevokeContract?: (id: string) => void
+  onViewContract?: (agentId: string) => void
 }
 
 function formatDate(ts: number): string {
@@ -31,7 +29,7 @@ function formatRelative(ts: number): string {
 
 export function ProfileView({
   agent, publishedNotes, allAgents, onBack, onOpenProfile, onOpenNote,
-  hasContract, onEstablishContract, onRevokeContract,
+  onViewContract,
 }: ProfileViewProps) {
   // Notes by this agent or matching their interests
   const agentNotes = useMemo(() => {
@@ -90,12 +88,11 @@ export function ProfileView({
               <h2 className="profile-info__name">{agent.name}</h2>
               <span className="profile-info__handle">{agent.handle}</span>
             </div>
-            {hasContract && onEstablishContract && onRevokeContract && (
+            {onViewContract && (
               <div className="profile-info__contract">
                 <ContractButton
-                  hasContract={hasContract(agent.id)}
-                  onEstablish={() => onEstablishContract(agent.id)}
-                  onRevoke={() => onRevokeContract(agent.id)}
+                  agentId={agent.id}
+                  onViewContract={onViewContract}
                   size="md"
                 />
               </div>

@@ -14,9 +14,7 @@ interface FeedViewProps {
   onOpenNote: (noteId: string) => void
   onOpenProfile: (agentId: string) => void
   onCreatePost?: (content: string) => void
-  hasContract?: (id: string) => boolean
-  onEstablishContract?: (id: string) => void
-  onRevokeContract?: (id: string) => void
+  onViewContract?: (agentId: string) => void
   contractedAgentIds?: Set<string>
   // Filesystem
   workspaces: Workspace[]
@@ -61,7 +59,7 @@ function getFileIcon(type: string): string {
 
 export function FeedView({
   mode, publishedNotes, agents, systemEvents, onOpenNote, onOpenProfile, onCreatePost,
-  hasContract, onEstablishContract, onRevokeContract, contractedAgentIds,
+  onViewContract, contractedAgentIds,
   workspaces, activeWorkspaceId, onSwitchWorkspace, onCreateWorkspace,
   notes, folders, onAddNote, onCreateFolder,
 }: FeedViewProps) {
@@ -466,8 +464,8 @@ export function FeedView({
                       <span className="feed-card__agent-name">{agent.name}</span>
                       <span className="feed-card__agent-handle">{agent.handle}</span>
                     </div>
-                    {hasContract && onEstablishContract && onRevokeContract && (
-                      <ContractButton hasContract={hasContract(agent.id)} onEstablish={() => onEstablishContract(agent.id)} onRevoke={() => onRevokeContract(agent.id)} />
+                    {onViewContract && (
+                      <ContractButton agentId={agent.id} onViewContract={onViewContract} />
                     )}
                   </div>
                 ))}

@@ -12,6 +12,7 @@ import { ExploreView } from './components/ExploreView'
 import { MessagesView } from './components/MessagesView'
 import { HomeScreen } from './components/HomeScreen'
 import { InboxView } from './components/InboxView'
+import { ContractViewer } from './components/ContractViewer'
 import { StartMenu } from './components/StartMenu'
 import { Header } from './components/Header'
 import { TabsBar } from './components/TabsBar'
@@ -38,6 +39,7 @@ const MemoizedPluginsView = memo(PluginsView)
 const MemoizedMessagesView = memo(MessagesView)
 const MemoizedHomeScreen = memo(HomeScreen)
 const MemoizedInboxView = memo(InboxView)
+const MemoizedContractViewer = memo(ContractViewer)
 
 export default function App() {
   const { theme, toggleTheme } = useTheme()
@@ -63,7 +65,7 @@ export default function App() {
     showHistory, setShowHistory,
   } = useUIContext()
   const {
-    hasContract, establishContract, revokeContract,
+    contracts, hasContract, establishContract, revokeContract,
     getContractedAgents,
   } = useSocialContext()
 
@@ -72,6 +74,7 @@ export default function App() {
   const [menuVariant, setMenuVariant] = useState<'os' | 'centered' | null>(null)
   const [sidebarWidth, setSidebarWidth] = useState(260)
   const [attachedFiles, setAttachedFiles] = useState<{ id: string; title: string }[]>([])
+  const [contractAgentId, setContractAgentId] = useState<string | null>(null)
   const handleDividerMouseDown = useResizable(sidebarWidth, setSidebarWidth, { min: 180, max: 480 })
 
   // Alt+Space → OS start menu
@@ -89,6 +92,17 @@ export default function App() {
   // Social data
   const contractedAgents = useMemo(() => getContractedAgents(agents), [getContractedAgents, agents])
   const contractedAgentIds = useMemo(() => new Set(contractedAgents.map(a => a.id)), [contractedAgents])
+
+  const handleViewContract = useCallback((agentId: string) => {
+    setContractAgentId(agentId)
+  }, [])
+
+  const contractAgent = contractAgentId ? agents.find(a => a.id === contractAgentId) : null
+  const contractDate = useMemo(() => {
+    if (!contractAgentId) return undefined
+    const c = contracts.find(f => f.followingId === contractAgentId)
+    return c?.createdAt
+  }, [contractAgentId, contracts])
 
   const editingNote = editingNoteId ? notes.find((n) => n.id === editingNoteId) : null
   const activeSession = activeChatId ? chatSessions.find(s => s.id === activeChatId) : undefined
@@ -287,9 +301,7 @@ export default function App() {
               onBack={() => setProfileAgentId(null)}
               onOpenProfile={handleOpenProfile}
               onOpenNote={handleOpenNote}
-              hasContract={hasContract}
-              onEstablishContract={establishContract}
-              onRevokeContract={revokeContract}
+              onViewContract={handleViewContract}
             />
           ) : (
             <MemoizedAgentsView
@@ -320,9 +332,7 @@ export default function App() {
             onOpenNote={handleOpenNote}
             onOpenProfile={handleOpenProfile}
             onCreatePost={handleCreatePost}
-            hasContract={hasContract}
-            onEstablishContract={establishContract}
-            onRevokeContract={revokeContract}
+            onViewContract={handleViewContract}
             contractedAgentIds={contractedAgentIds}
             workspaces={workspaces.filter(w => w.spaceId === activeProjectId || w.id === 'ws-default')}
             activeWorkspaceId={activeWorkspaceId}
@@ -340,9 +350,7 @@ export default function App() {
             publishedNotes={publishedNotes}
             onOpenNote={handleOpenNote}
             onOpenProfile={handleOpenProfile}
-            hasContract={hasContract}
-            onEstablishContract={establishContract}
-            onRevokeContract={revokeContract}
+            onViewContract={handleViewContract}
           />
         ) : view === 'workspace' ? (
           <MemoizedWorkspaceOS
@@ -389,6 +397,24 @@ export default function App() {
         ) : view === 'graph' ? (
           <MemoizedGraphView notes={notes} onOpenNote={handleOpenNote} onCreateNote={handleCreateFromChat} />
         ) : null}
+
+        {/* Contract Viewer */}
+        {contractAgent && (
+          <>
+            <div className="contract-backdrop" onClick={() => setContractAgentId(null)} />
+            <div className="contract-overlay">
+              <MemoizedContractViewer
+                agent={contractAgent}
+                hasContract={hasContract(contractAgent.id)}
+                contractDate={contractDate}
+                onEstablish={() => establishContract(contractAgent.id)}
+                onRevoke={() => revokeContract(contractAgent.id)}
+                onClose={() => setContractAgentId(null)}
+                onOpenProfile={(id) => { setContractAgentId(null); handleOpenProfile(id) }}
+              />
+            </div>
+          </>
+        )}
 
         {/* Start Menu — centered (logo) or OS (Alt+Space) */}
         {menuVariant && (

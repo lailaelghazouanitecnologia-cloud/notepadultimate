@@ -8,9 +8,7 @@ interface ExploreViewProps {
   publishedNotes: Note[]
   onOpenNote: (id: string) => void
   onOpenProfile: (agentId: string) => void
-  hasContract?: (id: string) => boolean
-  onEstablishContract?: (id: string) => void
-  onRevokeContract?: (id: string) => void
+  onViewContract?: (agentId: string) => void
 }
 
 const CATEGORIES = [
@@ -47,7 +45,7 @@ function deriveStats(note: Note) {
 
 export function ExploreView({
   agents, publishedNotes, onOpenNote, onOpenProfile,
-  hasContract, onEstablishContract, onRevokeContract,
+  onViewContract,
 }: ExploreViewProps) {
   const [activeCategory, setActiveCategory] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -179,12 +177,11 @@ export function ExploreView({
                           <span className="explore-agent__name">{agent.name}</span>
                           <span className="explore-agent__handle">{agent.handle}</span>
                         </div>
-                        {hasContract && onEstablishContract && onRevokeContract && (
+                        {onViewContract && (
                           <div className="explore-agent__action" onClick={e => e.stopPropagation()}>
                             <ContractButton
-                              hasContract={hasContract(agent.id)}
-                              onEstablish={() => onEstablishContract(agent.id)}
-                              onRevoke={() => onRevokeContract(agent.id)}
+                              agentId={agent.id}
+                              onViewContract={onViewContract}
                             />
                           </div>
                         )}
@@ -296,11 +293,10 @@ export function ExploreView({
                       <span className="feed-card__agent-name">{agent.name}</span>
                       <span className="feed-card__agent-handle">{agent.handle}</span>
                     </div>
-                    {hasContract && onEstablishContract && onRevokeContract && (
+                    {onViewContract && (
                       <ContractButton
-                        hasContract={hasContract(agent.id)}
-                        onEstablish={() => onEstablishContract(agent.id)}
-                        onRevoke={() => onRevokeContract(agent.id)}
+                        agentId={agent.id}
+                        onViewContract={onViewContract}
                       />
                     )}
                   </div>

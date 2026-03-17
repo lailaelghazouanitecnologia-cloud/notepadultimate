@@ -1,0 +1,122 @@
+/* ── Contract overlay ── */
+.contract-backdrop {
+  position: absolute; inset: 0; z-index: 95;
+  background: rgba(0,0,0,0.3);
+}
+.contract-overlay {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 96; width: 440px; max-height: 80%;
+  background: var(--background); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+  animation: contract-pop 180ms ease-out;
+}
+@keyframes contract-pop {
+  from { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* ── Contract Viewer ── */
+.contract-viewer {
+  display: flex; flex-direction: column;
+  height: 100%; overflow: hidden;
+}
+
+.contract-viewer__header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.contract-viewer__back {
+  background: none; border: none; cursor: pointer;
+  color: var(--foreground); padding: 4px; display: flex;
+}
+.contract-viewer__back svg { width: 18px; height: 18px; }
+.contract-viewer__title {
+  font-size: 17px; font-weight: 700; margin: 0;
+}
+
+.contract-viewer__scroll {
+  flex: 1; overflow-y: auto; padding: 20px;
+  display: flex; flex-direction: column; gap: 24px;
+}
+
+/* Agent card */
+.contract-viewer__agent {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; border-radius: 12px;
+  background: var(--hover-light); cursor: pointer;
+  transition: background 120ms;
+}
+.contract-viewer__agent:hover { background: var(--border); }
+.contract-viewer__avatar { font-size: 32px; line-height: 1; }
+.contract-viewer__agent-info { display: flex; flex-direction: column; flex: 1; gap: 2px; }
+.contract-viewer__name { font-weight: 600; font-size: 15px; }
+.contract-viewer__handle { font-size: 13px; color: var(--muted); }
+.contract-viewer__arrow { color: var(--muted); }
+.contract-viewer__arrow svg { width: 16px; height: 16px; }
+
+/* Status */
+.contract-viewer__status {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px; border-radius: 10px;
+  font-size: 14px; font-weight: 600;
+  border: 1px solid var(--border);
+}
+.contract-viewer__status-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+.contract-viewer__status--active .contract-viewer__status-dot { background: #22c55e; }
+.contract-viewer__status--none .contract-viewer__status-dot { background: var(--muted); }
+.contract-viewer__since {
+  margin-left: auto; font-weight: 400; font-size: 12px; color: var(--muted);
+}
+
+/* Section */
+.contract-viewer__section-title {
+  font-size: 13px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.5px; color: var(--muted); margin: 0 0 12px;
+}
+
+/* Terms */
+.contract-viewer__terms { display: flex; flex-direction: column; gap: 12px; }
+.contract-viewer__term {
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.contract-viewer__term-check { color: var(--muted); flex-shrink: 0; padding-top: 2px; }
+.contract-viewer__term-check svg { width: 16px; height: 16px; }
+.contract-viewer__status--active ~ .contract-viewer__section .contract-viewer__term-check {
+  color: #22c55e;
+}
+.contract-viewer__term-body { display: flex; flex-direction: column; gap: 2px; }
+.contract-viewer__term-label { font-size: 14px; font-weight: 600; }
+.contract-viewer__term-desc { font-size: 13px; color: var(--muted); line-height: 1.4; }
+
+/* Tags */
+.contract-viewer__tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.contract-viewer__tag {
+  padding: 4px 12px; border-radius: 14px; font-size: 12px;
+  background: var(--hover-light); color: var(--foreground);
+  border: 1px solid var(--border);
+}
+
+/* Actions */
+.contract-viewer__actions { padding-top: 8px; }
+.contract-viewer__cancel-btn,
+.contract-viewer__establish-btn {
+  width: 100%; padding: 12px; border-radius: 10px;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  border: none; transition: all 120ms;
+}
+.contract-viewer__establish-btn {
+  background: var(--foreground); color: var(--background);
+}
+.contract-viewer__establish-btn:hover { opacity: 0.85; }
+.contract-viewer__cancel-btn {
+  background: transparent; color: var(--destructive);
+  border: 1px solid var(--destructive);
+}
+.contract-viewer__cancel-btn:hover {
+  background: var(--destructive); color: white;
+}

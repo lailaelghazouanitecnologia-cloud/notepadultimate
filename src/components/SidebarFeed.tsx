@@ -5,16 +5,14 @@ interface SidebarFeedProps {
   agents: Agent[]
   contractedAgents: Agent[]
   suggestedAgents: Agent[]
-  hasContract: (id: string) => boolean
-  onEstablishContract: (id: string) => void
-  onRevokeContract: (id: string) => void
+  onViewContract: (agentId: string) => void
   onOpenProfile: (id: string) => void
   trending: { topic: string; count: number }[]
 }
 
 export function SidebarFeed({
   contractedAgents, suggestedAgents,
-  hasContract, onEstablishContract, onRevokeContract, onOpenProfile, trending,
+  onViewContract, onOpenProfile, trending,
 }: SidebarFeedProps) {
   return (
     <div className="sb-panel sb-panel--feed">
@@ -54,9 +52,8 @@ export function SidebarFeed({
                 <span className="sb-agent-row__handle">{agent.handle}</span>
               </div>
               <ContractButton
-                hasContract={hasContract(agent.id)}
-                onEstablish={() => onEstablishContract(agent.id)}
-                onRevoke={() => onRevokeContract(agent.id)}
+                agentId={agent.id}
+                onViewContract={onViewContract}
               />
             </div>
           ))}

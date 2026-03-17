@@ -176,19 +176,9 @@
   font-family: var(--font-sans); font-weight: 600;
   cursor: pointer; transition: all 120ms;
   white-space: nowrap; flex-shrink: 0;
-}
-.contract-btn--sm { height: 28px; padding: 0 14px; font-size: 12px; }
-.contract-btn--md { height: 34px; padding: 0 18px; font-size: 13px; }
-
-.contract-btn:not(.contract-btn--active) {
   background: var(--foreground); color: var(--background);
   border-color: var(--foreground);
 }
-.contract-btn:not(.contract-btn--active):hover { opacity: 0.85; }
-.contract-btn--active {
-  background: transparent; color: var(--foreground);
-  border-color: var(--border);
-}
-.contract-btn--active:hover {
-  border-color: var(--destructive); color: var(--destructive);
-}
+.contract-btn--sm { height: 28px; padding: 0 14px; font-size: 12px; }
+.contract-btn--md { height: 34px; padding: 0 18px; font-size: 13px; }
+.contract-btn:hover { opacity: 0.85; }

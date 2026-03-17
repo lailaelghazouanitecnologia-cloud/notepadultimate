@@ -1,25 +1,23 @@
 import { useCallback } from 'react'
 
 interface ContractButtonProps {
-  hasContract: boolean
-  onEstablish: () => void
-  onRevoke: () => void
+  agentId: string
+  onViewContract: (agentId: string) => void
   size?: 'sm' | 'md'
 }
 
-export function ContractButton({ hasContract, onEstablish, onRevoke, size = 'sm' }: ContractButtonProps) {
+export function ContractButton({ agentId, onViewContract, size = 'sm' }: ContractButtonProps) {
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
-    if (hasContract) onRevoke()
-    else onEstablish()
-  }, [hasContract, onEstablish, onRevoke])
+    onViewContract(agentId)
+  }, [agentId, onViewContract])
 
   return (
     <button
-      className={`contract-btn ${hasContract ? 'contract-btn--active' : ''} contract-btn--${size}`}
+      className={`contract-btn contract-btn--${size}`}
       onClick={handleClick}
     >
-      {hasContract ? 'Contracted' : 'Contract'}
+      See contract
     </button>
   )
 }

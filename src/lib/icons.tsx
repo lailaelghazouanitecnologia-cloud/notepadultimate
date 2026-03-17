@@ -170,6 +170,8 @@ export const Icons = {
   x: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M18 6L6 18M6 6l12 12"/></svg>,
   messageCircle: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/></svg>,
   chevronDown: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>,
+  chevronRight: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M9 18l6-6-6-6"/></svg>,
+  circle: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><circle cx="12" cy="12" r="10"/></svg>,
   clock: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>,
   rss: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1" fill="currentColor"/></svg>,
   upload: (p?: object) => <svg viewBox="0 0 24 24" {...s} {...p}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>,
