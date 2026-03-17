@@ -53,6 +53,59 @@
 .zw-sb-post-btn:active { transform: scale(0.98); }
 .zw-sb-post-btn svg { width: 16px; height: 16px; }
 
+/* ── Contextual panel (chat sessions, graph nodes) ── */
+.zw-sb-panel {
+  display: flex; flex-direction: column; gap: 0;
+  margin-top: 8px; flex: 1; min-height: 0; overflow: hidden;
+  border-top: 1px solid var(--border); padding-top: 8px;
+}
+.zw-sb-panel__header {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 10px 6px; flex-shrink: 0;
+}
+.zw-sb-panel__title {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.04em; color: var(--muted-foreground);
+  font-family: var(--font-sans); flex: 1;
+}
+.zw-sb-panel__count {
+  font-size: 10px; color: var(--muted-foreground); opacity: 0.6;
+  font-variant-numeric: tabular-nums; font-family: var(--font-sans);
+}
+.zw-sb-panel__action {
+  display: flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border: none; border-radius: 4px;
+  background: transparent; color: var(--muted-foreground);
+  cursor: pointer; transition: all 0.1s;
+}
+.zw-sb-panel__action:hover { background: var(--hover-light); color: var(--foreground); }
+.zw-sb-panel__action svg { width: 14px; height: 14px; }
+.zw-sb-panel__list {
+  flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 1px;
+}
+.zw-sb-panel__empty {
+  padding: 12px 10px; font-size: 12px; color: var(--muted-foreground);
+  opacity: 0.5; font-family: var(--font-sans);
+}
+.zw-sb-panel__item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; border-radius: 4px; cursor: pointer;
+  border: none; background: transparent; width: 100%; text-align: left;
+  transition: background 80ms; font-family: var(--font-sans);
+}
+.zw-sb-panel__item:hover { background: var(--hover-light); }
+.zw-sb-panel__item.active { background: var(--accent); }
+.zw-sb-panel__item svg { width: 14px; height: 14px; color: var(--muted-foreground); flex-shrink: 0; }
+.zw-sb-panel__item.active svg { color: var(--foreground); }
+.zw-sb-panel__item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.zw-sb-panel__item-title {
+  font-size: 12px; font-weight: 500; color: var(--foreground);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.zw-sb-panel__item-meta {
+  font-size: 10px; color: var(--muted-foreground);
+}
+
 /* ── Spacer ── */
 .zw-sb-spacer { flex: 1; min-height: 16px; }
 

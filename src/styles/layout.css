@@ -18,6 +18,72 @@
 .app-divider:hover::after { opacity: 0.5; }
 .app-main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
 
+/* ── Header ── adapts per page */
+.header {
+  height: var(--zw-header-h); display: flex; align-items: center;
+  padding: 0 12px; gap: 8px; flex-shrink: 0;
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
+}
+.header--no-border { border-bottom: none; }
+
+.header__left { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.header__title {
+  font-size: 16px; font-weight: 700; color: var(--foreground);
+  margin: 0; white-space: nowrap; font-family: var(--font-sans);
+  letter-spacing: -0.3px;
+}
+
+.header__right {
+  flex: 1; display: flex; align-items: center; justify-content: flex-end; gap: 6px;
+  min-width: 0;
+}
+
+.header__search {
+  display: flex; align-items: center; gap: 6px;
+  width: 100%; max-width: 280px;
+  height: 30px; padding: 0 10px;
+  background: var(--hover-light); border: 1px solid var(--border);
+  border-radius: 18px; transition: border-color 0.12s ease;
+}
+.header__search:focus-within { border-color: var(--ring); }
+.header__search svg { width: 13px; height: 13px; color: var(--muted-foreground); flex-shrink: 0; opacity: 0.5; }
+.header__search-input {
+  flex: 1; border: none; outline: none; background: transparent;
+  font-size: 12px; color: var(--foreground); font-family: var(--font-sans);
+}
+.header__search-input::placeholder { color: var(--muted-foreground); opacity: .5; }
+
+/* Header icon button */
+.header__icon-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border: none; border-radius: 6px;
+  background: transparent; color: var(--muted-foreground);
+  cursor: pointer; transition: all 0.12s ease;
+}
+.header__icon-btn:hover { background: var(--hover-light); color: var(--foreground); }
+.header__icon-btn.active { background: var(--accent); color: var(--foreground); }
+.header__icon-btn--hidden { display: none; }
+.header__icon-btn--borderless { border: none; background: none; }
+.header__icon-btn--borderless:hover { background: none; opacity: 0.7; }
+.header__icon-btn svg { width: 14px; height: 14px; }
+
+/* Publish button */
+.header__publish-btn {
+  display: flex; align-items: center; gap: 5px;
+  height: 26px; padding: 0 10px;
+  background: var(--zw-red); border: none;
+  border-radius: 6px; color: #fff;
+  font-size: 12px; font-weight: 500; font-family: var(--font-sans);
+  cursor: pointer; transition: all 0.12s ease;
+  box-shadow: var(--zw-red-shadow);
+}
+.header__publish-btn:hover { opacity: 0.9; }
+.header__publish-btn.published {
+  background: transparent; border-color: var(--border); color: var(--muted-foreground);
+}
+.header__publish-btn.published:hover { background: var(--hover-light); color: var(--foreground); }
+.header__publish-btn svg { width: 13px; height: 13px; }
 
 /* Generic icon button */
 .icon-btn {

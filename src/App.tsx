@@ -7,6 +7,7 @@ import { GraphView } from './components/GraphView'
 import { AgentsView } from './components/AgentsView'
 import { ProfileView } from './components/ProfileView'
 import { PluginsView } from './components/PluginsView'
+import { Header } from './components/Header'
 import { TabsBar } from './components/TabsBar'
 import { PublishModal } from './components/PublishModal'
 import { PeoplePanel } from './components/PeoplePanel'
@@ -41,12 +42,12 @@ export default function App() {
   const { projects, activeProjectId, activeProject, systemEvents, switchProject, createProject } = useProjectContext()
   const {
     view, setView,
-    sidebarCollapsed, toggleSidebar,
+    sidebarCollapsed, toggleSidebar, setSidebarCollapsed,
     editingNoteId, setEditingNoteId,
     openTabs, openTab, closeTab,
     profileAgentId, setProfileAgentId,
     chatSessions, activeChatId,
-    saveChat,
+    saveChat, newChat, openChat,
   } = useUIContext()
   const {
     isFollowing, followUser, unfollowUser,
@@ -136,6 +137,11 @@ export default function App() {
     publishNote({ ...note, content, published: true }, 'You')
   }, [addNote, updateNote, publishNote])
 
+  const handlePublish = useCallback(() => {
+    if (!editingNote || editingNote.published) return
+    setShowPublishModal(true)
+  }, [editingNote, setShowPublishModal])
+
   const handlePublishConfirm = useCallback((note: import('./types').Note, author: string) => {
     publishNote(note, author)
     updateNote(note.id, { published: true })
@@ -181,6 +187,12 @@ export default function App() {
         onOpenAgents={() => { setView('agents'); setProfileAgentId(null) }}
         onOpenContracts={() => { setView('agents'); setProfileAgentId(null) }}
         onOpenPlugins={() => { setView('plugins'); setProfileAgentId(null) }}
+        chatSessions={chatSessions}
+        activeChatId={activeChatId}
+        onNewChat={newChat}
+        onOpenChat={openChat}
+        notes={notes}
+        onOpenNote={handleOpenNote}
       />
 
       {/* Resizable divider */}
@@ -189,6 +201,17 @@ export default function App() {
       )}
 
       <div className="app-main">
+        <Header
+          sidebarCollapsed={sidebarCollapsed}
+          setSidebarCollapsed={setSidebarCollapsed}
+          view={view}
+          showEditor={showEditor}
+          editingNote={editingNote}
+          showPeoplePanel={showPeoplePanel}
+          setShowPeoplePanel={setShowPeoplePanel}
+          onPublish={handlePublish}
+        />
+
         {/* Tabs bar — open files (only in editor) */}
         {showEditor && tabNotes.length > 0 && (
           <TabsBar
