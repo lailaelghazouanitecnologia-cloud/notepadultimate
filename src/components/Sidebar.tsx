@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import type { Project, Note, Folder, Workspace } from '../types'
 import type { View } from '../contexts/UIContext'
 import { ZarnettiLogo, Identicon, Icons } from '../lib/icons'
-import { SidebarFiles } from './SidebarFiles'
+
 
 interface SidebarProps {
   projects: Project[]
@@ -47,10 +47,6 @@ export function Sidebar({
   theme, onToggleTheme,
   view, onNavigate, onPost, unreadAlerts,
   onOpenAgents, onOpenPlugins,
-  notes = [], folders = [], activeNoteId, onOpenNote,
-  onAddNote, onDeleteNote, onRenameNote, onDuplicateNote,
-  onMoveNoteToFolder, onCreateFolder, onRenameFolder, onMoveFolderToParent,
-  workspaces = [], activeWorkspaceId = '', onSwitchWorkspace, onCreateWorkspace,
 }: SidebarProps) {
   const [showAvatarMenu, setShowAvatarMenu] = useState(false)
   const avatarRef = useRef<HTMLDivElement>(null)
@@ -69,7 +65,6 @@ export function Sidebar({
   }, [showAvatarMenu])
 
   const showNav = view !== 'graph'
-  const showWorkspace = view === 'workspace'
 
   return (
     <aside className={`zw-sb ${collapsed ? 'collapsed' : ''}`} style={!collapsed && width ? { width } : undefined}>
@@ -133,28 +128,6 @@ export function Sidebar({
           {Icons.edit()}
           <span>Post</span>
         </button>
-      )}
-
-      {/* ── Workspace panel: always visible ── */}
-      {showWorkspace && onAddNote && onDeleteNote && onRenameNote && onCreateFolder && onMoveNoteToFolder && onMoveFolderToParent && onSwitchWorkspace && onCreateWorkspace && (
-        <SidebarFiles
-          notes={notes}
-          activeId={activeNoteId || null}
-          onSelect={onOpenNote || (() => {})}
-          onAdd={onAddNote}
-          onDelete={onDeleteNote}
-          onRename={onRenameNote}
-          onDuplicate={onDuplicateNote}
-          onMoveNoteToFolder={onMoveNoteToFolder}
-          folders={folders}
-          onCreateFolder={onCreateFolder}
-          onRenameFolder={onRenameFolder}
-          onMoveFolderToParent={onMoveFolderToParent}
-          workspaces={workspaces}
-          activeWorkspaceId={activeWorkspaceId}
-          onSwitchWorkspace={onSwitchWorkspace}
-          onCreateWorkspace={onCreateWorkspace}
-        />
       )}
 
       {/* Spacer — push avatar to bottom */}
