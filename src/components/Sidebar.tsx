@@ -46,7 +46,7 @@ export function Sidebar({
   collapsed, width,
   theme, onToggleTheme,
   view, onNavigate, onPost, unreadAlerts,
-  onOpenAgents, onOpenContracts, onOpenPlugins,
+  onOpenAgents, onOpenPlugins,
   notes = [], folders = [], activeNoteId, onOpenNote,
   onAddNote, onDeleteNote, onRenameNote, onDuplicateNote,
   onMoveNoteToFolder, onCreateFolder, onRenameFolder, onMoveFolderToParent,
@@ -87,7 +87,10 @@ export function Sidebar({
           {Icons.rss()}
           <span>Home</span>
         </button>
-        <button className="zw-sb-nav-item">
+        <button
+          className={`zw-sb-nav-item ${view === 'explore' ? 'active' : ''}`}
+          onClick={() => onNavigate?.('explore')}
+        >
           {Icons.search()}
           <span>Explore</span>
         </button>
@@ -114,13 +117,6 @@ export function Sidebar({
           {unreadAlerts != null && unreadAlerts > 0 && (
             <span className="zw-sb-nav-badge">{unreadAlerts}</span>
           )}
-        </button>
-        <button
-          className="zw-sb-nav-item"
-          onClick={onOpenContracts}
-        >
-          {Icons.file()}
-          <span>Contracts</span>
         </button>
         <button
           className={`zw-sb-nav-item ${view === 'workspace' ? 'active' : ''}`}

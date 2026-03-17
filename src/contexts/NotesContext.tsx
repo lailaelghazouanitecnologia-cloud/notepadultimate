@@ -20,7 +20,7 @@ interface NotesContextValue {
   publishedNotes: Note[]
   publishNote: (note: Note, author: string, authorId?: string) => void
   folders: Folder[]
-  createFolder: (name: string, parentId?: string) => void
+  createFolder: (name: string, parentId?: string) => Folder
   deleteFolder: (id: string) => void
   moveFolderToParent: (folderId: string, parentId: string | null) => void
   workspaces: Workspace[]
@@ -91,13 +91,14 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     setPublishedNotes(loadPublished())
   }, [])
 
-  const createFolder = useCallback((name: string, parentId?: string) => {
+  const createFolder = useCallback((name: string, parentId?: string): Folder => {
     const folder = createFolderStore(name, parentId)
     // Assign workspace to the new folder
     const all = loadFolders()
     const idx = all.findIndex(f => f.id === folder.id)
     if (idx >= 0) { all[idx].workspaceId = activeWorkspaceId; saveFolders(all) }
     setFolders(loadFolders())
+    return folder
   }, [activeWorkspaceId])
 
   const deleteFolder = useCallback((id: string) => {

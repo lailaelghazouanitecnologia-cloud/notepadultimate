@@ -8,6 +8,7 @@ import { AgentsView } from './components/AgentsView'
 import { ProfileView } from './components/ProfileView'
 import { PluginsView } from './components/PluginsView'
 import { WorkspaceOS } from './components/WorkspaceOS'
+import { ExploreView } from './components/ExploreView'
 import { Header } from './components/Header'
 import { TabsBar } from './components/TabsBar'
 import { PublishModal } from './components/PublishModal'
@@ -27,6 +28,7 @@ const MemoizedHomeScreen = memo(HomeScreen)
 const MemoizedGraphView = memo(GraphView)
 const MemoizedAgentsView = memo(AgentsView)
 const MemoizedWorkspaceOS = memo(WorkspaceOS)
+const MemoizedExploreView = memo(ExploreView)
 const MemoizedProfileView = memo(ProfileView)
 const MemoizedPluginsView = memo(PluginsView)
 
@@ -42,7 +44,6 @@ export default function App() {
   const {
     agents, alerts, unreadAlerts,
     createAgent, deleteAgent, markAlertRead,
-    createContract, deleteContract, getProjectContracts,
   } = useAgentsContext()
   const { projects, activeProjectId, systemEvents, switchProject, createProject } = useProjectContext()
   const {
@@ -157,11 +158,24 @@ export default function App() {
     setView('agents')
   }, [setProfileAgentId, setView])
 
-  const handleCreateContract = useCallback((agentId: string, name: string, description: string) => {
-    createContract(agentId, name, description, activeProjectId)
-  }, [createContract, activeProjectId])
+  const handleCreateContract = useCallback((agentId: string, fileName: string, content: string) => {
+    const agent = agents.find(a => a.id === agentId)
+    if (!agent) return
+    const agentFolderName = agent.handle.replace('@', '').toLowerCase()
+    // Find or create "contract" root folder
+    let contractRoot = folders.find(f => f.name === 'contract' && !f.parentId)
+    if (!contractRoot) contractRoot = createFolder('contract')
+    // Find or create agent subfolder
+    let agentFolder = folders.find(f => f.name === agentFolderName && f.parentId === contractRoot!.id)
+    if (!agentFolder) agentFolder = createFolder(agentFolderName, contractRoot.id)
+    // Create the .md note inside
+    const note = addNote()
+    updateNote(note.id, { title: fileName, content, folderId: agentFolder.id })
+  }, [agents, folders, createFolder, addNote, updateNote])
 
-  const projectContracts = getProjectContracts(activeProjectId)
+  const handleDeleteContractNote = useCallback((noteId: string) => {
+    deleteNote(noteId)
+  }, [deleteNote])
   const tabNotes = openTabs.map((id) => notes.find((n) => n.id === id)).filter(Boolean) as import('./types').Note[]
 
   const activeSession = activeChatId ? chatSessions.find((s) => s.id === activeChatId) : undefined
@@ -256,13 +270,15 @@ export default function App() {
               agents={agents}
               alerts={alerts}
               publishedNotes={publishedNotes}
-              contracts={projectContracts}
+              notes={notes}
+              folders={folders}
               onCreateAgent={createAgent}
               onDeleteAgent={handleDeleteAgent}
               onOpenProfile={handleOpenProfile}
               onMarkAlertRead={markAlertRead}
               onCreateContract={handleCreateContract}
-              onDeleteContract={deleteContract}
+              onDeleteContract={handleDeleteContractNote}
+              onOpenNote={handleOpenNote}
             />
           )
         ) : view === 'plugins' ? (
@@ -291,6 +307,16 @@ export default function App() {
             onAddNote={handleAddNote}
             onDeleteNote={deleteNote}
             onCreateFolder={createFolder}
+          />
+        ) : view === 'explore' ? (
+          <MemoizedExploreView
+            agents={agents}
+            publishedNotes={publishedNotes}
+            onOpenNote={handleOpenNote}
+            onOpenProfile={handleOpenProfile}
+            isFollowing={isFollowing}
+            onFollow={followUser}
+            onUnfollow={unfollowUser}
           />
         ) : view === 'workspace' ? (
           <MemoizedWorkspaceOS

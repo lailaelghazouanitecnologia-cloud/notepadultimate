@@ -1,26 +1,34 @@
 import { useState, useMemo } from 'react'
-import type { Agent, Alert, Note, Contract } from '../types'
+import type { Agent, Alert, Note, Folder } from '../types'
 import { Icons } from '../lib/icons'
+
+interface ContractFile {
+  note: Note
+  agentName: string
+  fileName: string
+}
 
 interface AgentsViewProps {
   agents: Agent[]
   alerts: Alert[]
   publishedNotes: Note[]
-  contracts: Contract[]
+  notes: Note[]
+  folders: Folder[]
   onCreateAgent: (agent: Omit<Agent, 'id' | 'createdAt' | 'notes' | 'followers' | 'following'>) => void
   onDeleteAgent: (id: string) => void
   onOpenProfile: (agentId: string) => void
   onMarkAlertRead: (alertId: string) => void
-  onCreateContract: (agentId: string, name: string, description: string) => void
-  onDeleteContract: (id: string) => void
+  onCreateContract: (agentId: string, fileName: string, content: string) => void
+  onDeleteContract: (noteId: string) => void
+  onOpenNote: (id: string) => void
 }
 
 type Tab = 'characters' | 'create' | 'contracts' | 'alerts'
 
 export function AgentsView({
-  agents, alerts, publishedNotes: _publishedNotes, contracts,
+  agents, alerts, publishedNotes: _publishedNotes, notes, folders,
   onCreateAgent, onDeleteAgent, onOpenProfile, onMarkAlertRead,
-  onCreateContract, onDeleteContract,
+  onCreateContract, onDeleteContract, onOpenNote,
 }: AgentsViewProps) {
   void _publishedNotes
   const [tab, setTab] = useState<Tab>('characters')
@@ -36,11 +44,39 @@ export function AgentsView({
 
   // Contract create state
   const [contractAgent, setContractAgent] = useState('')
-  const [contractName, setContractName] = useState('')
+  const [contractName, setContractName] = useState('soul.md')
   const [contractDesc, setContractDesc] = useState('')
   const [showContractForm, setShowContractForm] = useState(false)
 
   const unreadCount = alerts.filter((a) => !a.read).length
+
+  // Derive contract files from folder structure: contract/agentname/*.md
+  const contractFiles = useMemo<ContractFile[]>(() => {
+    const contractRoot = folders.find(f => f.name === 'contract' && !f.parentId)
+    if (!contractRoot) return []
+    const agentFolders = folders.filter(f => f.parentId === contractRoot.id)
+    const files: ContractFile[] = []
+    for (const af of agentFolders) {
+      const folderNotes = notes.filter(n => n.folderId === af.id)
+      for (const note of folderNotes) {
+        files.push({ note, agentName: af.name, fileName: note.title })
+      }
+    }
+    return files
+  }, [folders, notes])
+
+  // Count contracts per agent (by folder name matching agent name/handle)
+  const agentContractCount = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const cf of contractFiles) {
+      const agent = agents.find(a =>
+        a.name.toLowerCase() === cf.agentName.toLowerCase() ||
+        a.handle.replace('@', '').toLowerCase() === cf.agentName.toLowerCase()
+      )
+      if (agent) counts.set(agent.id, (counts.get(agent.id) || 0) + 1)
+    }
+    return counts
+  }, [contractFiles, agents])
 
   const filteredAgents = useMemo(() => {
     const q = search.toLowerCase()
@@ -70,7 +106,7 @@ export function AgentsView({
   const handleCreateContract = () => {
     if (!contractAgent || !contractName.trim() || !contractDesc.trim()) return
     onCreateContract(contractAgent, contractName.trim(), contractDesc.trim())
-    setContractAgent(''); setContractName(''); setContractDesc('')
+    setContractAgent(''); setContractName('soul.md'); setContractDesc('')
     setShowContractForm(false)
   }
 
@@ -132,7 +168,7 @@ export function AgentsView({
               <div className="agents-grid">
                 {filteredAgents.map((agent) => {
                   const agentAlertCount = agentAlerts(agent.id).filter((a) => !a.read).length
-                  const agentContracts = contracts.filter((c) => c.agentId === agent.id)
+                  const contractCount = agentContractCount.get(agent.id) || 0
                   return (
                     <div
                       key={agent.id}
@@ -158,8 +194,8 @@ export function AgentsView({
                       <div className="agent-card__stats">
                         <span><strong>{agent.followers.toLocaleString()}</strong> followers</span>
                         <span><strong>{agent.following}</strong> following</span>
-                        {agentContracts.length > 0 && (
-                          <span className="agent-card__preset">{agentContracts.length} contract{agentContracts.length !== 1 ? 's' : ''}</span>
+                        {contractCount > 0 && (
+                          <span className="agent-card__preset">{contractCount} contract{contractCount !== 1 ? 's' : ''}</span>
                         )}
                         {agent.isPreset && <span className="agent-card__preset">preset</span>}
                       </div>
@@ -267,48 +303,51 @@ export function AgentsView({
               <div className="agent-create__header">
                 <h3 className="agent-create__title">Agent Contracts</h3>
                 <p className="agent-create__subtitle">
-                  Define instructions and tasks for your agents in this workspace.
+                  Markdown files that define agent instructions. Stored as <code>contract/agentname/soul.md</code>
                 </p>
               </div>
 
-              {contracts.length === 0 && !showContractForm && (
+              {contractFiles.length === 0 && !showContractForm && (
                 <div className="agents-alerts__empty">
                   <div className="agents-alerts__empty-icon">{Icons.fileText()}</div>
                   <p>No contracts yet</p>
                   <p className="agents-alerts__empty-sub">
-                    Create contracts to tell agents what to do in this workspace.
+                    Create .md files to define what agents should do.
                   </p>
                 </div>
               )}
 
               <div className="contracts-section">
-                {contracts.map((contract) => {
-                  const agent = agents.find((a) => a.id === contract.agentId)
+                {contractFiles.map((cf) => {
+                  const agent = agents.find(a =>
+                    a.name.toLowerCase() === cf.agentName.toLowerCase() ||
+                    a.handle.replace('@', '').toLowerCase() === cf.agentName.toLowerCase()
+                  )
                   return (
-                    <div key={contract.id} className="contract-card">
+                    <div key={cf.note.id} className="contract-card" onClick={() => onOpenNote(cf.note.id)} style={{ cursor: 'pointer' }}>
                       <div className="contract-card__header">
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontSize: 16 }}>{agent?.avatar || '🤖'}</span>
+                          <span style={{ fontSize: 16 }}>{agent?.avatar || '📄'}</span>
                           <div>
-                            <div className="contract-card__name">{contract.name}</div>
-                            <div style={{ fontSize: 10, color: 'var(--muted-foreground)' }}>
-                              {agent?.name || 'Unknown'} · {agent?.handle}
+                            <div className="contract-card__name">{cf.fileName}</div>
+                            <div style={{ fontSize: 10, color: 'var(--muted-foreground)', fontFamily: 'var(--font-mono, monospace)' }}>
+                              contract/{cf.agentName}/{cf.fileName}
                             </div>
                           </div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span className={`contract-card__status contract-card__status--${contract.status}`}>
-                            {contract.status}
+                          <span className="contract-card__status contract-card__status--active">
+                            .md
                           </span>
                           <button
                             className="contract-card__delete"
-                            onClick={() => onDeleteContract(contract.id)}
+                            onClick={(e) => { e.stopPropagation(); onDeleteContract(cf.note.id) }}
                           >
                             {Icons.x()}
                           </button>
                         </div>
                       </div>
-                      <p className="contract-card__desc">{contract.description}</p>
+                      <p className="contract-card__desc">{cf.note.content.slice(0, 120) || 'Empty file'}</p>
                     </div>
                   )
                 })}
@@ -329,17 +368,18 @@ export function AgentsView({
                     <input
                       type="text" className="contract-create__input"
                       value={contractName} onChange={(e) => setContractName(e.target.value)}
-                      placeholder="Contract name (e.g. Monitor science news)"
+                      placeholder="File name (e.g. soul.md)"
                     />
                     <textarea
                       className="contract-create__textarea"
                       value={contractDesc} onChange={(e) => setContractDesc(e.target.value)}
-                      placeholder="Describe what the agent should do..."
+                      placeholder="# Soul Contract&#10;&#10;Define what the agent should do..."
+                      rows={6}
                     />
                     <div className="contract-create__actions">
                       <button
                         className="contract-create__btn contract-create__btn--cancel"
-                        onClick={() => { setShowContractForm(false); setContractAgent(''); setContractName(''); setContractDesc('') }}
+                        onClick={() => { setShowContractForm(false); setContractAgent(''); setContractName('soul.md'); setContractDesc('') }}
                       >
                         Cancel
                       </button>
@@ -347,7 +387,7 @@ export function AgentsView({
                         className="contract-create__btn contract-create__btn--save"
                         onClick={handleCreateContract}
                       >
-                        Create
+                        Create .md
                       </button>
                     </div>
                   </div>
@@ -358,7 +398,7 @@ export function AgentsView({
                     onClick={() => setShowContractForm(true)}
                   >
                     {Icons.plus()}
-                    <span>New contract</span>
+                    <span>New contract file</span>
                   </button>
                 )}
               </div>
