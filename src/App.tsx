@@ -1,4 +1,4 @@
-import { useCallback, useState, useMemo, memo } from 'react'
+import { useCallback, useState, useMemo, useEffect, memo } from 'react'
 import { FeedSidebar } from './components/FeedSidebar'
 import { WorkSidebar } from './components/WorkSidebar'
 import { Editor } from './components/Editor'
@@ -69,10 +69,22 @@ export default function App() {
 
   const [showPublishModal, setShowPublishModal] = useState(false)
   const [showPeoplePanel, setShowPeoplePanel] = useState(false)
-  const [showStartMenu, setShowStartMenu] = useState(false)
+  const [menuVariant, setMenuVariant] = useState<'os' | 'centered' | null>(null)
   const [sidebarWidth, setSidebarWidth] = useState(260)
   const [attachedFiles, setAttachedFiles] = useState<{ id: string; title: string }[]>([])
   const handleDividerMouseDown = useResizable(sidebarWidth, setSidebarWidth, { min: 180, max: 480 })
+
+  // Alt+Space → OS start menu
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.altKey && e.code === 'Space') {
+        e.preventDefault()
+        setMenuVariant(prev => prev === 'os' ? null : 'os')
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
 
   // Social data
   const followedAgents = useMemo(() => getFollowedAgents(agents), [getFollowedAgents, agents])
@@ -193,7 +205,7 @@ export default function App() {
           onToggleTheme={toggleTheme}
           onNavigate={(v) => { setView(v); setEditingNoteId(null); setProfileAgentId(null) }}
           onOpenPlugins={() => { setView('plugins'); setProfileAgentId(null) }}
-          onLogoClick={() => setShowStartMenu(s => !s)}
+          onLogoClick={() => setMenuVariant(prev => prev === 'centered' ? null : 'centered')}
           notes={workspaceNotes}
           folders={workspaceFolders}
           activeNoteId={activeId}
@@ -225,7 +237,7 @@ export default function App() {
           unreadAlerts={unreadAlerts}
           onOpenAgents={() => { setView('agents'); setProfileAgentId(null) }}
           onOpenPlugins={() => { setView('plugins'); setProfileAgentId(null) }}
-          onLogoClick={() => setShowStartMenu(s => !s)}
+          onLogoClick={() => setMenuVariant(prev => prev === 'centered' ? null : 'centered')}
         />
       )}
 
@@ -375,19 +387,20 @@ export default function App() {
           <MemoizedGraphView notes={notes} onOpenNote={handleOpenNote} onCreateNote={handleCreateFromChat} />
         ) : null}
 
-        {/* Start Menu — inside the OS content area */}
-        {showStartMenu && (
+        {/* Start Menu — centered (logo) or OS (Alt+Space) */}
+        {menuVariant && (
           <StartMenu
             agents={agents}
             view={view}
             projectName={activeProject?.name || 'Zarnetti'}
             theme={theme}
+            variant={menuVariant}
             onNavigate={(v) => { setView(v); setEditingNoteId(null); setProfileAgentId(null) }}
             onPost={() => { setView('feed'); setEditingNoteId(null); setProfileAgentId(null) }}
             onOpenAgents={() => { setView('agents'); setProfileAgentId(null) }}
             onOpenPlugins={() => { setView('plugins'); setProfileAgentId(null) }}
             onToggleTheme={toggleTheme}
-            onClose={() => setShowStartMenu(false)}
+            onClose={() => setMenuVariant(null)}
           />
         )}
       </div>

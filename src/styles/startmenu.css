@@ -35,6 +35,31 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* Centered variant — main page launcher (logo click) */
+.start-menu--centered {
+  bottom: auto;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 12px;
+  box-shadow: 0 8px 48px rgba(0,0,0,0.4), 0 0 0 1px var(--border-overlay);
+  animation: start-pop-in 0.18s ease;
+}
+
+@keyframes start-pop-in {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Shortcut hint */
+.start-menu__shortcut {
+  font-size: var(--font-xxs);
+  color: var(--muted-foreground);
+  padding: 4px 12px 8px;
+  text-align: center;
+  opacity: 0.6;
+}
+
 /* ── Header: user banner ── */
 .start-menu__header {
   display: flex;

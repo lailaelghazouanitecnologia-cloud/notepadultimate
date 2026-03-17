@@ -8,6 +8,7 @@ interface StartMenuProps {
   view: View
   projectName: string
   theme: 'light' | 'dark'
+  variant?: 'os' | 'centered'
   onNavigate: (view: View) => void
   onPost: () => void
   onOpenAgents: () => void
@@ -28,7 +29,7 @@ const NAV_ITEMS: { label: string; icon: (p?: object) => React.JSX.Element; view?
 ]
 
 export function StartMenu({
-  agents, view, projectName, theme,
+  agents, view, projectName, theme, variant = 'os',
   onNavigate, onPost, onOpenAgents, onOpenPlugins, onToggleTheme, onClose,
 }: StartMenuProps) {
   const [search, setSearch] = useState('')
@@ -45,7 +46,7 @@ export function StartMenu({
 
   return <>
     <div className="start-menu-backdrop" onClick={onClose} />
-    <div className="start-menu">
+    <div className={`start-menu ${variant === 'centered' ? 'start-menu--centered' : ''}`}>
       {/* Header — user banner */}
       <div className="start-menu__header">
         <div className="start-menu__avatar">
