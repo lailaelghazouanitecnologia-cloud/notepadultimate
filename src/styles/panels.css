@@ -25,45 +25,6 @@
 .zw-ws-menu-divider { height: 1px; background: var(--border); margin: 2px 4px; }
 .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* ═══════════════════════════════════════════════════
-   HEADER BADGES
-   ═══════════════════════════════════════════════════ */
-.header__icon-badge {
-  position: absolute; top: -2px; right: -2px;
-  background: var(--zw-red); color: #fff; font-size: 8px; font-weight: 700;
-  padding: 0 4px; border-radius: 6px; min-width: 14px; text-align: center;
-  line-height: 14px; pointer-events: none;
-}
-.header__icon-btn { position: relative; }
-
-/* Plugins dropdown menu */
-.header__plugins-menu {
-  position: absolute; top: 100%; right: 0; margin-top: 6px;
-  background: var(--popover); border: 1px solid var(--border); border-radius: 6px;
-  padding: 4px; min-width: 220px; box-shadow: var(--shadow-menu);
-  z-index: 200; animation: scale-in 0.12s ease;
-}
-.header__plugins-menu-title {
-  padding: 6px 10px 4px; font-size: 10px; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-foreground);
-}
-.header__plugins-item {
-  display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px;
-  border: none; border-radius: 4px; background: transparent; color: var(--foreground);
-  cursor: pointer; text-align: left; transition: background 0.08s;
-  font-family: var(--font-sans); font-size: 12px;
-}
-.header__plugins-item:hover { background: var(--hover-light); }
-.header__plugins-item.active { background: var(--hover-medium); }
-.header__plugins-item svg { width: 16px; height: 16px; color: var(--muted-foreground); flex-shrink: 0; }
-.header__plugins-item-info { flex: 1; display: flex; flex-direction: column; gap: 1px; }
-.header__plugins-item-info span:first-child { font-weight: 600; }
-.header__plugins-item-desc { font-size: 10px; color: var(--muted-foreground); opacity: 0.7; }
-.header__plugins-badge {
-  background: var(--zw-red); color: #fff; font-size: 9px; font-weight: 700;
-  padding: 1px 5px; border-radius: 8px; min-width: 16px; text-align: center;
-  margin-left: auto;
-}
 
 /* ═══════════════════════════════════════════════════
    AGENT CONTRACTS

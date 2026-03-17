@@ -19,6 +19,7 @@ interface SidebarProps {
   unreadAlerts?: number
   onOpenAgents?: () => void
   onOpenContracts?: () => void
+  onOpenPlugins?: () => void
 }
 
 export function Sidebar({
@@ -26,7 +27,7 @@ export function Sidebar({
   collapsed, width,
   theme, onToggleTheme,
   view, onNavigate, onPost, unreadAlerts,
-  onOpenAgents, onOpenContracts,
+  onOpenAgents, onOpenContracts, onOpenPlugins,
 }: SidebarProps) {
   const [showAvatarMenu, setShowAvatarMenu] = useState(false)
   const avatarRef = useRef<HTMLDivElement>(null)
@@ -79,11 +80,14 @@ export function Sidebar({
           <span>Messages</span>
         </button>
         <button
-          className="zw-sb-nav-item"
+          className={`zw-sb-nav-item ${view === 'agents' ? 'active' : ''}`}
           onClick={onOpenAgents}
         >
           {Icons.users()}
           <span>Agents</span>
+          {unreadAlerts != null && unreadAlerts > 0 && (
+            <span className="zw-sb-nav-badge">{unreadAlerts}</span>
+          )}
         </button>
         <button
           className="zw-sb-nav-item"
@@ -91,6 +95,13 @@ export function Sidebar({
         >
           {Icons.file()}
           <span>Contracts</span>
+        </button>
+        <button
+          className={`zw-sb-nav-item ${view === 'plugins' ? 'active' : ''}`}
+          onClick={onOpenPlugins}
+        >
+          {Icons.puzzle()}
+          <span>Plugins</span>
         </button>
       </nav>
 
@@ -126,7 +137,7 @@ export function Sidebar({
               <div className="zw-avatar-menu__name">User</div>
               <div className="zw-avatar-menu__handle">@user</div>
             </div>
-            <button className="zw-avatar-menu__item" onClick={() => setShowAvatarMenu(false)}>
+            <button className="zw-avatar-menu__item" onClick={() => { onOpenPlugins?.(); setShowAvatarMenu(false) }}>
               {Icons.puzzle()}
               <span>Plugins</span>
             </button>

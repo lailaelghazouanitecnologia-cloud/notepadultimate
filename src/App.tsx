@@ -6,13 +6,12 @@ import { FeedView } from './components/FeedView'
 import { GraphView } from './components/GraphView'
 import { AgentsView } from './components/AgentsView'
 import { ProfileView } from './components/ProfileView'
-import { Header } from './components/Header'
+import { PluginsView } from './components/PluginsView'
 import { TabsBar } from './components/TabsBar'
 import { PublishModal } from './components/PublishModal'
 import { PeoplePanel } from './components/PeoplePanel'
 import { useTheme } from './hooks/useTheme'
 import { useResizable } from './hooks/useResizable'
-import { Icons } from './lib/icons'
 import { useNotesContext } from './contexts/NotesContext'
 import { useAgentsContext } from './contexts/AgentsContext'
 import { useProjectContext } from './contexts/ProjectContext'
@@ -26,6 +25,7 @@ const MemoizedHomeScreen = memo(HomeScreen)
 const MemoizedGraphView = memo(GraphView)
 const MemoizedAgentsView = memo(AgentsView)
 const MemoizedProfileView = memo(ProfileView)
+const MemoizedPluginsView = memo(PluginsView)
 
 export default function App() {
   const { theme, toggleTheme } = useTheme()
@@ -41,21 +41,18 @@ export default function App() {
   const { projects, activeProjectId, activeProject, systemEvents, switchProject, createProject } = useProjectContext()
   const {
     view, setView,
-    sidebarCollapsed, toggleSidebar, setSidebarCollapsed,
-    pluginPanel, setPluginPanel,
+    sidebarCollapsed, toggleSidebar,
     editingNoteId, setEditingNoteId,
     openTabs, openTab, closeTab,
     profileAgentId, setProfileAgentId,
     chatSessions, activeChatId,
-    showHistory, setShowHistory,
-    saveChat, newChat, openChat,
+    saveChat,
   } = useUIContext()
   const {
     isFollowing, followUser, unfollowUser,
     getFollowedAgents, getSuggestedAgents,
   } = useSocialContext()
 
-  const [showPlugins, setShowPlugins] = useState(false)
   const [showPublishModal, setShowPublishModal] = useState(false)
   const [showPeoplePanel, setShowPeoplePanel] = useState(false)
   const [sidebarWidth, setSidebarWidth] = useState(260)
@@ -139,11 +136,6 @@ export default function App() {
     publishNote({ ...note, content, published: true }, 'You')
   }, [addNote, updateNote, publishNote])
 
-  const handlePublish = useCallback(() => {
-    if (!editingNote || editingNote.published) return
-    setShowPublishModal(true)
-  }, [editingNote, setShowPublishModal])
-
   const handlePublishConfirm = useCallback((note: import('./types').Note, author: string) => {
     publishNote(note, author)
     updateNote(note.id, { published: true })
@@ -156,8 +148,8 @@ export default function App() {
 
   const handleOpenProfile = useCallback((agentId: string) => {
     setProfileAgentId(agentId)
-    setPluginPanel('agents')
-  }, [setProfileAgentId, setPluginPanel])
+    setView('agents')
+  }, [setProfileAgentId, setView])
 
   const handleCreateContract = useCallback((agentId: string, name: string, description: string) => {
     createContract(agentId, name, description, activeProjectId)
@@ -183,11 +175,12 @@ export default function App() {
         theme={theme}
         onToggleTheme={toggleTheme}
         view={view}
-        onNavigate={(v) => { setView(v); setEditingNoteId(null); setPluginPanel(null); setProfileAgentId(null) }}
-        onPost={() => { setView('feed'); setEditingNoteId(null); setPluginPanel(null); setProfileAgentId(null) }}
+        onNavigate={(v) => { setView(v); setEditingNoteId(null); setProfileAgentId(null) }}
+        onPost={() => { setView('feed'); setEditingNoteId(null); setProfileAgentId(null) }}
         unreadAlerts={unreadAlerts}
-        onOpenAgents={() => { setPluginPanel('agents'); setProfileAgentId(null) }}
-        onOpenContracts={() => { setPluginPanel('agents'); setProfileAgentId(null) }}
+        onOpenAgents={() => { setView('agents'); setProfileAgentId(null) }}
+        onOpenContracts={() => { setView('agents'); setProfileAgentId(null) }}
+        onOpenPlugins={() => { setView('plugins'); setProfileAgentId(null) }}
       />
 
       {/* Resizable divider */}
@@ -196,28 +189,6 @@ export default function App() {
       )}
 
       <div className="app-main">
-        <Header
-          sidebarCollapsed={sidebarCollapsed}
-          setSidebarCollapsed={setSidebarCollapsed}
-          view={view}
-          setView={setView}
-          showEditor={showEditor}
-          editingNote={editingNote}
-          showHistory={showHistory}
-          setShowHistory={setShowHistory}
-          showPlugins={showPlugins}
-          setShowPlugins={setShowPlugins}
-          pluginPanel={pluginPanel}
-          setPluginPanel={setPluginPanel}
-          showPeoplePanel={showPeoplePanel}
-          setShowPeoplePanel={setShowPeoplePanel}
-          unreadAlerts={unreadAlerts}
-          profileAgentId={profileAgentId}
-          setProfileAgentId={setProfileAgentId}
-          setEditingNoteId={setEditingNoteId}
-          onPublish={handlePublish}
-        />
-
         {/* Tabs bar — open files (only in editor) */}
         {showEditor && tabNotes.length > 0 && (
           <TabsBar
@@ -235,7 +206,7 @@ export default function App() {
           <div className="content-area">
             <MemoizedEditor note={editingNote!} allNotes={notes} onUpdate={updateNote} onNavigate={handleNavigate} />
           </div>
-        ) : pluginPanel === 'agents' ? (
+        ) : view === 'agents' ? (
           profileAgent ? (
             <MemoizedProfileView
               agent={profileAgent}
@@ -259,6 +230,10 @@ export default function App() {
               onDeleteContract={deleteContract}
             />
           )
+        ) : view === 'plugins' ? (
+          <MemoizedPluginsView
+            onOpenAgents={() => { setView('agents'); setProfileAgentId(null) }}
+          />
         ) : view === 'feed' ? (
           <MemoizedFeedView
             publishedNotes={publishedNotes}

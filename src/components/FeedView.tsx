@@ -342,6 +342,16 @@ export function FeedView({
 
           {/* Right sidebar */}
           <aside className="feed-sidebar">
+            {/* Search */}
+            <div className="feed-sidebar-search">
+              {Icons.search()}
+              <input
+                type="text"
+                className="feed-sidebar-search__input"
+                placeholder="Search Zarnet..."
+              />
+            </div>
+
             {trending.length > 0 && (
               <div className="feed-card">
                 <h3 className="feed-card__title">Trending</h3>

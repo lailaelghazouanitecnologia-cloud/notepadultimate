@@ -1,8 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 
-export type View = 'feed' | 'chat' | 'graph'
-export type PluginPanel = 'agents' | null
+export type View = 'feed' | 'chat' | 'graph' | 'agents' | 'plugins'
 
 export interface ChatSession {
   id: string
@@ -16,12 +15,16 @@ const VIEW_PATHS: Record<string, View> = {
   '/feed': 'feed',
   '/chat': 'chat',
   '/graph': 'graph',
+  '/agents': 'agents',
+  '/plugins': 'plugins',
 }
 
 const PATH_FOR_VIEW: Record<View, string> = {
   feed: '/feed',
   chat: '/chat',
   graph: '/graph',
+  agents: '/agents',
+  plugins: '/plugins',
 }
 
 interface UIContextValue {
@@ -30,8 +33,6 @@ interface UIContextValue {
   sidebarCollapsed: boolean
   toggleSidebar: () => void
   setSidebarCollapsed: (collapsed: boolean) => void
-  pluginPanel: PluginPanel
-  setPluginPanel: (panel: PluginPanel) => void
   editingNoteId: string | null
   setEditingNoteId: (id: string | null) => void
   openTabs: string[]
@@ -59,7 +60,6 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const initialView = VIEW_PATHS[location.pathname] || 'feed'
   const [view, setViewState] = useState<View>(initialView)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [pluginPanel, setPluginPanel] = useState<PluginPanel>(null)
   const [editingNoteId, setEditingNoteIdState] = useState<string | null>(null)
   const [openTabs, setOpenTabs] = useState<string[]>([])
   const [profileAgentId, setProfileAgentId] = useState<string | null>(null)
@@ -73,7 +73,6 @@ export function UIProvider({ children }: { children: ReactNode }) {
     if (newView && newView !== view) {
       setViewState(newView)
       setEditingNoteIdState(null)
-      setPluginPanel(null)
       setProfileAgentId(null)
     }
 
@@ -82,12 +81,6 @@ export function UIProvider({ children }: { children: ReactNode }) {
     if (noteMatch) {
       setEditingNoteIdState(noteMatch[1])
       setOpenTabs(prev => prev.includes(noteMatch[1]) ? prev : [...prev, noteMatch[1]])
-    }
-
-    // Handle /agents URL
-    if (location.pathname === '/agents') {
-      setPluginPanel('agents')
-      setEditingNoteIdState(null)
     }
   }, [location.pathname])
 
@@ -151,7 +144,6 @@ export function UIProvider({ children }: { children: ReactNode }) {
     <UIContext.Provider value={{
       view, setView,
       sidebarCollapsed, toggleSidebar, setSidebarCollapsed,
-      pluginPanel, setPluginPanel,
       editingNoteId, setEditingNoteId,
       openTabs, openTab, closeTab,
       profileAgentId, setProfileAgentId,
