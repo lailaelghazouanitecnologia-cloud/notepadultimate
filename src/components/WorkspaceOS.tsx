@@ -102,16 +102,6 @@ export function WorkspaceOS({
   const allApps = useMemo(() => [...BUILTIN_APPS, ...installedApps], [installedApps])
   const activeWs = workspaces.find(w => w.id === activeWorkspaceId)
 
-  // Ensure "contract" folder exists in workspace
-  const contractFolderCreated = useRef(false)
-  useEffect(() => {
-    if (contractFolderCreated.current) return
-    const hasContract = folders.some(f => f.name === 'contract' && !f.parentId)
-    if (!hasContract) {
-      onCreateFolder('contract')
-      contractFolderCreated.current = true
-    }
-  }, [folders, onCreateFolder])
 
   // ── Notifications ──
   const addNotification = useCallback((title: string, body: string, icon?: string) => {

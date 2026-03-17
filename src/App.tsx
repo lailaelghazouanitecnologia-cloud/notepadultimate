@@ -141,7 +141,7 @@ export default function App() {
     const agent = agents.find(a => a.id === agentId)
     if (!agent) return
     const agentFolderName = agent.handle.replace('@', '').toLowerCase()
-    // Find or create "contract" root folder
+    // Find or create "contract" root folder (no workspace — contracts are global)
     let contractRoot = folders.find(f => f.name === 'contract' && !f.parentId)
     if (!contractRoot) contractRoot = createFolder('contract')
     // Find or create agent subfolder

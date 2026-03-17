@@ -48,14 +48,34 @@ export function NotesProvider({ children }: { children: ReactNode }) {
 
   const activeNote = notes.find((n) => n.id === activeId) ?? null
 
-  // Filter notes/folders by active workspace
+  // Contract folder IDs (excluded from workspace views)
+  const contractFolderIds = useMemo(() => {
+    const ids = new Set<string>()
+    const root = folders.find(f => f.name === 'contract' && !f.parentId)
+    if (!root) return ids
+    ids.add(root.id)
+    // Add all descendants
+    const addChildren = (parentId: string) => {
+      folders.filter(f => f.parentId === parentId).forEach(f => { ids.add(f.id); addChildren(f.id) })
+    }
+    addChildren(root.id)
+    return ids
+  }, [folders])
+
+  // Filter notes/folders by active workspace, excluding contract tree
   const workspaceNotes = useMemo(() =>
-    notes.filter(n => !n.workspaceId || n.workspaceId === activeWorkspaceId),
-    [notes, activeWorkspaceId]
+    notes.filter(n =>
+      (!n.workspaceId || n.workspaceId === activeWorkspaceId) &&
+      (!n.folderId || !contractFolderIds.has(n.folderId))
+    ),
+    [notes, activeWorkspaceId, contractFolderIds]
   )
   const workspaceFolders = useMemo(() =>
-    folders.filter(f => !f.workspaceId || f.workspaceId === activeWorkspaceId),
-    [folders, activeWorkspaceId]
+    folders.filter(f =>
+      (!f.workspaceId || f.workspaceId === activeWorkspaceId) &&
+      !contractFolderIds.has(f.id)
+    ),
+    [folders, activeWorkspaceId, contractFolderIds]
   )
 
   const addNote = useCallback(() => {
