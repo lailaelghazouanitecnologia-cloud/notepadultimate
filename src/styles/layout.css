@@ -34,7 +34,7 @@
   border: none; background: transparent; color: var(--muted-foreground); border-radius: 5px;
   cursor: pointer; transition: all 0.12s ease;
 }
-.zw-sb-toggle.hidden { visibility: hidden; pointer-events: none; }
+.zw-sb-toggle.hidden { display: none; }
 .zw-sb-toggle:hover { background: var(--hover-light); color: var(--foreground); }
 .zw-sb-toggle svg { width: 16px; height: 16px; }
 
