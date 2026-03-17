@@ -13,6 +13,7 @@ interface AgentsContextValue {
   createAgent: (data: Omit<Agent, 'id' | 'createdAt' | 'notes' | 'followers' | 'following'>) => void
   deleteAgent: (id: string) => void
   markAlertRead: (alertId: string) => void
+  markAllAlertsRead: () => void
   createContract: (agentId: string, name: string, description: string, projectId: string) => void
   deleteContract: (id: string) => void
   getProjectContracts: (projectId: string) => Contract[]
@@ -54,6 +55,14 @@ export function AgentsProvider({ children, publishedNotes }: { children: ReactNo
     })
   }, [])
 
+  const markAllAlertsRead = useCallback(() => {
+    setAlerts((prev) => {
+      const updated = prev.map((a) => ({ ...a, read: true }))
+      saveAlerts(updated)
+      return updated
+    })
+  }, [])
+
   const createContract = useCallback((agentId: string, name: string, description: string, projectId: string) => {
     const contract: Contract = {
       id: `contract-${Date.now()}`, agentId, projectId,
@@ -77,7 +86,7 @@ export function AgentsProvider({ children, publishedNotes }: { children: ReactNo
   return (
     <AgentsContext.Provider value={{
       agents, alerts, contracts,
-      createAgent, deleteAgent, markAlertRead,
+      createAgent, deleteAgent, markAlertRead, markAllAlertsRead,
       createContract, deleteContract, getProjectContracts,
       unreadAlerts,
     }}>

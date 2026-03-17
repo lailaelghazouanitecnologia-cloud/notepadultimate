@@ -19,6 +19,7 @@ interface StartMenuProps {
 const NAV_ITEMS: { label: string; icon: (p?: object) => React.JSX.Element; view?: View; key: string }[] = [
   { key: 'home', label: 'Home', icon: Icons.rss, view: 'feed' },
   { key: 'explore', label: 'Explore', icon: Icons.search, view: 'explore' },
+  { key: 'inbox', label: 'Inbox', icon: Icons.bell, view: 'inbox' },
   { key: 'messages', label: 'Messages', icon: Icons.messageCircle, view: 'messages' },
   { key: 'agents', label: 'Agents', icon: Icons.users },
   { key: 'workspace', label: 'Workspace', icon: Icons.folder, view: 'workspace' },

@@ -76,15 +76,19 @@ export interface Conversation {
   updatedAt: number
 }
 
+export type AlertType = 'interest' | 'mention' | 'publish' | 'like' | 'reply' | 'repost' | 'contract' | 'system'
+
 export interface Alert {
   id: string
   agentId: string
-  type: 'interest' | 'mention' | 'publish'
+  type: AlertType
   title: string
   content: string
   noteId?: string
   read: boolean
   createdAt: number
+  /** extra agent ids for grouped notifications (e.g. "and 4 others liked") */
+  groupAgentIds?: string[]
 }
 
 export interface SystemEvent {

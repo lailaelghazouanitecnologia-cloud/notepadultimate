@@ -11,6 +11,7 @@ import { WorkspaceOS } from './components/WorkspaceOS'
 import { ExploreView } from './components/ExploreView'
 import { MessagesView } from './components/MessagesView'
 import { HomeScreen } from './components/HomeScreen'
+import { InboxView } from './components/InboxView'
 import { StartMenu } from './components/StartMenu'
 import { Header } from './components/Header'
 import { TabsBar } from './components/TabsBar'
@@ -36,6 +37,7 @@ const MemoizedProfileView = memo(ProfileView)
 const MemoizedPluginsView = memo(PluginsView)
 const MemoizedMessagesView = memo(MessagesView)
 const MemoizedHomeScreen = memo(HomeScreen)
+const MemoizedInboxView = memo(InboxView)
 
 export default function App() {
   const { theme, toggleTheme } = useTheme()
@@ -48,7 +50,7 @@ export default function App() {
   } = useNotesContext()
   const {
     agents, alerts, unreadAlerts,
-    createAgent, deleteAgent, markAlertRead,
+    createAgent, deleteAgent, markAlertRead, markAllAlertsRead,
   } = useAgentsContext()
   const { projects, activeProjectId, systemEvents, switchProject, createProject } = useProjectContext()
   const {
@@ -358,6 +360,15 @@ export default function App() {
         ) : view === 'messages' ? (
           <MemoizedMessagesView
             agents={agents}
+            onOpenProfile={handleOpenProfile}
+          />
+        ) : view === 'inbox' ? (
+          <MemoizedInboxView
+            alerts={alerts}
+            agents={agents}
+            onMarkRead={markAlertRead}
+            onMarkAllRead={markAllAlertsRead}
+            onOpenNote={handleOpenNote}
             onOpenProfile={handleOpenProfile}
           />
         ) : view === 'graph' ? (

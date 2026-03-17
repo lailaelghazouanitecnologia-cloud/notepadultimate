@@ -61,7 +61,7 @@ export function FeedSidebar({
           {Icons.search()}
           <span>Explore</span>
         </button>
-        <button className="zw-sb-nav-item">
+        <button className={`zw-sb-nav-item ${view === 'inbox' ? 'active' : ''}`} onClick={() => onNavigate?.('inbox')}>
           {Icons.bell()}
           <span>Notifications</span>
           {unreadAlerts != null && unreadAlerts > 0 && (
