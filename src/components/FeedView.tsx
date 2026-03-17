@@ -1,6 +1,6 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useCallback, useRef } from 'react'
 import type { Note, Agent, SystemEvent } from '../types'
-import { Icons } from '../lib/icons'
+import { Icons, Identicon } from '../lib/icons'
 import { detectFiles, extractImages } from '../lib/markdown'
 
 interface FeedViewProps {
@@ -9,6 +9,7 @@ interface FeedViewProps {
   systemEvents: SystemEvent[]
   onOpenNote: (noteId: string) => void
   onOpenProfile: (agentId: string) => void
+  onCreatePost?: (content: string) => void
 }
 
 function formatRelative(ts: number): string {
@@ -49,7 +50,26 @@ function stripImages(text: string): string {
   return text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '').trim()
 }
 
-export function FeedView({ publishedNotes, agents, systemEvents, onOpenNote, onOpenProfile }: FeedViewProps) {
+export function FeedView({ publishedNotes, agents, systemEvents, onOpenNote, onOpenProfile, onCreatePost }: FeedViewProps) {
+  const [composerText, setComposerText] = useState('')
+  const composerRef = useRef<HTMLTextAreaElement>(null)
+
+  const handlePost = useCallback(() => {
+    const text = composerText.trim()
+    if (!text) return
+    onCreatePost?.(text)
+    setComposerText('')
+    if (composerRef.current) composerRef.current.style.height = 'auto'
+  }, [composerText, onCreatePost])
+
+  const handleComposerInput = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setComposerText(e.target.value)
+    // Auto-resize
+    const ta = e.target
+    ta.style.height = 'auto'
+    ta.style.height = ta.scrollHeight + 'px'
+  }, [])
+
   type TimelineItem =
     | { kind: 'post'; note: Note; ts: number }
     | { kind: 'system'; event: SystemEvent; ts: number }
@@ -91,6 +111,53 @@ export function FeedView({ publishedNotes, agents, systemEvents, onOpenNote, onO
         <div className="feed-layout">
           {/* Timeline */}
           <div className="feed-timeline">
+            {/* Composer */}
+            <div className="feed-composer">
+              <div className="feed-composer__body">
+                <div className="feed-composer__avatar">
+                  <Identicon className="feed-composer__avatar-img" />
+                </div>
+                <div className="feed-composer__input-col">
+                  <textarea
+                    ref={composerRef}
+                    className="feed-composer__textarea"
+                    placeholder="What's happening?"
+                    value={composerText}
+                    onChange={handleComposerInput}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handlePost()
+                    }}
+                    rows={1}
+                  />
+                </div>
+              </div>
+              <div className="feed-composer__toolbar">
+                <div className="feed-composer__tools">
+                  <button className="feed-composer__tool" title="Add image">
+                    {Icons.image()}
+                  </button>
+                  <button className="feed-composer__tool" title="Attach file">
+                    {Icons.paperclip()}
+                  </button>
+                  <button className="feed-composer__tool" title="Add link">
+                    {Icons.link()}
+                  </button>
+                </div>
+                <div className="feed-composer__right">
+                  {composerText.length > 0 && (
+                    <span className="feed-composer__count">{composerText.length} / 280</span>
+                  )}
+                  <button
+                    className="feed-composer__post-btn"
+                    disabled={composerText.trim().length === 0}
+                    onClick={handlePost}
+                  >
+                    Post
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {timeline.length === 0 ? (
               <div className="feed-empty">
                 <div className="feed-empty__icon">{Icons.rss()}</div>

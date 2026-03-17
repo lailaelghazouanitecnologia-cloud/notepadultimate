@@ -153,6 +153,12 @@ export default function App() {
     updateNote(note.id, { title: `${source.title} (copy)`, content: source.content, folderId: source.folderId })
   }, [notes, addNote, updateNote])
 
+  const handleCreatePost = useCallback((content: string) => {
+    const note = addNote()
+    updateNote(note.id, { content, published: true })
+    publishNote({ ...note, content, published: true }, 'You')
+  }, [addNote, updateNote, publishNote])
+
   const handlePublish = useCallback(() => {
     if (!editingNote || editingNote.published) return
     setPublishMessage('')
@@ -225,6 +231,10 @@ export default function App() {
         onMoveNote={handleMoveNote}
         theme={theme}
         onToggleTheme={toggleTheme}
+        view={view}
+        onNavigate={(v) => { setView(v); setEditingNoteId(null); setPluginPanel(null); setProfileAgentId(null) }}
+        onPost={() => { setView('feed'); setEditingNoteId(null); setPluginPanel(null); setProfileAgentId(null) }}
+        unreadAlerts={unreadAlerts}
       />
 
       {/* Resizable divider */}
@@ -422,6 +432,7 @@ export default function App() {
             systemEvents={systemEvents}
             onOpenNote={handleOpenNote}
             onOpenProfile={handleOpenProfile}
+            onCreatePost={handleCreatePost}
           />
         ) : view === 'chat' ? (
           <div className="content-area" style={{ flexDirection: 'row' }}>
