@@ -1,0 +1,76 @@
+/* ── Responsive design ── */
+@media (max-width: 768px) {
+  :root { --zw-sidebar-w: 100vw; }
+
+  .app { flex-direction: column; }
+
+  .zw-sb {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    z-index: 200;
+    width: 280px;
+    max-width: 85vw;
+    transform: translateX(0);
+    transition: transform 0.2s ease;
+  }
+  .zw-sb.collapsed {
+    transform: translateX(-100%);
+    pointer-events: none;
+    padding: 12px 8px;
+  }
+
+  /* Overlay behind sidebar when open */
+  .zw-sb::after {
+    content: '';
+    position: fixed;
+    top: 0; right: -100vw; bottom: 0;
+    width: 100vw;
+    background: rgba(0,0,0,0.4);
+    pointer-events: auto;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+  }
+  .zw-sb.collapsed::after {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Always show hamburger toggle on mobile */
+  .zw-sb-toggle { display: flex !important; }
+  .zw-sb-toggle.hidden { display: flex !important; }
+
+  .app-main { width: 100vw; }
+
+  .header { padding: 0 8px; }
+  .header__center { display: none; }
+  .header__right { gap: 4px; }
+  .header__publish-btn span { display: none; }
+
+  .zw-mode-switcher { gap: 2px; }
+  .zw-mode-tab span { display: none; }
+  .zw-mode-tab { padding: 4px 8px; }
+
+  .feed-layout { flex-direction: column; }
+  .feed-sidebar { display: none; }
+  .feed-timeline { max-width: 100%; }
+
+  .home-research__hero { padding: 24px 16px; }
+  .home-research__search-wrap { width: 100%; }
+
+  .agents-grid { grid-template-columns: 1fr; }
+
+  .profile-scroll { padding: 0 12px; }
+
+  .editor-area { min-width: 0; }
+  .editor-area__inner { padding: 16px; }
+
+  .content-area { overflow-x: hidden; }
+}
+
+@media (max-width: 480px) {
+  .tabs-bar__tabs { overflow-x: auto; }
+  .tab__label { max-width: 80px; }
+  .header__icon-btn--borderless { display: none; }
+  .zw-chat-footer { padding: 0 8px; }
+  .zw-chat-footer-stat { font-size: 10px; }
+}

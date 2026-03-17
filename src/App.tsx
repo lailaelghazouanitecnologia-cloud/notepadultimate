@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, memo } from 'react'
+import { useCallback, useState, memo } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { Editor } from './components/Editor'
 import { HomeScreen } from './components/HomeScreen'
@@ -6,15 +6,17 @@ import { FeedView } from './components/FeedView'
 import { GraphView } from './components/GraphView'
 import { AgentsView } from './components/AgentsView'
 import { ProfileView } from './components/ProfileView'
+import { Header } from './components/Header'
+import { TabsBar } from './components/TabsBar'
+import { PublishModal } from './components/PublishModal'
+import { PeoplePanel } from './components/PeoplePanel'
 import { useTheme } from './hooks/useTheme'
-import { Icons, FileTypeIcon } from './lib/icons'
+import { useResizable } from './hooks/useResizable'
+import { Icons } from './lib/icons'
 import { useNotesContext } from './contexts/NotesContext'
 import { useAgentsContext } from './contexts/AgentsContext'
 import { useProjectContext } from './contexts/ProjectContext'
 import { useUIContext } from './contexts/UIContext'
-import type { View } from './contexts/UIContext'
-// store utilities available if needed
-// import { addSystemEvent } from './store'
 
 const MemoizedSidebar = memo(Sidebar)
 const MemoizedEditor = memo(Editor)
@@ -48,42 +50,13 @@ export default function App() {
     saveChat, newChat, openChat,
   } = useUIContext()
 
-  const [showPlugins, setShowPlugins] = useLocalState(false)
-  const [showPublishModal, setShowPublishModal] = useLocalState(false)
-  const [publishMessage, setPublishMessage] = useLocalState('')
-  const [publishState, setPublishState] = useLocalState<'idle' | 'loading' | 'done'>('idle')
-  const [renamingTabId, setRenamingTabId] = useLocalState<string | null>(null)
-  const [tabRenameValue, setTabRenameValue] = useLocalState('')
-  const [showPeoplePanel, setShowPeoplePanel] = useLocalState(false)
-  const [sidebarWidth, setSidebarWidth] = useLocalState(260)
-  const [attachedFiles, setAttachedFiles] = useLocalState<{ id: string; title: string }[]>([])
-  const pluginsRef = useRef<HTMLDivElement>(null)
-  const tabRenameRef = useRef<HTMLInputElement>(null)
-  const resizingRef = useRef(false)
+  const [showPlugins, setShowPlugins] = useState(false)
+  const [showPublishModal, setShowPublishModal] = useState(false)
+  const [showPeoplePanel, setShowPeoplePanel] = useState(false)
+  const [sidebarWidth, setSidebarWidth] = useState(260)
+  const [attachedFiles, setAttachedFiles] = useState<{ id: string; title: string }[]>([])
 
-  // Resizable sidebar divider
-  const handleDividerMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    resizingRef.current = true
-    const startX = e.clientX
-    const startW = sidebarWidth
-    const onMove = (ev: MouseEvent) => {
-      if (!resizingRef.current) return
-      const newW = Math.max(180, Math.min(480, startW + ev.clientX - startX))
-      setSidebarWidth(newW)
-    }
-    const onUp = () => {
-      resizingRef.current = false
-      document.removeEventListener('mousemove', onMove)
-      document.removeEventListener('mouseup', onUp)
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
-    }
-    document.body.style.cursor = 'col-resize'
-    document.body.style.userSelect = 'none'
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup', onUp)
-  }, [sidebarWidth, setSidebarWidth])
+  const handleDividerMouseDown = useResizable(sidebarWidth, setSidebarWidth, { min: 180, max: 480 })
 
   // Handle file drop from sidebar into chat
   const handleFileDrop = useCallback((e: React.DragEvent) => {
@@ -103,9 +76,6 @@ export default function App() {
   }, [setAttachedFiles])
 
   const editingNote = editingNoteId ? notes.find((n) => n.id === editingNoteId) : null
-
-  // Close plugins dropdown on outside click
-  useClickOutside(pluginsRef, showPlugins, () => setShowPlugins(false))
 
   const openNoteInEditor = useCallback((id: string) => {
     setEditingNoteId(id)
@@ -161,24 +131,13 @@ export default function App() {
 
   const handlePublish = useCallback(() => {
     if (!editingNote || editingNote.published) return
-    setPublishMessage('')
-    setPublishState('idle')
     setShowPublishModal(true)
-  }, [editingNote, setPublishMessage, setPublishState, setShowPublishModal])
+  }, [editingNote, setShowPublishModal])
 
-  const handleConfirmPublish = useCallback(() => {
-    if (!editingNote || publishState !== 'idle') return
-    setPublishState('loading')
-    setTimeout(() => {
-      publishNote(editingNote, 'You')
-      updateNote(editingNote.id, { published: true })
-      setPublishState('done')
-      setTimeout(() => {
-        setShowPublishModal(false)
-        setPublishState('idle')
-      }, 1200)
-    }, 600)
-  }, [editingNote, updateNote, publishMessage, publishState, publishNote, setPublishState, setShowPublishModal])
+  const handlePublishConfirm = useCallback((note: import('./types').Note, author: string) => {
+    publishNote(note, author)
+    updateNote(note.id, { published: true })
+  }, [publishNote, updateNote])
 
   const handleDeleteAgent = useCallback((id: string) => {
     deleteAgent(id)
@@ -195,13 +154,7 @@ export default function App() {
   }, [createContract, activeProjectId])
 
   const projectContracts = getProjectContracts(activeProjectId)
-  const tabNotes = openTabs.map((id) => notes.find((n) => n.id === id)).filter(Boolean)
-
-  const modes: { id: View; icon: (p?: object) => React.ReactNode; label: string }[] = [
-    { id: 'feed', icon: Icons.rss, label: 'Feed' },
-    { id: 'chat', icon: Icons.messageCircle, label: 'Chat' },
-    { id: 'graph', icon: Icons.network, label: 'Graph' },
-  ]
+  const tabNotes = openTabs.map((id) => notes.find((n) => n.id === id)).filter(Boolean) as import('./types').Note[]
 
   const activeSession = activeChatId ? chatSessions.find((s) => s.id === activeChatId) : undefined
   const profileAgent = profileAgentId ? agents.find((a) => a.id === profileAgentId) : undefined
@@ -243,157 +196,38 @@ export default function App() {
       )}
 
       <div className="app-main">
-        <header className="header">
-          {/* LEFT: sidebar toggle + mode switcher */}
-          <div className="header__left">
-            <button
-              className={`header__icon-btn ${sidebarCollapsed ? '' : 'header__icon-btn--hidden'}`}
-              onClick={() => setSidebarCollapsed(false)}
-              title="Open sidebar"
-              tabIndex={sidebarCollapsed ? 0 : -1}
-            >
-              {Icons.menu()}
-            </button>
-            <div className="zw-mode-switcher">
-              {modes.map((m) => (
-                <button
-                  key={m.id}
-                  className={`zw-mode-tab ${view === m.id && !showEditor && !pluginPanel ? 'active' : ''}`}
-                  onClick={() => { setView(m.id); setEditingNoteId(null); setPluginPanel(null); setProfileAgentId(null) }}
-                >
-                  {m.icon()}
-                  <span>{m.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* CENTER: search input */}
-          <div className="header__center">
-            <div className="header__search">
-              {Icons.search()}
-              <input type="text" className="header__search-input" placeholder="Search Zarnet..." />
-            </div>
-          </div>
-
-          {/* RIGHT: icon buttons + publish */}
-          <div className="header__right">
-            <button
-              className={`header__icon-btn ${showHistory ? 'active' : ''} ${!(view === 'chat' && !showEditor && !pluginPanel) ? 'header__icon-btn--hidden' : ''}`}
-              onClick={() => setShowHistory(!showHistory)}
-              title="Chat history"
-              tabIndex={view === 'chat' && !showEditor && !pluginPanel ? 0 : -1}
-            >
-              {Icons.clock()}
-            </button>
-
-            {/* Plugins dropdown */}
-            <div style={{ position: 'relative' }} ref={pluginsRef}>
-              <button
-                className={`header__icon-btn ${pluginPanel ? 'active' : ''}`}
-                onClick={() => setShowPlugins(!showPlugins)}
-                title="Plugins"
-              >
-                {Icons.puzzle()}
-                {unreadAlerts > 0 && <span className="header__icon-badge">{unreadAlerts}</span>}
-              </button>
-              {showPlugins && (
-                <div className="header__plugins-menu">
-                  <div className="header__plugins-menu-title">Plugins</div>
-                  <button
-                    className={`header__plugins-item ${pluginPanel === 'agents' ? 'active' : ''}`}
-                    onClick={() => {
-                      setPluginPanel(pluginPanel === 'agents' ? null : 'agents')
-                      setShowPlugins(false)
-                      setProfileAgentId(null)
-                      setEditingNoteId(null)
-                    }}
-                  >
-                    {Icons.bot()}
-                    <div className="header__plugins-item-info">
-                      <span>Agents</span>
-                      <span className="header__plugins-item-desc">Characters & contracts</span>
-                    </div>
-                    {unreadAlerts > 0 && <span className="header__plugins-badge">{unreadAlerts}</span>}
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <button
-              className={`header__icon-btn header__icon-btn--borderless ${showPeoplePanel ? 'active' : ''}`}
-              title="Add people"
-              onClick={() => setShowPeoplePanel(!showPeoplePanel)}
-            >
-              {Icons.userPlus()}
-            </button>
-
-            {/* Publish — only when editing a note */}
-            <button
-              className={`header__publish-btn ${editingNote?.published ? 'published' : ''} ${!(showEditor && editingNote) ? 'header__publish-btn--hidden' : ''}`}
-              onClick={handlePublish}
-              title={editingNote?.published ? 'Published' : 'Publish note'}
-              tabIndex={showEditor && editingNote ? 0 : -1}
-            >
-              {editingNote?.published ? Icons.check() : Icons.upload()}
-              <span>{editingNote?.published ? 'Published' : 'Publish'}</span>
-            </button>
-          </div>
-        </header>
+        <Header
+          sidebarCollapsed={sidebarCollapsed}
+          setSidebarCollapsed={setSidebarCollapsed}
+          view={view}
+          setView={setView}
+          showEditor={showEditor}
+          editingNote={editingNote}
+          showHistory={showHistory}
+          setShowHistory={setShowHistory}
+          showPlugins={showPlugins}
+          setShowPlugins={setShowPlugins}
+          pluginPanel={pluginPanel}
+          setPluginPanel={setPluginPanel}
+          showPeoplePanel={showPeoplePanel}
+          setShowPeoplePanel={setShowPeoplePanel}
+          unreadAlerts={unreadAlerts}
+          profileAgentId={profileAgentId}
+          setProfileAgentId={setProfileAgentId}
+          setEditingNoteId={setEditingNoteId}
+          onPublish={handlePublish}
+        />
 
         {/* Tabs bar — open files (only in editor) */}
         {showEditor && tabNotes.length > 0 && (
-          <div className="tabs-bar">
-            <div className="tabs-bar__tabs">
-              {tabNotes.map((note) => note && (
-                <button
-                  key={note.id}
-                  className={`tab ${editingNoteId === note.id ? 'active' : ''}`}
-                  onClick={() => { setEditingNoteId(note.id); setActiveId(note.id) }}
-                  onDoubleClick={(e) => {
-                    e.preventDefault()
-                    setRenamingTabId(note.id)
-                    setTabRenameValue(note.title || 'Untitled')
-                    setTimeout(() => tabRenameRef.current?.focus(), 0)
-                  }}
-                >
-                  {/\.\w+$/.test(note.title) ? (
-                    <FileTypeIcon filename={note.title} />
-                  ) : (
-                    <span className="tab__circle" />
-                  )}
-                  {renamingTabId === note.id ? (
-                    <input
-                      ref={tabRenameRef}
-                      className="tab__rename-input"
-                      value={tabRenameValue}
-                      onChange={(e) => setTabRenameValue(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          if (tabRenameValue.trim()) updateNote(note.id, { title: tabRenameValue.trim() })
-                          setRenamingTabId(null)
-                        }
-                        if (e.key === 'Escape') setRenamingTabId(null)
-                      }}
-                      onBlur={() => {
-                        if (tabRenameValue.trim()) updateNote(note.id, { title: tabRenameValue.trim() })
-                        setRenamingTabId(null)
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  ) : (
-                    <span className="tab__label">{note.title || 'Untitled'}</span>
-                  )}
-                  <span className="tab__close" onClick={(e) => { e.stopPropagation(); handleCloseTab(note.id) }}>
-                    {Icons.x()}
-                  </span>
-                </button>
-              ))}
-              <button className="tab-add" onClick={() => handleAddNote()} aria-label="New tab">
-                {Icons.plus()}
-              </button>
-            </div>
-          </div>
+          <TabsBar
+            tabNotes={tabNotes}
+            editingNoteId={editingNoteId}
+            onSelectTab={(id) => { setEditingNoteId(id); setActiveId(id) }}
+            onCloseTab={handleCloseTab}
+            onAddTab={() => handleAddNote()}
+            onRenameNote={handleRenameNote}
+          />
         )}
 
         {/* Content */}
@@ -482,112 +316,21 @@ export default function App() {
 
       {/* People panel */}
       {showPeoplePanel && (
-        <div className="people-panel">
-          <div className="people-panel__header">
-            <span className="people-panel__title">People</span>
-            <button className="people-panel__close" onClick={() => setShowPeoplePanel(false)}>
-              {Icons.x()}
-            </button>
-          </div>
-          <div className="people-panel__search">
-            {Icons.search()}
-            <input type="text" placeholder="Search or invite by email..." className="people-panel__search-input" />
-          </div>
-          <div className="people-panel__section">
-            <span className="people-panel__label">Members</span>
-            <div className="people-panel__member">
-              <div className="people-panel__avatar">Y</div>
-              <div className="people-panel__info">
-                <span className="people-panel__name">You</span>
-                <span className="people-panel__role">Owner</span>
-              </div>
-            </div>
-          </div>
-          <div className="people-panel__section">
-            <span className="people-panel__label">Agents</span>
-            {agents.slice(0, 4).map((a) => (
-              <div key={a.id} className="people-panel__member" onClick={() => handleOpenProfile(a.id)}>
-                <div className="people-panel__avatar">{a.avatar}</div>
-                <div className="people-panel__info">
-                  <span className="people-panel__name">{a.name}</span>
-                  <span className="people-panel__role">Agent</span>
-                </div>
-              </div>
-            ))}
-          </div>
-          <button className="people-panel__invite-btn">
-            {Icons.userPlus()}
-            <span>Invite people</span>
-          </button>
-        </div>
+        <PeoplePanel
+          agents={agents}
+          onClose={() => setShowPeoplePanel(false)}
+          onOpenProfile={handleOpenProfile}
+        />
       )}
 
       {/* Publish modal */}
       {showPublishModal && editingNote && (
-        <div className="publish-overlay" onClick={() => publishState === 'idle' && setShowPublishModal(false)}>
-          <div className="publish-card" onClick={(e) => e.stopPropagation()}>
-            <div className="publish-card__header">
-              <h3>Publish with thread</h3>
-              <button className="publish-card__close" onClick={() => publishState === 'idle' && setShowPublishModal(false)}>
-                {Icons.x()}
-              </button>
-            </div>
-            <div className="publish-card__tweet">
-              <div className="publish-card__avatar">Y</div>
-              <textarea
-                className="publish-card__input"
-                placeholder="What's happening?"
-                value={publishMessage}
-                onChange={(e) => setPublishMessage(e.target.value)}
-                maxLength={280}
-              />
-            </div>
-            <div className="publish-card__attached">
-              <div className="publish-card__doc-icon">{Icons.file()}</div>
-              <div className="publish-card__doc-meta">
-                <span className="publish-card__doc-name">{editingNote.title || 'Untitled'}</span>
-                <span className="publish-card__doc-size">{editingNote.content.length} chars</span>
-              </div>
-            </div>
-            <div className="publish-card__footer">
-              <span className="publish-card__count">{publishMessage.length} / 280</span>
-              <button
-                className={`publish-card__btn ${publishState}`}
-                onClick={handleConfirmPublish}
-                disabled={publishState !== 'idle'}
-              >
-                {publishState === 'loading' ? (
-                  <span className="publish-card__spinner" />
-                ) : publishState === 'done' ? (
-                  Icons.check()
-                ) : (
-                  Icons.upload()
-                )}
-                <span>{publishState === 'done' ? 'Published' : 'Publish'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <PublishModal
+          note={editingNote}
+          onClose={() => setShowPublishModal(false)}
+          onPublish={handlePublishConfirm}
+        />
       )}
     </div>
   )
-}
-
-// ── Utility hooks ──
-
-import { useState } from 'react'
-
-function useLocalState<T>(initial: T) {
-  return useState<T>(initial)
-}
-
-function useClickOutside(ref: React.RefObject<HTMLElement | null>, active: boolean, onClose: () => void) {
-  useEffect(() => {
-    if (!active) return
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [active, ref, onClose])
 }
