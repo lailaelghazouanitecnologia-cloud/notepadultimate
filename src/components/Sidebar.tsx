@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import type { Project, Note, Folder } from '../types'
+import type { Project, Note, Folder, Workspace } from '../types'
 import type { View } from '../contexts/UIContext'
 import { ZarnettiLogo, Identicon, Icons } from '../lib/icons'
 import { SidebarFiles } from './SidebarFiles'
@@ -21,7 +21,7 @@ interface SidebarProps {
   onOpenAgents?: () => void
   onOpenContracts?: () => void
   onOpenPlugins?: () => void
-  // Workspace (files) — shown in chat/graph views
+  // Workspace (files)
   notes?: Note[]
   folders?: Folder[]
   activeNoteId?: string | null
@@ -30,9 +30,15 @@ interface SidebarProps {
   onDeleteNote?: (id: string) => void
   onRenameNote?: (id: string, newTitle: string) => void
   onDuplicateNote?: (id: string) => void
+  onMoveNoteToFolder?: (noteId: string, folderId: string | null) => void
   onCreateFolder?: (name: string, parentId?: string) => void
-  onDeleteFolder?: (id: string) => void
   onRenameFolder?: (id: string, newName: string) => void
+  onMoveFolderToParent?: (folderId: string, parentId: string | null) => void
+  // Workspaces
+  workspaces?: Workspace[]
+  activeWorkspaceId?: string
+  onSwitchWorkspace?: (id: string) => void
+  onCreateWorkspace?: (name: string) => void
 }
 
 export function Sidebar({
@@ -43,7 +49,8 @@ export function Sidebar({
   onOpenAgents, onOpenContracts, onOpenPlugins,
   notes = [], folders = [], activeNoteId, onOpenNote,
   onAddNote, onDeleteNote, onRenameNote, onDuplicateNote,
-  onCreateFolder, onDeleteFolder, onRenameFolder,
+  onMoveNoteToFolder, onCreateFolder, onRenameFolder, onMoveFolderToParent,
+  workspaces = [], activeWorkspaceId = '', onSwitchWorkspace, onCreateWorkspace,
 }: SidebarProps) {
   const [showAvatarMenu, setShowAvatarMenu] = useState(false)
   const avatarRef = useRef<HTMLDivElement>(null)
@@ -62,7 +69,7 @@ export function Sidebar({
   }, [showAvatarMenu])
 
   const showNav = view !== 'chat' && view !== 'graph'
-  const showWorkspace = view === 'chat' || view === 'graph'
+  const showWorkspace = true  // workspace panel always visible
 
   return (
     <aside className={`zw-sb ${collapsed ? 'collapsed' : ''}`} style={!collapsed && width ? { width } : undefined}>
@@ -132,8 +139,8 @@ export function Sidebar({
         </button>
       )}
 
-      {/* ── Workspace panel: chat/graph views ── */}
-      {showWorkspace && onAddNote && onDeleteNote && onRenameNote && onCreateFolder && onDeleteFolder && (
+      {/* ── Workspace panel: always visible ── */}
+      {showWorkspace && onAddNote && onDeleteNote && onRenameNote && onCreateFolder && onMoveNoteToFolder && onMoveFolderToParent && onSwitchWorkspace && onCreateWorkspace && (
         <SidebarFiles
           notes={notes}
           activeId={activeNoteId || null}
@@ -142,15 +149,20 @@ export function Sidebar({
           onDelete={onDeleteNote}
           onRename={onRenameNote}
           onDuplicate={onDuplicateNote}
+          onMoveNoteToFolder={onMoveNoteToFolder}
           folders={folders}
           onCreateFolder={onCreateFolder}
-          onDeleteFolder={onDeleteFolder}
           onRenameFolder={onRenameFolder}
+          onMoveFolderToParent={onMoveFolderToParent}
+          workspaces={workspaces}
+          activeWorkspaceId={activeWorkspaceId}
+          onSwitchWorkspace={onSwitchWorkspace}
+          onCreateWorkspace={onCreateWorkspace}
         />
       )}
 
-      {/* Spacer — only when no workspace panel (workspace uses flex:1) */}
-      {!showWorkspace && <div className="zw-sb-spacer" />}
+      {/* Spacer — fallback if workspace props missing */}
+      {!(onAddNote && onDeleteNote && onRenameNote && onCreateFolder && onMoveNoteToFolder && onMoveFolderToParent && onSwitchWorkspace && onCreateWorkspace) && <div className="zw-sb-spacer" />}
 
       {/* Account row */}
       <div className="zw-sb-account" ref={avatarRef}>

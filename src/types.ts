@@ -8,12 +8,21 @@ export interface Note {
   author?: string
   authorId?: string
   folderId?: string  // parent folder
+  workspaceId?: string  // which workspace this note belongs to
 }
 
 export interface Folder {
   id: string
   name: string
   parentId?: string  // nested folders
+  createdAt: number
+  workspaceId?: string  // which workspace this folder belongs to
+}
+
+export interface Workspace {
+  id: string
+  name: string
+  spaceId: string  // which project/space this belongs to
   createdAt: number
 }
 

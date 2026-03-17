@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
-import type { Note, Folder } from '../types'
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
+import type { Note, Folder, Workspace } from '../types'
 import { Icons, FileTypeIcon } from '../lib/icons'
 
 interface SidebarFilesProps {
@@ -10,16 +10,23 @@ interface SidebarFilesProps {
   onDelete: (id: string) => void
   onRename: (id: string, newTitle: string) => void
   onDuplicate?: (id: string) => void
-  onDragNote?: boolean
+  onMoveNoteToFolder: (noteId: string, folderId: string | null) => void
   folders: Folder[]
   onCreateFolder: (name: string, parentId?: string) => void
-  onDeleteFolder: (id: string) => void
   onRenameFolder?: (id: string, newName: string) => void
+  onMoveFolderToParent: (folderId: string, parentId: string | null) => void
+  // Workspace support
+  workspaces: Workspace[]
+  activeWorkspaceId: string
+  onSwitchWorkspace: (id: string) => void
+  onCreateWorkspace: (name: string) => void
 }
 
 export function SidebarFiles({
-  notes, activeId, onSelect, onAdd, onDelete, onRename, onDuplicate, onDragNote,
-  folders, onCreateFolder, onDeleteFolder, onRenameFolder,
+  notes, activeId, onSelect, onAdd, onDelete, onRename, onDuplicate,
+  onMoveNoteToFolder,
+  folders, onCreateFolder, onRenameFolder, onMoveFolderToParent,
+  workspaces, activeWorkspaceId, onSwitchWorkspace, onCreateWorkspace,
 }: SidebarFilesProps) {
   const [search, setSearch] = useState('')
   const [showCreateMenu, setShowCreateMenu] = useState(false)
@@ -34,6 +41,16 @@ export function SidebarFiles({
   const renameInputRef = useRef<HTMLInputElement>(null)
 
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; id: string; type: 'note' | 'folder' } | null>(null)
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null)
+
+  // Workspace selector state
+  const [showWsMenu, setShowWsMenu] = useState(false)
+  const [creatingWs, setCreatingWs] = useState(false)
+  const [newWsName, setNewWsName] = useState('')
+  const wsMenuRef = useRef<HTMLDivElement>(null)
+  const wsInputRef = useRef<HTMLInputElement>(null)
+
+  const activeWorkspace = workspaces.find(w => w.id === activeWorkspaceId)
 
   const startRename = (id: string, currentName: string) => {
     setRenamingId(id)
@@ -65,6 +82,72 @@ export function SidebarFiles({
     setCtxMenu({ x: e.clientX, y: e.clientY, id, type })
   }
 
+  // --- Drag & Drop ---
+  const handleDragStart = useCallback((e: React.DragEvent, id: string, type: 'note' | 'folder') => {
+    e.dataTransfer.setData('application/x-item-id', id)
+    e.dataTransfer.setData('application/x-item-type', type)
+    if (type === 'note') {
+      const note = notes.find(n => n.id === id)
+      e.dataTransfer.setData('text/note-id', id)
+      e.dataTransfer.setData('text/note-title', note?.title || 'Untitled')
+    }
+    e.dataTransfer.effectAllowed = 'move'
+  }, [notes])
+
+  const handleDragOver = useCallback((e: React.DragEvent, targetFolderId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const draggedId = e.dataTransfer.types.includes('application/x-item-id')
+    if (draggedId) {
+      e.dataTransfer.dropEffect = 'move'
+      setDropTargetId(targetFolderId)
+    }
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.stopPropagation()
+    setDropTargetId(null)
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent, targetFolderId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDropTargetId(null)
+    const itemId = e.dataTransfer.getData('application/x-item-id')
+    const itemType = e.dataTransfer.getData('application/x-item-type')
+    if (!itemId) return
+    if (itemType === 'note') {
+      onMoveNoteToFolder(itemId, targetFolderId)
+    } else if (itemType === 'folder') {
+      // Prevent dropping folder into itself or its own children
+      if (itemId === targetFolderId) return
+      if (isDescendant(itemId, targetFolderId)) return
+      onMoveFolderToParent(itemId, targetFolderId)
+    }
+  }, [onMoveNoteToFolder, onMoveFolderToParent])
+
+  const handleDropOnRoot = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDropTargetId(null)
+    const itemId = e.dataTransfer.getData('application/x-item-id')
+    const itemType = e.dataTransfer.getData('application/x-item-type')
+    if (!itemId) return
+    if (itemType === 'note') {
+      onMoveNoteToFolder(itemId, null)
+    } else if (itemType === 'folder') {
+      onMoveFolderToParent(itemId, null)
+    }
+  }, [onMoveNoteToFolder, onMoveFolderToParent])
+
+  // Check if possibleChild is a descendant of possibleParent
+  const isDescendant = (possibleParentId: string, folderId: string): boolean => {
+    const folder = folders.find(f => f.id === folderId)
+    if (!folder?.parentId) return false
+    if (folder.parentId === possibleParentId) return true
+    return isDescendant(possibleParentId, folder.parentId)
+  }
+
   useEffect(() => {
     if (!ctxMenu) return
     const handler = () => setCtxMenu(null)
@@ -89,6 +172,23 @@ export function SidebarFiles({
     if (creatingFolder !== null) folderInputRef.current?.focus()
   }, [creatingFolder])
 
+  useEffect(() => {
+    if (!showWsMenu) return
+    const handler = (e: MouseEvent) => {
+      if (wsMenuRef.current && !wsMenuRef.current.contains(e.target as Node)) {
+        setShowWsMenu(false)
+        setCreatingWs(false)
+        setNewWsName('')
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showWsMenu])
+
+  useEffect(() => {
+    if (creatingWs) wsInputRef.current?.focus()
+  }, [creatingWs])
+
   const filtered = useMemo(() => {
     if (!search) return notes
     const q = search.toLowerCase()
@@ -109,6 +209,15 @@ export function SidebarFiles({
     onCreateFolder(newFolderName.trim(), creatingFolder === '__root__' ? undefined : creatingFolder || undefined)
     setNewFolderName('')
     setCreatingFolder(null)
+  }
+
+  const handleCreateWs = () => {
+    const trimmed = newWsName.trim()
+    if (!trimmed) return
+    onCreateWorkspace(trimmed)
+    setNewWsName('')
+    setCreatingWs(false)
+    setShowWsMenu(false)
   }
 
   const rootNotes = filtered.filter(n => !n.folderId)
@@ -133,12 +242,8 @@ export function SidebarFiles({
       onClick={() => onSelect(note.id)}
       onDoubleClick={(e) => { e.preventDefault(); startRename(note.id, note.title || 'Untitled') }}
       onContextMenu={(e) => handleContextMenu(e, note.id, 'note')}
-      draggable={!!onDragNote}
-      onDragStart={(e) => {
-        e.dataTransfer.setData('text/note-id', note.id)
-        e.dataTransfer.setData('text/note-title', note.title || 'Untitled')
-        e.dataTransfer.effectAllowed = 'copy'
-      }}
+      draggable
+      onDragStart={(e) => handleDragStart(e, note.id, 'note')}
     >
       {/\.\w+$/.test(note.title) ? <FileTypeIcon filename={note.title} /> : Icons.file()}
       {renamingId === note.id ? (
@@ -169,14 +274,20 @@ export function SidebarFiles({
     const isExpanded = expandedFolders.has(folder.id)
     const folderNotes = notesByFolder.get(folder.id) || []
     const childFolders = folders.filter(f => f.parentId === folder.id)
+    const isDragOver = dropTargetId === folder.id
 
     return (
       <div key={folder.id} className="zw-sb-folder">
         <button
-          className="zw-sb-item zw-sb-item--folder"
+          className={`zw-sb-item zw-sb-item--folder ${isDragOver ? 'zw-sb-item--drop-target' : ''}`}
           onClick={() => toggleFolder(folder.id)}
           onDoubleClick={(e) => { e.preventDefault(); startRename(folder.id, folder.name) }}
           onContextMenu={(e) => handleContextMenu(e, folder.id, 'folder')}
+          draggable
+          onDragStart={(e) => handleDragStart(e, folder.id, 'folder')}
+          onDragOver={(e) => handleDragOver(e, folder.id)}
+          onDragLeave={handleDragLeave}
+          onDrop={(e) => handleDrop(e, folder.id)}
         >
           <svg viewBox="0 0 24 24" style={{ width: 12, height: 12, transition: 'transform 0.12s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', flexShrink: 0 }} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 18l6-6-6-6" />
@@ -202,9 +313,6 @@ export function SidebarFiles({
             <button className="zw-sb-item-menu" onClick={(e) => { e.stopPropagation(); onAdd(folder.id) }} title="New file">
               {Icons.plus()}
             </button>
-            <button className="zw-sb-item-menu" onClick={(e) => { e.stopPropagation(); onDeleteFolder(folder.id) }} title="Delete folder">
-              {Icons.x()}
-            </button>
           </span>
         </button>
         {isExpanded && (
@@ -220,8 +328,56 @@ export function SidebarFiles({
   return (
     <div className="sb-panel sb-panel--files">
       <div className="sb-section">
+        {/* Workspace selector */}
+        <div className="zw-ws-selector" ref={wsMenuRef}>
+          <button className="zw-ws-selector__btn" onClick={() => setShowWsMenu(!showWsMenu)}>
+            <span className="zw-ws-selector__name">{activeWorkspace?.name || 'Workspace'}</span>
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+          {showWsMenu && (
+            <div className="zw-ws-menu">
+              {workspaces.map(ws => (
+                <button
+                  key={ws.id}
+                  className={`zw-ws-menu__item ${ws.id === activeWorkspaceId ? 'active' : ''}`}
+                  onClick={() => { onSwitchWorkspace(ws.id); setShowWsMenu(false) }}
+                >
+                  {ws.id === activeWorkspaceId ? Icons.check() : Icons.folder()}
+                  <span>{ws.name}</span>
+                </button>
+              ))}
+              <div className="zw-ws-menu__divider" />
+              {creatingWs ? (
+                <div className="zw-ws-menu__item" style={{ cursor: 'default' }}>
+                  {Icons.plus()}
+                  <input
+                    ref={wsInputRef}
+                    className="zw-sb-rename-input"
+                    placeholder="Workspace name..."
+                    value={newWsName}
+                    onChange={(e) => setNewWsName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleCreateWs()
+                      if (e.key === 'Escape') { setCreatingWs(false); setNewWsName('') }
+                    }}
+                    onBlur={() => { if (newWsName.trim()) handleCreateWs(); else { setCreatingWs(false); setNewWsName('') } }}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+              ) : (
+                <button className="zw-ws-menu__item" onClick={() => setCreatingWs(true)}>
+                  {Icons.plus()}
+                  <span>New workspace</span>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
         <div className="sb-section__header">
-          <span className="sb-section__title">Workspace</span>
+          <span className="sb-section__title">Files</span>
           <div ref={createMenuRef} style={{ position: 'relative' }}>
             <button className="sb-section__action" onClick={() => setShowCreateMenu(!showCreateMenu)} title="New...">
               {Icons.plus()}
@@ -256,7 +412,11 @@ export function SidebarFiles({
           </div>
         </div>
 
-        <div className="zw-sb-files-scroll">
+        <div
+          className="zw-sb-files-scroll"
+          onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}
+          onDrop={handleDropOnRoot}
+        >
           {creatingFolder !== null && (
             <div style={{ padding: '2px 4px' }}>
               <div className="zw-sb-item" style={{ gap: 4 }}>
@@ -323,15 +483,18 @@ export function SidebarFiles({
               <span>New file in folder</span>
             </button>
           )}
-          <div className="zw-sb-ctx-divider" />
-          <button className="zw-sb-ctx-item zw-sb-ctx-item--danger" onClick={() => {
-            if (ctxMenu.type === 'note') onDelete(ctxMenu.id)
-            else onDeleteFolder(ctxMenu.id)
-            setCtxMenu(null)
-          }}>
-            {Icons.x()}
-            <span>Delete</span>
-          </button>
+          {ctxMenu.type === 'note' && (
+            <>
+              <div className="zw-sb-ctx-divider" />
+              <button className="zw-sb-ctx-item zw-sb-ctx-item--danger" onClick={() => {
+                onDelete(ctxMenu.id)
+                setCtxMenu(null)
+              }}>
+                {Icons.x()}
+                <span>Delete</span>
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>

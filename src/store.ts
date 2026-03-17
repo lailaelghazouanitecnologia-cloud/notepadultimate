@@ -1,4 +1,4 @@
-import type { Note, Agent, Alert, Project, Contract, Folder, SystemEvent, Follow, SpaceInvite, UserProfile } from './types'
+import type { Note, Agent, Alert, Project, Contract, Folder, SystemEvent, Follow, SpaceInvite, UserProfile, Workspace } from './types'
 
 const STORAGE_KEY = 'zarnetti-notes'
 const PUBLISHED_KEY = 'zarnetti-published'
@@ -395,6 +395,45 @@ export function loadInvites(): SpaceInvite[] {
 
 export function saveInvites(invites: SpaceInvite[]): void {
   localStorage.setItem(INVITES_KEY, JSON.stringify(invites))
+}
+
+// ── Workspaces ──
+const WORKSPACES_KEY = 'zarnetti-workspaces'
+const ACTIVE_WORKSPACE_KEY = 'zarnetti-active-workspace'
+
+export function loadWorkspaces(): Workspace[] {
+  try {
+    const raw = localStorage.getItem(WORKSPACES_KEY)
+    const ws: Workspace[] = raw ? JSON.parse(raw) : []
+    if (ws.length === 0) {
+      const def: Workspace = { id: 'ws-default', name: 'Main', spaceId: 'default', createdAt: Date.now() }
+      saveWorkspaces([def])
+      return [def]
+    }
+    return ws
+  } catch {
+    return [{ id: 'ws-default', name: 'Main', spaceId: 'default', createdAt: Date.now() }]
+  }
+}
+
+export function saveWorkspaces(workspaces: Workspace[]): void {
+  localStorage.setItem(WORKSPACES_KEY, JSON.stringify(workspaces))
+}
+
+export function createWorkspace(name: string, spaceId: string): Workspace {
+  const ws: Workspace = { id: `ws-${Date.now()}`, name, spaceId, createdAt: Date.now() }
+  const all = loadWorkspaces()
+  all.push(ws)
+  saveWorkspaces(all)
+  return ws
+}
+
+export function getActiveWorkspaceId(): string {
+  return localStorage.getItem(ACTIVE_WORKSPACE_KEY) || 'ws-default'
+}
+
+export function setActiveWorkspaceId(id: string): void {
+  localStorage.setItem(ACTIVE_WORKSPACE_KEY, id)
 }
 
 // ── User profile ──

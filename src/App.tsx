@@ -32,7 +32,10 @@ export default function App() {
   const { theme, toggleTheme } = useTheme()
   const {
     notes, activeId, setActiveId, addNote, updateNote, deleteNote,
-    publishedNotes, publishNote, folders, createFolder, deleteFolder,
+    moveNoteToFolder,
+    publishedNotes, publishNote, createFolder, moveFolderToParent,
+    workspaces, activeWorkspaceId, setActiveWorkspaceId, createWorkspace,
+    workspaceNotes, workspaceFolders,
   } = useNotesContext()
   const {
     agents, alerts, unreadAlerts,
@@ -182,16 +185,21 @@ export default function App() {
         onOpenAgents={() => { setView('agents'); setProfileAgentId(null) }}
         onOpenContracts={() => { setView('agents'); setProfileAgentId(null) }}
         onOpenPlugins={() => { setView('plugins'); setProfileAgentId(null) }}
-        notes={notes}
-        folders={folders}
+        notes={workspaceNotes}
+        folders={workspaceFolders}
         activeNoteId={activeId}
         onOpenNote={handleOpenNote}
         onAddNote={handleAddNote}
         onDeleteNote={deleteNote}
         onRenameNote={handleRenameNote}
         onDuplicateNote={handleDuplicateNote}
+        onMoveNoteToFolder={moveNoteToFolder}
         onCreateFolder={createFolder}
-        onDeleteFolder={deleteFolder}
+        onMoveFolderToParent={moveFolderToParent}
+        workspaces={workspaces.filter(w => w.spaceId === activeProjectId || w.id === 'ws-default')}
+        activeWorkspaceId={activeWorkspaceId}
+        onSwitchWorkspace={setActiveWorkspaceId}
+        onCreateWorkspace={(name: string) => createWorkspace(name, activeProjectId)}
       />
 
       {/* Resizable divider */}
