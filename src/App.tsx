@@ -33,7 +33,7 @@ export default function App() {
   const {
     notes, activeId, setActiveId, addNote, updateNote, deleteNote,
     moveNoteToFolder,
-    publishedNotes, publishNote, createFolder, moveFolderToParent,
+    publishedNotes, publishNote, folders, createFolder, moveFolderToParent,
     workspaces, activeWorkspaceId, setActiveWorkspaceId, createWorkspace,
     workspaceNotes, workspaceFolders,
   } = useNotesContext()
@@ -281,6 +281,15 @@ export default function App() {
             followedAgentIds={followedAgentIds}
             activeSpaceId={activeProjectId}
             activeSpaceName={activeProject?.name}
+            workspaces={workspaces.filter(w => w.spaceId === activeProjectId || w.id === 'ws-default')}
+            activeWorkspaceId={activeWorkspaceId}
+            onSwitchWorkspace={setActiveWorkspaceId}
+            onCreateWorkspace={(name: string) => createWorkspace(name, activeProjectId)}
+            notes={notes}
+            folders={folders}
+            onAddNote={handleAddNote}
+            onDeleteNote={deleteNote}
+            onCreateFolder={createFolder}
           />
         ) : view === 'chat' ? (
           <div className="content-area" style={{ flexDirection: 'row' }}>

@@ -23,6 +23,7 @@ export interface Workspace {
   id: string
   name: string
   spaceId: string  // which project/space this belongs to
+  isPublic?: boolean
   createdAt: number
 }
 
