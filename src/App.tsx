@@ -424,7 +424,7 @@ export default function App() {
             onOpenProfile={handleOpenProfile}
           />
         ) : view === 'chat' ? (
-          <div className="content-area" style={{ position: 'relative' }}>
+          <div className="content-area" style={{ flexDirection: 'row' }}>
             <MemoizedHomeScreen
               notes={notes}
               publishedNotes={publishedNotes}
